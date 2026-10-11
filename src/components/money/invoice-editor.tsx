@@ -36,7 +36,10 @@ const QUANTITY_PATTERN = /^[1-9]\d{0,5}$/;
 function parseRow(row: Row) {
   const quantity = QUANTITY_PATTERN.test(row.quantity.trim()) ? Number(row.quantity.trim()) : null;
   const unitPriceMinor = parseAmountToMinor(row.unitPrice);
-  return { quantity, unitPriceMinor: unitPriceMinor !== null && unitPriceMinor > 0 ? unitPriceMinor : null };
+  return {
+    quantity,
+    unitPriceMinor: unitPriceMinor !== null && unitPriceMinor > 0 ? unitPriceMinor : null,
+  };
 }
 
 /** Route entry for editing: resolves the draft from the URL. */
@@ -46,7 +49,14 @@ export function InvoiceEditRoute() {
   const invoice = invoices.find((item) => item.id === id);
 
   if (!invoice) {
-    return <MissingRecord icon={ReceiptText} noun="invoice" listHref="/money/invoices" listLabel="Back to invoices" />;
+    return (
+      <MissingRecord
+        icon={ReceiptText}
+        noun="invoice"
+        listHref="/money/invoices"
+        listLabel="Back to invoices"
+      />
+    );
   }
   if (invoice.status !== "draft") {
     return (
@@ -76,7 +86,9 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
 
   const [contactId, setContactId] = useState(invoice?.contactId ?? "");
   const [issuedOn, setIssuedOn] = useState(invoice?.issuedOn ?? DEMO_TODAY);
-  const [dueOn, setDueOn] = useState(invoice?.dueOn ?? addDays(DEMO_TODAY, getRuntime().paymentTermDays));
+  const [dueOn, setDueOn] = useState(
+    invoice?.dueOn ?? addDays(DEMO_TODAY, getRuntime().paymentTermDays),
+  );
   const [rows, setRows] = useState<Row[]>(
     invoice?.items.map((item, index) => ({
       key: index,
@@ -85,12 +97,18 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
       unitPrice: formatAmountInput(item.unitPriceMinor),
     })) ?? [{ key: 0, description: "", quantity: "1", unitPrice: "" }],
   );
-  const [discount, setDiscount] = useState(invoice?.discountMinor ? formatAmountInput(invoice.discountMinor) : "");
-  const [taxRateBps, setTaxRateBps] = useState(String(invoice?.taxRateBps ?? getRuntime().taxRateBps));
+  const [discount, setDiscount] = useState(
+    invoice?.discountMinor ? formatAmountInput(invoice.discountMinor) : "",
+  );
+  const [taxRateBps, setTaxRateBps] = useState(
+    String(invoice?.taxRateBps ?? getRuntime().taxRateBps),
+  );
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [errors, setErrors] = useState<Errors>({});
 
-  const contacts = store.contacts.filter((contact) => !contact.archived || contact.id === invoice?.contactId);
+  const contacts = store.contacts.filter(
+    (contact) => !contact.archived || contact.id === invoice?.contactId,
+  );
   const catalog = store.catalog.filter((item) => !item.archived);
 
   // Live totals use whatever parses so far; unfinished rows count as zero.
@@ -119,10 +137,15 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
   function addFromCatalog(id: string) {
     const item = catalog.find((entry) => entry.id === id);
     if (!item) return;
-    const filled = { description: item.name, quantity: "1", unitPrice: formatAmountInput(item.unitPriceMinor) };
+    const filled = {
+      description: item.name,
+      quantity: "1",
+      unitPrice: formatAmountInput(item.unitPriceMinor),
+    };
     // Reuse a single untouched first row instead of leaving it blank above the new one.
     const [only] = rows;
-    if (rows.length === 1 && !only.description.trim() && !only.unitPrice.trim()) updateRow(only.key, filled);
+    if (rows.length === 1 && !only.description.trim() && !only.unitPrice.trim())
+      updateRow(only.key, filled);
     else addRow(filled);
   }
 
@@ -132,20 +155,24 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
     if (!contactId) found.contactId = "Choose a client to bill.";
     if (!issuedOn) found.issuedOn = "Choose an issue date.";
     if (!dueOn) found.dueOn = "Choose a due date.";
-    else if (issuedOn && dueOn < issuedOn) found.dueOn = "The due date can’t be before the issue date.";
+    else if (issuedOn && dueOn < issuedOn)
+      found.dueOn = "The due date can’t be before the issue date.";
 
     rows.forEach((row, index) => {
       const numbers = parsed[index];
       if (!row.description.trim()) found[`row-${row.key}`] = "Describe this line.";
-      else if (numbers.quantity === null) found[`row-${row.key}`] = "Quantity must be a whole number, 1 or more.";
-      else if (numbers.unitPriceMinor === null) found[`row-${row.key}`] = "Enter a unit price above zero, like 2500 or 2,500.50.";
+      else if (numbers.quantity === null)
+        found[`row-${row.key}`] = "Quantity must be a whole number, 1 or more.";
+      else if (numbers.unitPriceMinor === null)
+        found[`row-${row.key}`] = "Enter a unit price above zero, like 2500 or 2,500.50.";
     });
     if (rows.length === 0) found.items = "Add at least one line.";
 
     if (discount.trim()) {
       const value = parseAmountToMinor(discount);
       if (value === null) found.discount = "Enter the discount as an amount, like 1000.";
-      else if (value > totals.subtotalMinor) found.discount = "The discount can’t be more than the subtotal.";
+      else if (value > totals.subtotalMinor)
+        found.discount = "The discount can’t be more than the subtotal.";
     }
 
     setErrors(found);
@@ -196,7 +223,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <section aria-labelledby="invoice-details-title" className="rounded-lg border bg-card px-5 py-5">
+          <section
+            aria-labelledby="invoice-details-title"
+            className="rounded-lg border bg-card px-5 py-5"
+          >
             <h2 id="invoice-details-title" className="text-section">
               Details
             </h2>
@@ -215,7 +245,12 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                     clearError("contactId");
                   }}
                 >
-                  <SelectTrigger id="invoice-contactId" className="w-full" aria-invalid={Boolean(errors.contactId)} aria-describedby={errorId("contactId")}>
+                  <SelectTrigger
+                    id="invoice-contactId"
+                    className="w-full"
+                    aria-invalid={Boolean(errors.contactId)}
+                    aria-describedby={errorId("contactId")}
+                  >
                     <SelectValue placeholder="Choose a client" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,7 +299,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             </div>
           </section>
 
-          <section aria-labelledby="invoice-lines-title" className="rounded-lg border bg-card px-5 py-5">
+          <section
+            aria-labelledby="invoice-lines-title"
+            className="rounded-lg border bg-card px-5 py-5"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 id="invoice-lines-title" className="text-section">
                 Lines
@@ -292,7 +330,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                 const rowError = errors[`row-${row.key}`];
                 const describedBy = rowError ? `invoice-row-${row.key}-error` : undefined;
                 return (
-                  <li key={row.key} className="border-b border-dashed pb-4 last:border-b-0 last:pb-0">
+                  <li
+                    key={row.key}
+                    className="border-b border-dashed pb-4 last:border-b-0 last:pb-0"
+                  >
                     <fieldset className="grid grid-cols-[1fr_1fr_auto] items-end gap-x-3 gap-y-2 md:grid-cols-[minmax(0,1fr)_5rem_8rem_7rem_auto]">
                       <legend className="sr-only">Line {index + 1}</legend>
                       <div className="col-span-3 grid gap-1.5 md:col-span-1">
@@ -302,7 +343,9 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                           value={row.description}
                           placeholder="What you are billing for"
                           autoComplete="off"
-                          onChange={(event) => updateRow(row.key, { description: event.target.value })}
+                          onChange={(event) =>
+                            updateRow(row.key, { description: event.target.value })
+                          }
                           aria-invalid={Boolean(rowError)}
                           aria-describedby={describedBy}
                         />
@@ -328,12 +371,16 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                           placeholder="0"
                           autoComplete="off"
                           className="tabular text-right"
-                          onChange={(event) => updateRow(row.key, { unitPrice: event.target.value })}
+                          onChange={(event) =>
+                            updateRow(row.key, { unitPrice: event.target.value })
+                          }
                           aria-describedby={describedBy}
                         />
                       </div>
                       <div className="col-span-2 flex h-8 items-center justify-between gap-2 md:col-span-1 md:justify-end">
-                        <span className="text-caption text-muted-foreground md:sr-only">Line total</span>
+                        <span className="text-caption text-muted-foreground md:sr-only">
+                          Line total
+                        </span>
                         <span className="tabular font-medium">{formatMoney(lineMinor)}</span>
                       </div>
                       <Button
@@ -351,7 +398,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                       </Button>
                     </fieldset>
                     {rowError ? (
-                      <p id={`invoice-row-${row.key}-error`} className="mt-1.5 text-caption text-danger">
+                      <p
+                        id={`invoice-row-${row.key}-error`}
+                        className="mt-1.5 text-caption text-danger"
+                      >
                         {rowError}
                       </p>
                     ) : null}
@@ -370,7 +420,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             </p>
           </section>
 
-          <section aria-labelledby="invoice-notes-title" className="rounded-lg border bg-card px-5 py-5">
+          <section
+            aria-labelledby="invoice-notes-title"
+            className="rounded-lg border bg-card px-5 py-5"
+          >
             <h2 id="invoice-notes-title" className="text-section">
               Notes
             </h2>
@@ -388,7 +441,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
           </section>
         </div>
 
-        <aside aria-label="Totals" className="self-start rounded-lg border bg-card px-5 py-5 xl:sticky xl:top-6">
+        <aside
+          aria-label="Totals"
+          className="self-start rounded-lg border bg-card px-5 py-5 xl:sticky xl:top-6"
+        >
           <h2 className="text-section">Totals</h2>
           <div className="mt-4 grid gap-4">
             <div className="grid gap-1.5">
@@ -415,7 +471,11 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             <div className="grid gap-1.5">
               <Label htmlFor="invoice-tax">Tax</Label>
               <Select value={taxRateBps} onValueChange={setTaxRateBps}>
-                <SelectTrigger id="invoice-tax" className="w-full" aria-describedby="invoice-tax-hint">
+                <SelectTrigger
+                  id="invoice-tax"
+                  className="w-full"
+                  aria-describedby="invoice-tax-hint"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,13 +499,17 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Discount</dt>
-              <dd className="tabular">{totals.discountMinor > 0 ? `−${formatMoney(totals.discountMinor)}` : "None"}</dd>
+              <dd className="tabular">
+                {totals.discountMinor > 0 ? `−${formatMoney(totals.discountMinor)}` : "None"}
+              </dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">
                 {Number(taxRateBps) > 0 ? `Tax (${formatTaxRate(Number(taxRateBps))})` : "Tax"}
               </dt>
-              <dd className="tabular">{Number(taxRateBps) > 0 ? formatMoney(totals.taxMinor) : "None"}</dd>
+              <dd className="tabular">
+                {Number(taxRateBps) > 0 ? formatMoney(totals.taxMinor) : "None"}
+              </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t pt-2.5">
               <dt className="font-medium">Total</dt>
@@ -461,7 +525,9 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
               <Link href={backHref}>Cancel</Link>
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">Prototype: saved for this session only.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Prototype: saved for this session only.
+          </p>
         </aside>
       </div>
     </form>

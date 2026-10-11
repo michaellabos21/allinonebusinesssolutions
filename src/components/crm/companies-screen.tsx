@@ -28,7 +28,8 @@ const TYPE_OPTIONS = [
 type CompanyRow = Company & { peopleCount: number; openDealMinor: number; billedMinor: number };
 
 export function CompaniesScreen() {
-  const { companies, contacts, deals, invoices, openQuickCreate, openEditor, setCompanyArchived } = useDemoStore();
+  const { companies, contacts, deals, invoices, openQuickCreate, openEditor, setCompanyArchived } =
+    useDemoStore();
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [archiveTarget, setArchiveTarget] = useState<Company | null>(null);
@@ -40,7 +41,9 @@ export function CompaniesScreen() {
         if (type === "archived" ? !company.archived : company.archived) return false;
         if (type !== "all" && type !== "archived" && company.type !== type) return false;
         if (!text) return true;
-        return [company.name, company.industry, company.city].some((value) => value.toLowerCase().includes(text));
+        return [company.name, company.industry, company.city].some((value) =>
+          value.toLowerCase().includes(text),
+        );
       })
       .map((company) => {
         const rollup = getCompanyRollup(company, { contacts, deals, invoices });
@@ -61,7 +64,10 @@ export function CompaniesScreen() {
         sortValue: (company) => company.name,
         cell: (company) => (
           <div className="min-w-0">
-            <Link href={`/crm/companies/${company.id}`} className="block truncate font-medium hover:underline">
+            <Link
+              href={`/crm/companies/${company.id}`}
+              className="block truncate font-medium hover:underline"
+            >
               {company.name}
             </Link>
             <span className="block truncate text-caption text-muted-foreground">
@@ -91,7 +97,11 @@ export function CompaniesScreen() {
         sortValue: (company) => company.openDealMinor,
         className: "hidden md:table-cell",
         cell: (company) =>
-          company.openDealMinor > 0 ? formatMoney(company.openDealMinor) : <span className="text-muted-foreground">None</span>,
+          company.openDealMinor > 0 ? (
+            formatMoney(company.openDealMinor)
+          ) : (
+            <span className="text-muted-foreground">None</span>
+          ),
       },
       {
         id: "billed",
@@ -100,7 +110,11 @@ export function CompaniesScreen() {
         sortValue: (company) => company.billedMinor,
         className: "hidden lg:table-cell",
         cell: (company) =>
-          company.billedMinor > 0 ? formatMoney(company.billedMinor) : <span className="text-muted-foreground">None</span>,
+          company.billedMinor > 0 ? (
+            formatMoney(company.billedMinor)
+          ) : (
+            <span className="text-muted-foreground">None</span>
+          ),
       },
       {
         id: "actions",
@@ -122,7 +136,12 @@ export function CompaniesScreen() {
                       toast.success(`${company.name} restored`);
                     },
                   }
-                : { label: "Archive", icon: Archive, destructive: true, onSelect: () => setArchiveTarget(company) },
+                : {
+                    label: "Archive",
+                    icon: Archive,
+                    destructive: true,
+                    onSelect: () => setArchiveTarget(company),
+                  },
             ]}
           />
         ),

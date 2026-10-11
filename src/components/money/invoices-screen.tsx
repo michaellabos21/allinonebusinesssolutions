@@ -31,7 +31,8 @@ const TABS: { value: Tab; label: string }[] = [
 
 type InvoiceRow = Invoice & { display: InvoiceDisplayStatus; client: string };
 
-const sum = (rows: { amountMinor: number }[]) => rows.reduce((total, row) => total + row.amountMinor, 0);
+const sum = (rows: { amountMinor: number }[]) =>
+  rows.reduce((total, row) => total + row.amountMinor, 0);
 const countLabel = (count: number) => `${count} ${count === 1 ? "invoice" : "invoices"}`;
 
 export function InvoicesScreen() {
@@ -56,7 +57,11 @@ export function InvoicesScreen() {
   const searched = useMemo(() => {
     const text = query.trim().toLowerCase();
     return text
-      ? all.filter((row) => [row.number, row.client, row.description].some((value) => value.toLowerCase().includes(text)))
+      ? all.filter((row) =>
+          [row.number, row.client, row.description].some((value) =>
+            value.toLowerCase().includes(text),
+          ),
+        )
       : all;
   }, [all, query]);
   const rows = tab === "all" ? searched : searched.filter((row) => row.display === tab);
@@ -69,7 +74,11 @@ export function InvoicesScreen() {
   const figures = [
     { label: "Awaiting payment", rows: unpaid, note: "Sent and not yet paid, including overdue." },
     { label: "Overdue", rows: overdue, note: "Past the due date.", alert: overdue.length > 0 },
-    { label: "Paid this month", rows: paidThisMonth, note: `Payments recorded in ${formatMonthName(month)}.` },
+    {
+      label: "Paid this month",
+      rows: paidThisMonth,
+      note: `Payments recorded in ${formatMonthName(month)}.`,
+    },
     { label: "Drafts", rows: drafts, note: "Not sent yet." },
   ];
 
@@ -81,10 +90,15 @@ export function InvoicesScreen() {
         sortValue: (row) => row.number,
         cell: (row) => (
           <div className="min-w-32">
-            <Link href={`/money/invoices/${row.id}`} className="tabular font-medium hover:underline">
+            <Link
+              href={`/money/invoices/${row.id}`}
+              className="tabular font-medium hover:underline"
+            >
               {row.number}
             </Link>
-            <span className="block max-w-56 truncate text-caption text-muted-foreground">{row.description}</span>
+            <span className="block max-w-56 truncate text-caption text-muted-foreground">
+              {row.description}
+            </span>
           </div>
         ),
       },
@@ -100,7 +114,11 @@ export function InvoicesScreen() {
         header: "Issued",
         sortValue: (row) => row.issuedOn,
         className: "hidden lg:table-cell",
-        cell: (row) => <span className="tabular whitespace-nowrap text-muted-foreground">{formatDate(row.issuedOn, "long")}</span>,
+        cell: (row) => (
+          <span className="tabular whitespace-nowrap text-muted-foreground">
+            {formatDate(row.issuedOn, "long")}
+          </span>
+        ),
       },
       {
         id: "due",
@@ -108,8 +126,15 @@ export function InvoicesScreen() {
         sortValue: (row) => row.dueOn,
         className: "hidden md:table-cell",
         cell: (row) => (
-          <span className={cn("tabular whitespace-nowrap", row.display === "overdue" ? "font-medium text-danger" : "text-muted-foreground")}>
-            {row.display === "overdue" ? describeDue(row.dueOn).label : formatDate(row.dueOn, "long")}
+          <span
+            className={cn(
+              "tabular whitespace-nowrap",
+              row.display === "overdue" ? "font-medium text-danger" : "text-muted-foreground",
+            )}
+          >
+            {row.display === "overdue"
+              ? describeDue(row.dueOn).label
+              : formatDate(row.dueOn, "long")}
           </span>
         ),
       },
@@ -143,7 +168,13 @@ export function InvoicesScreen() {
                   ]
                 : []),
               ...(row.status === "sent"
-                ? [{ label: "Record payment", icon: BadgeCheck, onSelect: () => actions.askPayment(row) }]
+                ? [
+                    {
+                      label: "Record payment",
+                      icon: BadgeCheck,
+                      onSelect: () => actions.askPayment(row),
+                    },
+                  ]
                 : []),
             ]}
           />
@@ -153,7 +184,10 @@ export function InvoicesScreen() {
     [actions],
   );
 
-  const table = useTableState(rows, columns, { pageSize: 10, initialSort: { id: "number", direction: "desc" } });
+  const table = useTableState(rows, columns, {
+    pageSize: 10,
+    initialSort: { id: "number", direction: "desc" },
+  });
 
   return (
     <div className="page-container space-y-5">
@@ -192,8 +226,15 @@ export function InvoicesScreen() {
                 <div key={figure.label} className="-mt-px -ml-px border-t border-l px-5 py-4">
                   <dt className="text-muted-foreground">{figure.label}</dt>
                   <dd className="mt-1">
-                    <span className="block font-display text-figure">{formatMoney(sum(figure.rows))}</span>
-                    <span className={cn("mt-1 block text-caption", figure.alert ? "font-medium text-danger" : "text-muted-foreground")}>
+                    <span className="block font-display text-figure">
+                      {formatMoney(sum(figure.rows))}
+                    </span>
+                    <span
+                      className={cn(
+                        "mt-1 block text-caption",
+                        figure.alert ? "font-medium text-danger" : "text-muted-foreground",
+                      )}
+                    >
                       {countLabel(figure.rows.length)}. {figure.note}
                     </span>
                   </dd>
@@ -203,9 +244,16 @@ export function InvoicesScreen() {
           </section>
 
           <TableToolbar>
-            <div role="group" aria-label="Filter by status" className="flex max-w-full overflow-x-auto rounded-md border p-0.5">
+            <div
+              role="group"
+              aria-label="Filter by status"
+              className="flex max-w-full overflow-x-auto rounded-md border p-0.5"
+            >
               {TABS.map((item) => {
-                const count = item.value === "all" ? searched.length : searched.filter((row) => row.display === item.value).length;
+                const count =
+                  item.value === "all"
+                    ? searched.length
+                    : searched.filter((row) => row.display === item.value).length;
                 return (
                   <button
                     key={item.value}
@@ -218,12 +266,19 @@ export function InvoicesScreen() {
                     )}
                   >
                     {item.label}
-                    <span className="tabular text-xs font-normal text-muted-foreground">{count}</span>
+                    <span className="tabular text-xs font-normal text-muted-foreground">
+                      {count}
+                    </span>
                   </button>
                 );
               })}
             </div>
-            <SearchInput value={query} onChange={setQuery} label="Search invoices" className="sm:ml-auto" />
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              label="Search invoices"
+              className="sm:ml-auto"
+            />
           </TableToolbar>
 
           <section aria-label="Invoices" className="overflow-hidden rounded-lg border bg-card">
@@ -231,7 +286,11 @@ export function InvoicesScreen() {
               <EmptyState
                 icon={SearchX}
                 title="No invoices match"
-                description={query ? "Try a different search or another status tab." : "There are no invoices with this status."}
+                description={
+                  query
+                    ? "Try a different search or another status tab."
+                    : "There are no invoices with this status."
+                }
                 className="py-14"
               />
             ) : (
@@ -247,7 +306,10 @@ export function InvoicesScreen() {
             <div className="flex flex-wrap items-center justify-between gap-x-4 border-t px-5 py-2.5">
               <p className="text-caption text-muted-foreground">
                 Showing {countLabel(rows.length)} worth{" "}
-                <span className="tabular font-medium text-foreground">{formatMoney(sum(rows))}</span>.
+                <span className="tabular font-medium text-foreground">
+                  {formatMoney(sum(rows))}
+                </span>
+                .
               </p>
             </div>
             <Pagination {...table.pagination} noun="invoices" />

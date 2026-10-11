@@ -38,11 +38,27 @@ export type AccentId = (typeof ACCENTS)[number]["id"];
 
 /** Notification switches shown in settings. Nothing is sent in the prototype. */
 export const NOTIFICATION_OPTIONS = [
-  { id: "invoiceOverdue", label: "Invoice becomes overdue", description: "When a sent invoice passes its due date." },
-  { id: "paymentReceived", label: "Payment recorded", description: "When an invoice is marked as paid." },
-  { id: "taskDue", label: "Task due today", description: "A morning reminder for tasks assigned to you." },
+  {
+    id: "invoiceOverdue",
+    label: "Invoice becomes overdue",
+    description: "When a sent invoice passes its due date.",
+  },
+  {
+    id: "paymentReceived",
+    label: "Payment recorded",
+    description: "When an invoice is marked as paid.",
+  },
+  {
+    id: "taskDue",
+    label: "Task due today",
+    description: "A morning reminder for tasks assigned to you.",
+  },
   { id: "mentions", label: "Mentions", description: "When a teammate mentions you in a note." },
-  { id: "weeklySummary", label: "Weekly summary email", description: "Revenue, open invoices and overdue tasks every Monday." },
+  {
+    id: "weeklySummary",
+    label: "Weekly summary email",
+    description: "Revenue, open invoices and overdue tasks every Monday.",
+  },
 ] as const;
 export type NotificationPrefId = (typeof NOTIFICATION_OPTIONS)[number]["id"];
 

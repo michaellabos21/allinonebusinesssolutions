@@ -78,7 +78,9 @@ export function NotificationsMenu() {
                     {notification.title}
                     {notification.read ? null : <span className="sr-only"> (unread)</span>}
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">{notification.body}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {notification.body}
+                  </span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {formatRelativeDay(notification.at)}

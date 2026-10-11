@@ -67,7 +67,12 @@ export function RelatedList({
   action?: React.ReactNode;
 }) {
   return (
-    <Panel title={title} description={rows.length === 0 ? empty : undefined} action={action} bodyClassName="px-2 pb-2 pt-1">
+    <Panel
+      title={title}
+      description={rows.length === 0 ? empty : undefined}
+      action={action}
+      bodyClassName="px-2 pb-2 pt-1"
+    >
       {rows.length > 0 ? (
         <ul>
           {rows.map((row) => {
@@ -76,7 +81,9 @@ export function RelatedList({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{row.primary}</span>
                   {row.secondary ? (
-                    <span className="block truncate text-caption text-muted-foreground">{row.secondary}</span>
+                    <span className="block truncate text-caption text-muted-foreground">
+                      {row.secondary}
+                    </span>
                   ) : null}
                 </span>
                 {row.meta ? <span className="tabular shrink-0 text-right">{row.meta}</span> : null}

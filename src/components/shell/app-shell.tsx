@@ -7,7 +7,13 @@ import { GlobalSearch } from "@/components/shell/global-search";
 import { EditorDialog } from "@/components/shell/editor-dialog";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { ACCENTS } from "@/config/app";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { cn } from "@/lib/utils";
@@ -62,7 +68,11 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
         </aside>
 
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetContent side="left" className="w-72 gap-0 bg-canvas p-0" onCloseAutoFocus={returnFocus}>
+          <SheetContent
+            side="left"
+            className="w-72 gap-0 bg-canvas p-0"
+            onCloseAutoFocus={returnFocus}
+          >
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation</SheetTitle>
               <SheetDescription>Workspace pages and demo data settings</SheetDescription>

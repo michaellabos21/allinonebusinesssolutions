@@ -32,26 +32,59 @@ export function getRange(id: RangeId, today: string = DEMO_TODAY): DateRange {
   };
 }
 
-const inRange = (date: string | null, range: DateRange) => date !== null && date >= range.from && date <= range.to;
-const sum = (rows: { amountMinor: number }[]) => rows.reduce((total, row) => total + row.amountMinor, 0);
-const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+const inRange = (date: string | null, range: DateRange) =>
+  date !== null && date >= range.from && date <= range.to;
+const sum = (rows: { amountMinor: number }[]) =>
+  rows.reduce((total, row) => total + row.amountMinor, 0);
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sept",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
-export type MonthFlow = { key: string; label: string; collectedMinor: number; expenseMinor: number; partial: boolean };
+export type MonthFlow = {
+  key: string;
+  label: string;
+  collectedMinor: number;
+  expenseMinor: number;
+  partial: boolean;
+};
 
 /** Payments received and expenses paid, month by month. */
-export function getMoneyFlow(invoices: Invoice[], expenses: Expense[], range: DateRange): MonthFlow[] {
+export function getMoneyFlow(
+  invoices: Invoice[],
+  expenses: Expense[],
+  range: DateRange,
+): MonthFlow[] {
   return range.months.map((key, index) => ({
     key,
     label: SHORT_MONTHS[Number(key.slice(5, 7)) - 1],
-    collectedMinor: sum(invoices.filter((invoice) => invoice.paidOn?.startsWith(key) && inRange(invoice.paidOn, range))),
-    expenseMinor: sum(expenses.filter((expense) => expense.date.startsWith(key) && inRange(expense.date, range))),
+    collectedMinor: sum(
+      invoices.filter(
+        (invoice) => invoice.paidOn?.startsWith(key) && inRange(invoice.paidOn, range),
+      ),
+    ),
+    expenseMinor: sum(
+      expenses.filter((expense) => expense.date.startsWith(key) && inRange(expense.date, range)),
+    ),
     partial: index === range.months.length - 1,
   }));
 }
 
 export function getHeadline(invoices: Invoice[], expenses: Expense[], range: DateRange) {
   const collectedMinor = sum(invoices.filter((invoice) => inRange(invoice.paidOn, range)));
-  const billed = invoices.filter((invoice) => invoice.status !== "draft" && inRange(invoice.issuedOn, range));
+  const billed = invoices.filter(
+    (invoice) => invoice.status !== "draft" && inRange(invoice.issuedOn, range),
+  );
   const expenseMinor = sum(expenses.filter((expense) => inRange(expense.date, range)));
   return {
     collectedMinor,
@@ -99,14 +132,23 @@ export function getTaskLoad(tasks: Task[], range: DateRange) {
 }
 
 /** Per-project task progress and spend. Progress is all-time; spend is within the range. */
-export function getProjectReport(projects: Project[], tasks: Task[], expenses: Expense[], range: DateRange) {
+export function getProjectReport(
+  projects: Project[],
+  tasks: Task[],
+  expenses: Expense[],
+  range: DateRange,
+) {
   return projects.map((project) => {
     const own = tasks.filter((task) => task.projectId === project.id);
     return {
       project,
       total: own.length,
       done: own.filter((task) => task.status === "done").length,
-      spendMinor: sum(expenses.filter((expense) => expense.projectId === project.id && inRange(expense.date, range))),
+      spendMinor: sum(
+        expenses.filter(
+          (expense) => expense.projectId === project.id && inRange(expense.date, range),
+        ),
+      ),
     };
   });
 }
@@ -116,7 +158,10 @@ export function getExpenseCategories(expenses: Expense[], range: DateRange) {
   for (const expense of expenses) {
     if (!inRange(expense.date, range)) continue;
     const current = totals.get(expense.category) ?? { amountMinor: 0, count: 0 };
-    totals.set(expense.category, { amountMinor: current.amountMinor + expense.amountMinor, count: current.count + 1 });
+    totals.set(expense.category, {
+      amountMinor: current.amountMinor + expense.amountMinor,
+      count: current.count + 1,
+    });
   }
   return [...totals.entries()]
     .map(([category, value]) => ({ category, ...value }))

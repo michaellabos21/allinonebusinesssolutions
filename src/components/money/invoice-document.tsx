@@ -56,10 +56,18 @@ export function InvoiceDocument({
           <caption className="sr-only">Invoice lines</caption>
           <thead>
             <tr className="border-b text-xs font-medium text-muted-foreground">
-              <th scope="col" className="py-2.5 pr-4 font-medium">Description</th>
-              <th scope="col" className="py-2.5 pr-4 text-right font-medium">Qty</th>
-              <th scope="col" className="py-2.5 pr-4 text-right font-medium">Unit price</th>
-              <th scope="col" className="py-2.5 text-right font-medium">Amount</th>
+              <th scope="col" className="py-2.5 pr-4 font-medium">
+                Description
+              </th>
+              <th scope="col" className="py-2.5 pr-4 text-right font-medium">
+                Qty
+              </th>
+              <th scope="col" className="py-2.5 pr-4 text-right font-medium">
+                Unit price
+              </th>
+              <th scope="col" className="py-2.5 text-right font-medium">
+                Amount
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -67,8 +75,12 @@ export function InvoiceDocument({
               <tr key={item.id} className="border-b border-dashed last:border-solid">
                 <td className="py-3 pr-4">{item.description}</td>
                 <td className="tabular py-3 pr-4 text-right">{item.quantity}</td>
-                <td className="tabular py-3 pr-4 text-right whitespace-nowrap">{formatMoney(item.unitPriceMinor)}</td>
-                <td className="tabular py-3 text-right whitespace-nowrap">{formatMoney(lineTotalMinor(item))}</td>
+                <td className="tabular py-3 pr-4 text-right whitespace-nowrap">
+                  {formatMoney(item.unitPriceMinor)}
+                </td>
+                <td className="tabular py-3 text-right whitespace-nowrap">
+                  {formatMoney(lineTotalMinor(item))}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -91,7 +103,9 @@ export function InvoiceDocument({
             <dt className="text-muted-foreground">
               {invoice.taxRateBps > 0 ? `Tax (${formatTaxRate(invoice.taxRateBps)})` : "Tax"}
             </dt>
-            <dd className="tabular">{invoice.taxRateBps > 0 ? formatMoney(totals.taxMinor) : "None"}</dd>
+            <dd className="tabular">
+              {invoice.taxRateBps > 0 ? formatMoney(totals.taxMinor) : "None"}
+            </dd>
           </div>
           <div className="flex items-baseline justify-between gap-4 border-t pt-2.5">
             <dt className="font-medium">Total due</dt>

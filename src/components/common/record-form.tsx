@@ -131,13 +131,17 @@ export function RecordForm({
           const id = `field-${field.name}`;
           const error = errors[field.name];
           const describedBy =
-            [error ? `${id}-error` : "", field.hint ? `${id}-hint` : ""].filter(Boolean).join(" ") ||
-            undefined;
+            [error ? `${id}-error` : "", field.hint ? `${id}-hint` : ""]
+              .filter(Boolean)
+              .join(" ") || undefined;
           const options =
             typeof field.options === "function" ? field.options(values) : (field.options ?? []);
 
           return (
-            <div key={field.name} className={cn("grid content-start gap-1.5", !field.half && "sm:col-span-2")}>
+            <div
+              key={field.name}
+              className={cn("grid content-start gap-1.5", !field.half && "sm:col-span-2")}
+            >
               <Label htmlFor={id}>
                 {field.label}
                 {field.required ? null : (
@@ -145,8 +149,16 @@ export function RecordForm({
                 )}
               </Label>
               {field.type === "select" ? (
-                <Select value={values[field.name]} onValueChange={(value) => setValue(field.name, value)}>
-                  <SelectTrigger id={id} className="w-full" aria-invalid={Boolean(error)} aria-describedby={describedBy}>
+                <Select
+                  value={values[field.name]}
+                  onValueChange={(value) => setValue(field.name, value)}
+                >
+                  <SelectTrigger
+                    id={id}
+                    className="w-full"
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={describedBy}
+                  >
                     <SelectValue placeholder="Choose" />
                   </SelectTrigger>
                   <SelectContent>

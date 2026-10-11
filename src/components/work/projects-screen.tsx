@@ -48,7 +48,10 @@ export function ProjectsScreen() {
       .filter((project) => {
         if (status !== "all" && project.status !== status) return false;
         if (owner !== "all" && project.ownerId !== owner) return false;
-        return !text || [project.name, project.client].some((value) => value.toLowerCase().includes(text));
+        return (
+          !text ||
+          [project.name, project.client].some((value) => value.toLowerCase().includes(text))
+        );
       });
   }, [projects, tasks, contactCompanyName, query, status, owner]);
 
@@ -63,7 +66,9 @@ export function ProjectsScreen() {
             <Link href={`/work/projects/${project.id}`} className="font-medium hover:underline">
               {project.name}
             </Link>
-            <span className="block text-caption text-muted-foreground">{project.client || "No client"}</span>
+            <span className="block text-caption text-muted-foreground">
+              {project.client || "No client"}
+            </span>
           </div>
         ),
       },
@@ -90,7 +95,9 @@ export function ProjectsScreen() {
         header: "Progress",
         sortValue: (project) => project.percent,
         className: "hidden sm:table-cell",
-        cell: (project) => <ProgressBar done={project.done} total={project.total} className="w-40" />,
+        cell: (project) => (
+          <ProgressBar done={project.done} total={project.total} className="w-40" />
+        ),
       },
       {
         id: "due",
@@ -99,7 +106,13 @@ export function ProjectsScreen() {
         cell: (project) => {
           const late = project.status === "active" && project.dueOn < DEMO_TODAY;
           return (
-            <span className={late ? "tabular font-medium whitespace-nowrap text-danger" : "tabular whitespace-nowrap text-muted-foreground"}>
+            <span
+              className={
+                late
+                  ? "tabular font-medium whitespace-nowrap text-danger"
+                  : "tabular whitespace-nowrap text-muted-foreground"
+              }
+            >
               {formatDate(project.dueOn, "long")}
               {late ? " (late)" : ""}
             </span>
@@ -117,7 +130,11 @@ export function ProjectsScreen() {
             actions={[
               { label: "View", icon: Eye, href: `/work/projects/${project.id}` },
               { label: "Edit", icon: Pencil, onSelect: () => openEditor("project", project.id) },
-              { label: "Add task", icon: Plus, onSelect: () => openQuickCreate("task", { projectId: project.id }) },
+              {
+                label: "Add task",
+                icon: Plus,
+                onSelect: () => openQuickCreate("task", { projectId: project.id }),
+              },
             ]}
           />
         ),
@@ -165,7 +182,12 @@ export function ProjectsScreen() {
         <>
           <TableToolbar>
             <SearchInput value={query} onChange={setQuery} label="Search projects" />
-            <FilterMenu label="Status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+            <FilterMenu
+              label="Status"
+              options={STATUS_OPTIONS}
+              value={status}
+              onChange={setStatus}
+            />
             <FilterMenu label="Owner" options={ownerOptions} value={owner} onChange={setOwner} />
             {hasFilters ? (
               <Button

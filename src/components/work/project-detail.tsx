@@ -7,7 +7,11 @@ import { useState } from "react";
 
 import { Panel } from "@/components/common/panel";
 import { EmptyState } from "@/components/common/states";
-import { PriorityBadge, ProjectStatusBadge, TaskStatusBadge } from "@/components/common/status-badge";
+import {
+  PriorityBadge,
+  ProjectStatusBadge,
+  TaskStatusBadge,
+} from "@/components/common/status-badge";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { BackLink, MissingRecord } from "@/components/crm/shared";
 import { useDemoStore } from "@/components/providers/demo-store";
@@ -27,7 +31,14 @@ export function ProjectDetail() {
 
   const project = store.projects.find((item) => item.id === id);
   if (!project) {
-    return <MissingRecord icon={FolderKanban} noun="project" listHref="/work/projects" listLabel="Back to projects" />;
+    return (
+      <MissingRecord
+        icon={FolderKanban}
+        noun="project"
+        listHref="/work/projects"
+        listLabel="Back to projects"
+      />
+    );
   }
 
   const tasks = sortTasksForList(store.tasks.filter((task) => task.projectId === project.id));
@@ -42,7 +53,10 @@ export function ProjectDetail() {
     {
       label: "Progress",
       value: `${progress.percent}%`,
-      note: progress.total === 0 ? "No tasks yet." : `${progress.done} of ${progress.total} tasks done.`,
+      note:
+        progress.total === 0
+          ? "No tasks yet."
+          : `${progress.done} of ${progress.total} tasks done.`,
     },
     {
       label: "Open tasks",
@@ -79,13 +93,19 @@ export function ProjectDetail() {
             {contact ? (
               <>
                 For{" "}
-                <Link href={`/crm/contacts/${contact.id}`} className="hover:text-foreground hover:underline">
+                <Link
+                  href={`/crm/contacts/${contact.id}`}
+                  className="hover:text-foreground hover:underline"
+                >
                   {contact.name}
                 </Link>
                 {client ? (
                   <>
                     {" at "}
-                    <Link href={`/crm/companies/${contact.companyId}`} className="hover:text-foreground hover:underline">
+                    <Link
+                      href={`/crm/companies/${contact.companyId}`}
+                      className="hover:text-foreground hover:underline"
+                    >
                       {client}
                     </Link>
                   </>
@@ -118,7 +138,12 @@ export function ProjectDetail() {
               <dt className="text-muted-foreground">{figure.label}</dt>
               <dd className="mt-1">
                 <span className="block font-display text-figure">{figure.value}</span>
-                <span className={cn("mt-1 block text-caption", figure.alert ? "font-medium text-danger" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "mt-1 block text-caption",
+                    figure.alert ? "font-medium text-danger" : "text-muted-foreground",
+                  )}
+                >
                   {figure.note}
                 </span>
               </dd>
@@ -136,7 +161,11 @@ export function ProjectDetail() {
             title="Tasks"
             description={`${progress.open} open, ${progress.done} done.`}
             action={
-              <Button variant="outline" size="sm" onClick={() => store.openQuickCreate("task", { projectId: project.id })}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => store.openQuickCreate("task", { projectId: project.id })}
+              >
                 <Plus data-icon="inline-start" aria-hidden />
                 Add task
               </Button>
@@ -149,7 +178,10 @@ export function ProjectDetail() {
                 title="No tasks on this project"
                 description="Break the work into tasks to track progress."
                 action={
-                  <Button variant="outline" onClick={() => store.openQuickCreate("task", { projectId: project.id })}>
+                  <Button
+                    variant="outline"
+                    onClick={() => store.openQuickCreate("task", { projectId: project.id })}
+                  >
                     Add task
                   </Button>
                 }
@@ -160,7 +192,10 @@ export function ProjectDetail() {
                   const done = task.status === "done";
                   const due = describeDue(task.dueOn);
                   return (
-                    <li key={task.id} className="flex items-start gap-3 rounded-md px-3 py-2.5 hover:bg-muted/50">
+                    <li
+                      key={task.id}
+                      className="flex items-start gap-3 rounded-md px-3 py-2.5 hover:bg-muted/50"
+                    >
                       <TaskCheck task={task} className="mt-0.5" />
                       <div className="min-w-0 flex-1">
                         <button
@@ -175,14 +210,20 @@ export function ProjectDetail() {
                         </button>
                         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
                           {memberName(task.assigneeId)}
-                          {!done && task.status === "in_progress" ? <TaskStatusBadge status="in_progress" /> : null}
-                          {!done && task.priority === "high" ? <PriorityBadge priority="high" /> : null}
+                          {!done && task.status === "in_progress" ? (
+                            <TaskStatusBadge status="in_progress" />
+                          ) : null}
+                          {!done && task.priority === "high" ? (
+                            <PriorityBadge priority="high" />
+                          ) : null}
                         </p>
                       </div>
                       <span
                         className={cn(
                           "tabular shrink-0 text-caption",
-                          !done && due.tone === "overdue" ? "font-medium text-danger" : "text-muted-foreground",
+                          !done && due.tone === "overdue"
+                            ? "font-medium text-danger"
+                            : "text-muted-foreground",
                         )}
                       >
                         {done ? formatDate(task.dueOn) : due.label}
@@ -194,9 +235,17 @@ export function ProjectDetail() {
             )}
           </Panel>
 
-          <Panel title="Activity" description="Changes to this project and its tasks." bodyClassName="px-2 pb-2">
+          <Panel
+            title="Activity"
+            description="Changes to this project and its tasks."
+            bodyClassName="px-2 pb-2"
+          >
             {activity.length === 0 ? (
-              <EmptyState icon={Activity} title="No activity yet" description="Task and project changes are logged here." />
+              <EmptyState
+                icon={Activity}
+                title="No activity yet"
+                description="Task and project changes are logged here."
+              />
             ) : (
               <ol>
                 {activity.map((entry) => (
@@ -218,7 +267,9 @@ export function ProjectDetail() {
         <div className="space-y-6">
           <Panel title="Overview">
             <p className="max-w-[60ch]">
-              {project.description || <span className="text-muted-foreground">No description yet.</span>}
+              {project.description || (
+                <span className="text-muted-foreground">No description yet.</span>
+              )}
             </p>
             <dl className="mt-4 space-y-3 border-t pt-4">
               <div>
@@ -243,7 +294,9 @@ export function ProjectDetail() {
                   <UserAvatar name={member.name} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{member.name}</p>
-                    <p className="text-caption text-muted-foreground">{isOwner ? "Project owner" : "Contributor"}</p>
+                    <p className="text-caption text-muted-foreground">
+                      {isOwner ? "Project owner" : "Contributor"}
+                    </p>
                   </div>
                   <span className="tabular shrink-0 text-caption text-muted-foreground">
                     {openTasks} open

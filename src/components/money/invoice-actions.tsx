@@ -69,9 +69,9 @@ export function PaymentDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Record payment for {invoice?.number}?</AlertDialogTitle>
           <AlertDialogDescription>
-            This marks {invoice ? formatMoney(invoice.amountMinor) : "the invoice"} as paid in full on{" "}
-            {formatDate(DEMO_TODAY, "long")}. It is a simulated action: no payment is processed and no money
-            is moved.
+            This marks {invoice ? formatMoney(invoice.amountMinor) : "the invoice"} as paid in full
+            on {formatDate(DEMO_TODAY, "long")}. It is a simulated action: no payment is processed
+            and no money is moved.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

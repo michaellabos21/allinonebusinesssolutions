@@ -18,7 +18,9 @@ export function useFocusReturn(open: boolean) {
     if (!(active instanceof HTMLElement)) return;
     // Opened from a menu item: the item is about to unmount, so use the menu's trigger.
     const menu = active.closest("[role=menu]");
-    const menuTrigger = menu ? document.getElementById(menu.getAttribute("aria-labelledby") ?? "") : null;
+    const menuTrigger = menu
+      ? document.getElementById(menu.getAttribute("aria-labelledby") ?? "")
+      : null;
     opener.current = menuTrigger ?? active;
   }, [open]);
 

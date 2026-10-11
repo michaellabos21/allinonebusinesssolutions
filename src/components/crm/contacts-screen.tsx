@@ -11,7 +11,12 @@ import { PageHeader } from "@/components/common/page-header";
 import { RowActions } from "@/components/common/row-actions";
 import { EmptyState } from "@/components/common/states";
 import { ContactStatusBadge, Pill } from "@/components/common/status-badge";
-import { FilterMenu, MultiFilterMenu, SearchInput, TableToolbar } from "@/components/common/table-toolbar";
+import {
+  FilterMenu,
+  MultiFilterMenu,
+  SearchInput,
+  TableToolbar,
+} from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
@@ -35,10 +40,12 @@ export function ContactsScreen() {
 
   const tagOptions = useMemo(
     () =>
-      [...new Set([...CONTACT_TAGS, ...contacts.flatMap((contact) => contact.tags)])].map((tag) => ({
-        value: tag,
-        label: tag,
-      })),
+      [...new Set([...CONTACT_TAGS, ...contacts.flatMap((contact) => contact.tags)])].map(
+        (tag) => ({
+          value: tag,
+          label: tag,
+        }),
+      ),
     [contacts],
   );
 
@@ -65,10 +72,15 @@ export function ContactsScreen() {
           <div className="flex min-w-0 items-center gap-3">
             <UserAvatar name={contact.name} />
             <div className="min-w-0">
-              <Link href={`/crm/contacts/${contact.id}`} className="block truncate font-medium hover:underline">
+              <Link
+                href={`/crm/contacts/${contact.id}`}
+                className="block truncate font-medium hover:underline"
+              >
                 {contact.name}
               </Link>
-              <span className="block truncate text-caption text-muted-foreground">{contact.email}</span>
+              <span className="block truncate text-caption text-muted-foreground">
+                {contact.email}
+              </span>
             </div>
           </div>
         ),
@@ -91,7 +103,9 @@ export function ContactsScreen() {
         id: "status",
         header: "Status",
         sortValue: (contact) => contact.status,
-        cell: (contact) => <ContactStatusBadge status={contact.status} archived={contact.archived} />,
+        cell: (contact) => (
+          <ContactStatusBadge status={contact.status} archived={contact.archived} />
+        ),
       },
       {
         id: "tags",
@@ -136,7 +150,12 @@ export function ContactsScreen() {
                       toast.success(`${contact.name} restored`);
                     },
                   }
-                : { label: "Archive", icon: Archive, destructive: true, onSelect: () => setArchiveTarget(contact) },
+                : {
+                    label: "Archive",
+                    icon: Archive,
+                    destructive: true,
+                    onSelect: () => setArchiveTarget(contact),
+                  },
             ]}
           />
         ),
@@ -179,7 +198,12 @@ export function ContactsScreen() {
         <>
           <TableToolbar>
             <SearchInput value={query} onChange={setQuery} label="Search contacts" />
-            <FilterMenu label="Status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+            <FilterMenu
+              label="Status"
+              options={STATUS_OPTIONS}
+              value={status}
+              onChange={setStatus}
+            />
             <MultiFilterMenu label="Tags" options={tagOptions} values={tags} onChange={setTags} />
             {hasFilters ? (
               <Button

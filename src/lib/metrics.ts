@@ -35,7 +35,20 @@ export type MonthRevenue = {
   partial: boolean;
 };
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sept",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 /** Payments received per calendar month, ending with the current month. */
 export function getRevenueByMonth(
@@ -98,9 +111,8 @@ export function getSummary(
       const days = daysBetween(today, project.dueOn);
       return days >= 0 && days <= 30;
     }).length,
-    tasksDueThisWeekCount: openTasks.filter(
-      (task) => task.dueOn >= today && task.dueOn <= weekEnd,
-    ).length,
+    tasksDueThisWeekCount: openTasks.filter((task) => task.dueOn >= today && task.dueOn <= weekEnd)
+      .length,
     overdueTaskCount: openTasks.filter((task) => task.dueOn < today).length,
   };
 }

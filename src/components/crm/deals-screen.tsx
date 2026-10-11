@@ -1,6 +1,14 @@
 "use client";
 
-import { Archive, ArchiveRestore, ArrowRightLeft, Handshake, Pencil, Plus, SearchX } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowRightLeft,
+  Handshake,
+  Pencil,
+  Plus,
+  SearchX,
+} from "lucide-react";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +19,12 @@ import { PageHeader } from "@/components/common/page-header";
 import { RowActions } from "@/components/common/row-actions";
 import { EmptyState } from "@/components/common/states";
 import { DealStageBadge } from "@/components/common/status-badge";
-import { FilterMenu, SearchInput, SegmentedControl, TableToolbar } from "@/components/common/table-toolbar";
+import {
+  FilterMenu,
+  SearchInput,
+  SegmentedControl,
+  TableToolbar,
+} from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
@@ -31,7 +44,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { formatDate, formatMoney } from "@/lib/format";
 import { getOpenDeals } from "@/lib/metrics";
 import { memberName } from "@/lib/runtime";
@@ -48,7 +67,8 @@ const STATUS_OPTIONS = [
   { value: "archived", label: "Archived" },
 ];
 
-const stageLabel = (stage: DealStage) => DEAL_STAGES.find((item) => item.id === stage)?.label ?? stage;
+const stageLabel = (stage: DealStage) =>
+  DEAL_STAGES.find((item) => item.id === stage)?.label ?? stage;
 const sumValue = (deals: Deal[]) => deals.reduce((total, deal) => total + deal.valueMinor, 0);
 
 export function DealsScreen() {
@@ -76,7 +96,9 @@ export function DealsScreen() {
     return deals.filter((deal) => {
       if (owner !== "all" && deal.ownerId !== owner) return false;
       if (!text) return true;
-      return [deal.name, companyName(deal.companyId)].some((value) => value.toLowerCase().includes(text));
+      return [deal.name, companyName(deal.companyId)].some((value) =>
+        value.toLowerCase().includes(text),
+      );
     });
   }, [deals, companyName, query, owner]);
 
@@ -110,7 +132,12 @@ export function DealsScreen() {
               toast.success(`“${deal.name}” restored`);
             },
           }
-        : { label: "Archive", icon: Archive, destructive: true, onSelect: () => setArchiveTarget(deal) },
+        : {
+            label: "Archive",
+            icon: Archive,
+            destructive: true,
+            onSelect: () => setArchiveTarget(deal),
+          },
     ];
   }
 
@@ -179,7 +206,9 @@ export function DealsScreen() {
         header: "Actions",
         hideHeader: true,
         align: "right",
-        cell: (deal) => <RowActions label={`Actions for ${deal.name}`} actions={dealActions(deal)} />,
+        cell: (deal) => (
+          <RowActions label={`Actions for ${deal.name}`} actions={dealActions(deal)} />
+        ),
       },
     ],
     // dealActions only closes over stable store callbacks.
@@ -187,7 +216,9 @@ export function DealsScreen() {
     [companyName, openEditor, setDealArchived],
   );
 
-  const table = useTableState(tableDeals, columns, { initialSort: { id: "value", direction: "desc" } });
+  const table = useTableState(tableDeals, columns, {
+    initialSort: { id: "value", direction: "desc" },
+  });
   const hasFilters = query !== "" || owner !== "all";
 
   return (
@@ -227,7 +258,12 @@ export function DealsScreen() {
             <SearchInput value={query} onChange={setQuery} label="Search deals" />
             <FilterMenu label="Owner" options={ownerOptions} value={owner} onChange={setOwner} />
             {view === "table" ? (
-              <FilterMenu label="Status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+              <FilterMenu
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={status}
+                onChange={setStatus}
+              />
             ) : null}
             {hasFilters ? (
               <Button
@@ -267,9 +303,13 @@ export function DealsScreen() {
                       <header className="flex items-baseline justify-between gap-2 border-b px-3 py-2.5">
                         <h2 className="font-semibold">
                           {stage.label}{" "}
-                          <span className="tabular font-normal text-muted-foreground">{inStage.length}</span>
+                          <span className="tabular font-normal text-muted-foreground">
+                            {inStage.length}
+                          </span>
                         </h2>
-                        <p className="tabular text-caption text-muted-foreground">{formatMoney(sumValue(inStage))}</p>
+                        <p className="tabular text-caption text-muted-foreground">
+                          {formatMoney(sumValue(inStage))}
+                        </p>
                       </header>
                       <ul className="flex flex-1 flex-col gap-2 p-2">
                         {inStage.length === 0 ? (
@@ -278,7 +318,10 @@ export function DealsScreen() {
                           </li>
                         ) : (
                           inStage.map((deal) => (
-                            <li key={deal.id} className="rounded-md border bg-card p-3 shadow-[0_1px_0_rgb(28_36_52/0.04)]">
+                            <li
+                              key={deal.id}
+                              className="rounded-md border bg-card p-3 shadow-[0_1px_0_rgb(28_36_52/0.04)]"
+                            >
                               <div className="flex items-start justify-between gap-2">
                                 <button
                                   type="button"
@@ -302,7 +345,9 @@ export function DealsScreen() {
                                     <DropdownMenuLabel>Move to</DropdownMenuLabel>
                                     <DropdownMenuRadioGroup
                                       value={deal.stage}
-                                      onValueChange={(value) => changeStage(deal, value as DealStage)}
+                                      onValueChange={(value) =>
+                                        changeStage(deal, value as DealStage)
+                                      }
                                     >
                                       {DEAL_STAGES.map((option) => (
                                         <DropdownMenuRadioItem key={option.id} value={option.id}>
@@ -313,12 +358,21 @@ export function DealsScreen() {
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </div>
-                              <p className="truncate text-caption text-muted-foreground">{companyName(deal.companyId)}</p>
+                              <p className="truncate text-caption text-muted-foreground">
+                                {companyName(deal.companyId)}
+                              </p>
                               <div className="mt-3 flex items-end justify-between gap-2">
-                                <span className="font-display text-base font-semibold">{formatMoney(deal.valueMinor)}</span>
+                                <span className="font-display text-base font-semibold">
+                                  {formatMoney(deal.valueMinor)}
+                                </span>
                                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                  <span className="tabular">{formatDate(deal.expectedCloseOn)}</span>
-                                  <UserAvatar name={memberName(deal.ownerId)} className="size-5 [&_[data-slot=avatar-fallback]]:text-[10px]" />
+                                  <span className="tabular">
+                                    {formatDate(deal.expectedCloseOn)}
+                                  </span>
+                                  <UserAvatar
+                                    name={memberName(deal.ownerId)}
+                                    className="size-5 [&_[data-slot=avatar-fallback]]:text-[10px]"
+                                  />
                                   <span className="sr-only">Owner: {memberName(deal.ownerId)}</span>
                                 </span>
                               </div>
@@ -368,7 +422,10 @@ export function DealsScreen() {
               <SheetHeader className="border-b pr-12">
                 <SheetTitle className="font-display text-lg">{selected.name}</SheetTitle>
                 <SheetDescription>
-                  <Link href={`/crm/companies/${selected.companyId}`} className="hover:text-foreground hover:underline">
+                  <Link
+                    href={`/crm/companies/${selected.companyId}`}
+                    className="hover:text-foreground hover:underline"
+                  >
                     {companyName(selected.companyId)}
                   </Link>
                 </SheetDescription>
@@ -397,7 +454,9 @@ export function DealsScreen() {
                     </SelectContent>
                   </Select>
                   {selected.archived ? (
-                    <p className="text-xs text-muted-foreground">Restore this deal to change its stage.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Restore this deal to change its stage.
+                    </p>
                   ) : null}
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
@@ -405,8 +464,12 @@ export function DealsScreen() {
                     <dt className="text-caption text-muted-foreground">Contact</dt>
                     <dd>
                       {selected.contactId ? (
-                        <Link href={`/crm/contacts/${selected.contactId}`} className="text-primary hover:underline">
-                          {store.contacts.find((contact) => contact.id === selected.contactId)?.name ?? "Unknown"}
+                        <Link
+                          href={`/crm/contacts/${selected.contactId}`}
+                          className="text-primary hover:underline"
+                        >
+                          {store.contacts.find((contact) => contact.id === selected.contactId)
+                            ?.name ?? "Unknown"}
                         </Link>
                       ) : (
                         "None"

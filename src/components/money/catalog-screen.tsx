@@ -34,7 +34,9 @@ export function CatalogScreen() {
     return catalog.filter((item) => {
       if (type === "archived" ? !item.archived : item.archived) return false;
       if (type !== "all" && type !== "archived" && item.type !== type) return false;
-      return !text || [item.name, item.description].some((value) => value.toLowerCase().includes(text));
+      return (
+        !text || [item.name, item.description].some((value) => value.toLowerCase().includes(text))
+      );
     });
   }, [catalog, query, type]);
 
@@ -98,7 +100,12 @@ export function CatalogScreen() {
                       toast.success(`“${item.name}” restored`);
                     },
                   }
-                : { label: "Archive", icon: Archive, destructive: true, onSelect: () => setArchiveTarget(item) },
+                : {
+                    label: "Archive",
+                    icon: Archive,
+                    destructive: true,
+                    onSelect: () => setArchiveTarget(item),
+                  },
             ]}
           />
         ),
@@ -107,7 +114,10 @@ export function CatalogScreen() {
     [openEditor, setCatalogItemArchived],
   );
 
-  const table = useTableState(rows, columns, { pageSize: 10, initialSort: { id: "name", direction: "asc" } });
+  const table = useTableState(rows, columns, {
+    pageSize: 10,
+    initialSort: { id: "name", direction: "asc" },
+  });
   const hasFilters = query !== "" || type !== "all";
 
   return (
@@ -188,7 +198,10 @@ export function CatalogScreen() {
           if (!archiveTarget) return;
           setCatalogItemArchived(archiveTarget.id, true);
           toast.success(`“${archiveTarget.name}” archived`, {
-            action: { label: "Undo", onClick: () => setCatalogItemArchived(archiveTarget.id, false) },
+            action: {
+              label: "Undo",
+              onClick: () => setCatalogItemArchived(archiveTarget.id, false),
+            },
           });
           setArchiveTarget(null);
         }}

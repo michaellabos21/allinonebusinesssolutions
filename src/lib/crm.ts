@@ -20,13 +20,24 @@ export function getContactTimeline(
   { notes, invoices }: { notes: Note[]; invoices: Invoice[] },
 ): TimelineEvent[] {
   const events: TimelineEvent[] = [
-    { id: `created-${contact.id}`, kind: "created", title: "Added as a contact", at: contact.createdOn },
+    {
+      id: `created-${contact.id}`,
+      kind: "created",
+      title: "Added as a contact",
+      at: contact.createdOn,
+    },
   ];
 
   for (const note of notes) {
     if (note.contactId !== contact.id) continue;
     const author = memberName(note.authorId);
-    events.push({ id: note.id, kind: "note", title: `${author} added a note`, detail: note.body, at: note.at });
+    events.push({
+      id: note.id,
+      kind: "note",
+      title: `${author} added a note`,
+      detail: note.body,
+      at: note.at,
+    });
   }
 
   for (const invoice of invoices) {
@@ -56,7 +67,9 @@ export function getCompanyRollup(
   company: Company,
   { contacts, deals, invoices }: { contacts: Contact[]; deals: Deal[]; invoices: Invoice[] },
 ) {
-  const people = contacts.filter((contact) => contact.companyId === company.id && !contact.archived);
+  const people = contacts.filter(
+    (contact) => contact.companyId === company.id && !contact.archived,
+  );
   const contactIds = new Set(
     contacts.filter((contact) => contact.companyId === company.id).map((contact) => contact.id),
   );
@@ -65,7 +78,8 @@ export function getCompanyRollup(
   const unpaid = billed.filter((invoice) => invoice.status === "sent");
   const companyDeals = deals.filter((deal) => deal.companyId === company.id && !deal.archived);
   const openDeals = getOpenDeals(companyDeals);
-  const sum = (items: { amountMinor: number }[]) => items.reduce((total, item) => total + item.amountMinor, 0);
+  const sum = (items: { amountMinor: number }[]) =>
+    items.reduce((total, item) => total + item.amountMinor, 0);
 
   return {
     people,

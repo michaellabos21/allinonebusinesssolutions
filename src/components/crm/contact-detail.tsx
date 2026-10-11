@@ -1,6 +1,15 @@
 "use client";
 
-import { Archive, ArchiveRestore, Banknote, NotebookPen, Pencil, ReceiptText, UserRound, UserRoundPlus } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Banknote,
+  NotebookPen,
+  Pencil,
+  ReceiptText,
+  UserRound,
+  UserRoundPlus,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useId, useState } from "react";
@@ -42,7 +51,14 @@ export function ContactDetail() {
 
   const contact = store.contacts.find((item) => item.id === id);
   if (!contact) {
-    return <MissingRecord icon={UserRound} noun="contact" listHref="/crm/contacts" listLabel="Back to contacts" />;
+    return (
+      <MissingRecord
+        icon={UserRound}
+        noun="contact"
+        listHref="/crm/contacts"
+        listLabel="Back to contacts"
+      />
+    );
   }
 
   const company = store.companyName(contact.companyId);
@@ -71,7 +87,10 @@ export function ContactDetail() {
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
-          <UserAvatar name={contact.name} className="size-14 [&_[data-slot=avatar-fallback]]:text-lg" />
+          <UserAvatar
+            name={contact.name}
+            className="size-14 [&_[data-slot=avatar-fallback]]:text-lg"
+          />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="font-display text-title">{contact.name}</h1>
@@ -79,7 +98,10 @@ export function ContactDetail() {
             </div>
             <p className="mt-0.5 text-muted-foreground">
               {contact.companyId ? (
-                <Link href={`/crm/companies/${contact.companyId}`} className="hover:text-foreground hover:underline">
+                <Link
+                  href={`/crm/companies/${contact.companyId}`}
+                  className="hover:text-foreground hover:underline"
+                >
                   {company}
                 </Link>
               ) : (
@@ -121,7 +143,10 @@ export function ContactDetail() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Panel title="Notes" description={`${notes.length} ${notes.length === 1 ? "note" : "notes"} on this contact.`}>
+          <Panel
+            title="Notes"
+            description={`${notes.length} ${notes.length === 1 ? "note" : "notes"} on this contact.`}
+          >
             <form onSubmit={saveNote} noValidate>
               <label htmlFor={noteId} className="sr-only">
                 New note
@@ -179,10 +204,14 @@ export function ContactDetail() {
                     <div className="min-w-0 flex-1 pt-0.5">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                         <p className="font-medium">{event.title}</p>
-                        <p className="tabular text-caption text-muted-foreground">{formatDate(event.at, "long")}</p>
+                        <p className="tabular text-caption text-muted-foreground">
+                          {formatDate(event.at, "long")}
+                        </p>
                       </div>
                       {event.detail ? (
-                        <p className="mt-0.5 line-clamp-2 text-caption text-muted-foreground">{event.detail}</p>
+                        <p className="mt-0.5 line-clamp-2 text-caption text-muted-foreground">
+                          {event.detail}
+                        </p>
                       ) : null}
                     </div>
                   </li>
@@ -210,7 +239,9 @@ export function ContactDetail() {
               <div>
                 <dt className="text-caption text-muted-foreground">Tags</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
-                  {contact.tags.length > 0 ? contact.tags.map((tag) => <Pill key={tag}>{tag}</Pill>) : "None"}
+                  {contact.tags.length > 0
+                    ? contact.tags.map((tag) => <Pill key={tag}>{tag}</Pill>)
+                    : "None"}
                 </dd>
               </div>
               <div>

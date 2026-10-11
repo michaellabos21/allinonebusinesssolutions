@@ -31,7 +31,9 @@ export function ReceivablesStatement() {
   const client = (contactId: string) => contactCompanyName(contactId) || "Unknown client";
 
   const headline =
-    open.length > 0 ? `${formatMoney(openMinor)} is waiting to be paid.` : "Nothing is waiting to be paid.";
+    open.length > 0
+      ? `${formatMoney(openMinor)} is waiting to be paid.`
+      : "Nothing is waiting to be paid.";
   const detail =
     open.length === 0
       ? drafts.length > 0

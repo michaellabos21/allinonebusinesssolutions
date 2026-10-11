@@ -1,6 +1,13 @@
 "use client";
 
-import { FolderKanban, ListChecks, type LucideIcon, Plus, ReceiptText, UserRound } from "lucide-react";
+import {
+  FolderKanban,
+  ListChecks,
+  type LucideIcon,
+  Plus,
+  ReceiptText,
+  UserRound,
+} from "lucide-react";
 
 import { type QuickCreateKind, useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";

@@ -20,7 +20,17 @@ const deal = (
   stage: DealStage,
   valueMinor: number,
   expectedCloseOn: string,
-): Deal => ({ id, name, companyId, contactId, ownerId, stage, valueMinor, expectedCloseOn, archived: false });
+): Deal => ({
+  id,
+  name,
+  companyId,
+  contactId,
+  ownerId,
+  stage,
+  valueMinor,
+  expectedCloseOn,
+  archived: false,
+});
 
 export const deals: Deal[] = [
   deal("d1", "Loyalty app", "co1", "c1", "u2", "proposal", 18_000_000, "2026-11-15"),

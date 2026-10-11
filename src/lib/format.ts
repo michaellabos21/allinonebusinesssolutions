@@ -107,11 +107,13 @@ export function describeDue(
 }
 
 export function initials(name: string) {
-  return name
-    .split(/\s+/)
-    // Skip words like "&" that do not start with a letter or digit.
-    .filter((part) => /^[\p{L}\p{N}]/u.test(part))
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
+  return (
+    name
+      .split(/\s+/)
+      // Skip words like "&" that do not start with a letter or digit.
+      .filter((part) => /^[\p{L}\p{N}]/u.test(part))
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("")
+  );
 }

@@ -15,7 +15,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /** Row of search, filters and view controls above a table or board. */
-export function TableToolbar({ children, className }: { children: React.ReactNode; className?: string }) {
+export function TableToolbar({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <div className={cn("flex flex-wrap items-center gap-2", className)}>{children}</div>;
 }
 
@@ -132,7 +138,9 @@ export function MultiFilterMenu({
             onSelect={(event) => event.preventDefault()}
             onCheckedChange={(checked) =>
               onChange(
-                checked ? [...values, option.value] : values.filter((item) => item !== option.value),
+                checked
+                  ? [...values, option.value]
+                  : values.filter((item) => item !== option.value),
               )
             }
           >

@@ -1,8 +1,21 @@
 "use client";
 
-import { ErrorState } from "@/components/common/states";
+import { useEffect } from "react";
 
-export default function WorkspaceError({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
+import { ErrorState } from "@/components/common/states";
+import { logger } from "@/lib/logger";
+
+export default function WorkspaceError({
+  error,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) {
+  useEffect(() => {
+    logger.error("app.route_error", { message: error.message, digest: error.digest });
+  }, [error]);
+
   return (
     <div className="page-container">
       <ErrorState onRetry={retry} />

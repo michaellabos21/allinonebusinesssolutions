@@ -1,6 +1,15 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, ChevronRight, FolderKanban, ListChecks, type LucideIcon, Plus, ReceiptText } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  FolderKanban,
+  ListChecks,
+  type LucideIcon,
+  Plus,
+  ReceiptText,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -34,11 +43,25 @@ const KIND_ICON = Object.fromEntries(KINDS.map((kind) => [kind.value, kind.icon]
   CalendarEventKind,
   LucideIcon
 >;
-const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 /** Chips per day cell before the rest collapse into "+n more". */
 const CELL_LIMIT = 2;
 
-function EventRow({ event, onOpenTask }: { event: CalendarEvent; onOpenTask: (id: string) => void }) {
+function EventRow({
+  event,
+  onOpenTask,
+}: {
+  event: CalendarEvent;
+  onOpenTask: (id: string) => void;
+}) {
   const Icon = KIND_ICON[event.kind];
   const body = (
     <>
@@ -46,13 +69,22 @@ function EventRow({ event, onOpenTask }: { event: CalendarEvent; onOpenTask: (id
         <Icon className="size-3.5" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className={cn("block font-medium", event.done && "font-normal text-muted-foreground line-through")}>
+        <span
+          className={cn(
+            "block font-medium",
+            event.done && "font-normal text-muted-foreground line-through",
+          )}
+        >
           {event.title}
         </span>
         <span className="block truncate text-caption text-muted-foreground">{event.detail}</span>
       </span>
-      {event.late ? <span className="shrink-0 text-caption font-medium text-danger">Overdue</span> : null}
-      {event.done ? <span className="shrink-0 text-caption text-muted-foreground">Done</span> : null}
+      {event.late ? (
+        <span className="shrink-0 text-caption font-medium text-danger">Overdue</span>
+      ) : null}
+      {event.done ? (
+        <span className="shrink-0 text-caption text-muted-foreground">Done</span>
+      ) : null}
     </>
   );
   const className =
@@ -109,7 +141,10 @@ export function CalendarScreen() {
         title="Calendar"
         description="Task due dates, project deadlines and invoice due dates in one place."
         actions={
-          <Button className="hover:bg-primary-hover" onClick={() => openQuickCreate("task", { dueOn: selected })}>
+          <Button
+            className="hover:bg-primary-hover"
+            onClick={() => openQuickCreate("task", { dueOn: selected })}
+          >
             <Plus data-icon="inline-start" aria-hidden />
             New task
           </Button>
@@ -118,17 +153,31 @@ export function CalendarScreen() {
 
       <TableToolbar>
         <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => goToMonth(shiftMonth(month, -1))}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Previous month"
+            onClick={() => goToMonth(shiftMonth(month, -1))}
+          >
             <ChevronLeft aria-hidden />
           </Button>
-          <Button variant="outline" size="icon" aria-label="Next month" onClick={() => goToMonth(shiftMonth(month, 1))}>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Next month"
+            onClick={() => goToMonth(shiftMonth(month, 1))}
+          >
             <ChevronRight aria-hidden />
           </Button>
         </div>
         <h2 className="min-w-36 font-display text-lg font-semibold" aria-live="polite">
           {formatMonth(month)}
         </h2>
-        <Button variant="outline" disabled={month === DEMO_TODAY.slice(0, 7) && selected === DEMO_TODAY} onClick={() => goToMonth(DEMO_TODAY.slice(0, 7))}>
+        <Button
+          variant="outline"
+          disabled={month === DEMO_TODAY.slice(0, 7) && selected === DEMO_TODAY}
+          onClick={() => goToMonth(DEMO_TODAY.slice(0, 7))}
+        >
           Today
         </Button>
         <MultiFilterMenu
@@ -153,7 +202,10 @@ export function CalendarScreen() {
 
       {view === "month" ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <section aria-label={formatMonth(month)} className="overflow-hidden rounded-lg border bg-card">
+          <section
+            aria-label={formatMonth(month)}
+            className="overflow-hidden rounded-lg border bg-card"
+          >
             <div className="grid grid-cols-7 border-b bg-muted/40 text-xs font-medium text-muted-foreground">
               {weekdays.map((day) => (
                 <div key={day} className="px-2 py-2 text-center md:text-left">
@@ -190,7 +242,10 @@ export function CalendarScreen() {
                     </span>
                     {/* Small screens: a count. Wider screens: the first items by name. */}
                     {dayEvents.length > 0 ? (
-                      <span className="tabular rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground md:hidden" aria-hidden>
+                      <span
+                        className="tabular rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground md:hidden"
+                        aria-hidden
+                      >
                         {dayEvents.length}
                       </span>
                     ) : null}
@@ -235,7 +290,11 @@ export function CalendarScreen() {
             <div className="px-2 pt-2 pb-2">
               {selectedEvents.length === 0 ? (
                 <div className="px-3 pb-3">
-                  <Button variant="outline" size="sm" onClick={() => openQuickCreate("task", { dueOn: selected })}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openQuickCreate("task", { dueOn: selected })}
+                  >
                     <Plus data-icon="inline-start" aria-hidden />
                     Add a task for this day
                   </Button>
@@ -253,14 +312,20 @@ export function CalendarScreen() {
           </section>
         </div>
       ) : (
-        <section aria-label={`Agenda for ${formatMonth(month)}`} className="rounded-lg border bg-card">
+        <section
+          aria-label={`Agenda for ${formatMonth(month)}`}
+          className="rounded-lg border bg-card"
+        >
           {agendaDays.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
               title={`Nothing due in ${formatMonth(month)}`}
               description="Try another month, or add a task with a due date."
               action={
-                <Button variant="outline" onClick={() => openQuickCreate("task", { dueOn: selected })}>
+                <Button
+                  variant="outline"
+                  onClick={() => openQuickCreate("task", { dueOn: selected })}
+                >
                   New task
                 </Button>
               }
@@ -269,10 +334,20 @@ export function CalendarScreen() {
           ) : (
             <ol className="divide-y">
               {agendaDays.map((date) => (
-                <li key={date} className="grid gap-x-4 px-3 py-3 sm:grid-cols-[150px_minmax(0,1fr)]">
-                  <h3 className={cn("px-2 pt-2 pb-1 font-medium", date === DEMO_TODAY && "text-primary")}>
+                <li
+                  key={date}
+                  className="grid gap-x-4 px-3 py-3 sm:grid-cols-[150px_minmax(0,1fr)]"
+                >
+                  <h3
+                    className={cn(
+                      "px-2 pt-2 pb-1 font-medium",
+                      date === DEMO_TODAY && "text-primary",
+                    )}
+                  >
                     <span className="tabular">{formatDate(date, "weekdayShort")}</span>
-                    {date === DEMO_TODAY ? <span className="block text-caption font-normal">Today</span> : null}
+                    {date === DEMO_TODAY ? (
+                      <span className="block text-caption font-normal">Today</span>
+                    ) : null}
                   </h3>
                   <ul>
                     {(byDate.get(date) ?? []).map((event) => (

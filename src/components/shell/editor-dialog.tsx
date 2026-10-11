@@ -55,15 +55,33 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         description: contact ? `Update details for ${contact.name}.` : "Add someone you work with.",
         submitLabel: contact ? "Save changes" : "Add contact",
         fields: [
-          { name: "name", label: "Full name", type: "text", required: true, missing: "Enter the contact’s name.", placeholder: "Ana Cruz" },
-          { name: "email", label: "Email", type: "email", required: true, missing: "Enter an email address.", placeholder: "ana@company.com", half: true },
+          {
+            name: "name",
+            label: "Full name",
+            type: "text",
+            required: true,
+            missing: "Enter the contact’s name.",
+            placeholder: "Ana Cruz",
+          },
+          {
+            name: "email",
+            label: "Email",
+            type: "email",
+            required: true,
+            missing: "Enter an email address.",
+            placeholder: "ana@company.com",
+            half: true,
+          },
           { name: "phone", label: "Phone", type: "tel", placeholder: "0917 555 0100", half: true },
           {
             name: "companyName",
             label: "Company",
             type: "combo",
             placeholder: "Pick one or type a new name",
-            options: activeCompanies.map((company) => ({ value: company.name, label: company.name })),
+            options: activeCompanies.map((company) => ({
+              value: company.name,
+              label: company.name,
+            })),
             half: true,
           },
           {
@@ -78,7 +96,13 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
               { value: "inactive", label: "Inactive" },
             ],
           },
-          { name: "tags", label: "Tags", type: "text", placeholder: CONTACT_TAGS.slice(0, 2).join(", "), hint: "Separate tags with commas." },
+          {
+            name: "tags",
+            label: "Tags",
+            type: "text",
+            placeholder: CONTACT_TAGS.slice(0, 2).join(", "),
+            hint: "Separate tags with commas.",
+          },
         ],
         initial: {
           name: contact?.name ?? "",
@@ -120,10 +144,19 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
       if (id && !company) return null;
       return {
         title: company ? "Edit company" : "New company",
-        description: company ? `Update details for ${company.name}.` : "Add an organisation you work with or are pitching to.",
+        description: company
+          ? `Update details for ${company.name}.`
+          : "Add an organisation you work with or are pitching to.",
         submitLabel: company ? "Save changes" : "Add company",
         fields: [
-          { name: "name", label: "Company name", type: "text", required: true, missing: "Enter the company’s name.", placeholder: "Cruz Trading" },
+          {
+            name: "name",
+            label: "Company name",
+            type: "text",
+            required: true,
+            missing: "Enter the company’s name.",
+            placeholder: "Cruz Trading",
+          },
           {
             name: "type",
             label: "Relationship",
@@ -137,7 +170,13 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           },
           { name: "industry", label: "Industry", type: "text", placeholder: "Retail", half: true },
           { name: "city", label: "City", type: "text", placeholder: "Iloilo City", half: true },
-          { name: "website", label: "Website", type: "text", placeholder: "company.com", half: true },
+          {
+            name: "website",
+            label: "Website",
+            type: "text",
+            placeholder: "company.com",
+            half: true,
+          },
         ],
         initial: {
           name: company?.name ?? "",
@@ -165,7 +204,9 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             id,
           );
           return {
-            message: company ? `Changes to ${saved.name} saved` : `${saved.name} added to companies`,
+            message: company
+              ? `Changes to ${saved.name} saved`
+              : `${saved.name} added to companies`,
             viewLabel: "View company",
             href: `/crm/companies/${saved.id}`,
           };
@@ -177,11 +218,23 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
       if (id && !deal) return null;
       return {
         title: deal ? "Edit deal" : "New deal",
-        description: deal ? `Update “${deal.name}”.` : "Track an opportunity from first contact to a decision.",
+        description: deal
+          ? `Update “${deal.name}”.`
+          : "Track an opportunity from first contact to a decision.",
         submitLabel: deal ? "Save changes" : "Add deal",
-        warning: activeCompanies.length === 0 ? "Add a company first. A deal belongs to a company." : undefined,
+        warning:
+          activeCompanies.length === 0
+            ? "Add a company first. A deal belongs to a company."
+            : undefined,
         fields: [
-          { name: "name", label: "Deal name", type: "text", required: true, missing: "Give the deal a name.", placeholder: "Website redesign" },
+          {
+            name: "name",
+            label: "Deal name",
+            type: "text",
+            required: true,
+            missing: "Give the deal a name.",
+            placeholder: "Website redesign",
+          },
           {
             name: "companyId",
             label: "Company",
@@ -204,7 +257,15 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
                 "No contact",
               ),
           },
-          { name: "value", label: `Value (${getRuntime().currency})`, type: "amount", required: true, missing: "Enter what the deal is worth.", placeholder: "120,000", half: true },
+          {
+            name: "value",
+            label: `Value (${getRuntime().currency})`,
+            type: "amount",
+            required: true,
+            missing: "Enter what the deal is worth.",
+            placeholder: "120,000",
+            half: true,
+          },
           {
             name: "stage",
             label: "Stage",
@@ -221,7 +282,14 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             half: true,
             options: memberOptions,
           },
-          { name: "expectedCloseOn", label: "Expected close", type: "date", required: true, missing: "Choose an expected close date.", half: true },
+          {
+            name: "expectedCloseOn",
+            label: "Expected close",
+            type: "date",
+            required: true,
+            missing: "Choose an expected close date.",
+            half: true,
+          },
         ],
         initial: {
           name: deal?.name ?? "",
@@ -264,12 +332,33 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
       if (id && !project) return null;
       return {
         title: project ? "Edit project" : "New project",
-        description: project ? `Update “${project.name}”.` : "Start a project and give it an owner and a due date.",
+        description: project
+          ? `Update “${project.name}”.`
+          : "Start a project and give it an owner and a due date.",
         submitLabel: project ? "Save changes" : "Create project",
         fields: [
-          { name: "name", label: "Project name", type: "text", required: true, missing: "Give the project a name.", placeholder: "Website redesign" },
-          { name: "contactId", label: "Client", type: "select", options: optional(contactOptions, "No client") },
-          { name: "ownerId", label: "Owner", type: "select", required: true, half: true, options: memberOptions },
+          {
+            name: "name",
+            label: "Project name",
+            type: "text",
+            required: true,
+            missing: "Give the project a name.",
+            placeholder: "Website redesign",
+          },
+          {
+            name: "contactId",
+            label: "Client",
+            type: "select",
+            options: optional(contactOptions, "No client"),
+          },
+          {
+            name: "ownerId",
+            label: "Owner",
+            type: "select",
+            required: true,
+            half: true,
+            options: memberOptions,
+          },
           {
             name: "status",
             label: "Status",
@@ -282,8 +371,20 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
               { value: "completed", label: "Completed" },
             ],
           },
-          { name: "dueOn", label: "Due date", type: "date", required: true, missing: "Choose a due date.", half: true },
-          { name: "description", label: "Description", type: "textarea", placeholder: "What is being delivered, and for whom?" },
+          {
+            name: "dueOn",
+            label: "Due date",
+            type: "date",
+            required: true,
+            missing: "Choose a due date.",
+            half: true,
+          },
+          {
+            name: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "What is being delivered, and for whom?",
+          },
         ],
         initial: {
           name: project?.name ?? "",
@@ -306,7 +407,9 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             id,
           );
           return {
-            message: project ? `Changes to “${saved.name}” saved` : `Project “${saved.name}” created`,
+            message: project
+              ? `Changes to “${saved.name}” saved`
+              : `Project “${saved.name}” created`,
             viewLabel: "View project",
             href: `/work/projects/${saved.id}`,
           };
@@ -318,10 +421,19 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
       if (id && !task) return null;
       return {
         title: task ? "Edit task" : "New task",
-        description: task ? "Update this task." : "Add something that needs doing and who is doing it.",
+        description: task
+          ? "Update this task."
+          : "Add something that needs doing and who is doing it.",
         submitLabel: task ? "Save changes" : "Add task",
         fields: [
-          { name: "title", label: "Task", type: "text", required: true, missing: "Describe the task.", placeholder: "Send the first draft" },
+          {
+            name: "title",
+            label: "Task",
+            type: "text",
+            required: true,
+            missing: "Describe the task.",
+            placeholder: "Send the first draft",
+          },
           {
             name: "projectId",
             label: "Project",
@@ -329,12 +441,20 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             options: optional(
               store.projects.map((project) => ({
                 value: project.id,
-                label: project.status === "completed" ? `${project.name} (completed)` : project.name,
+                label:
+                  project.status === "completed" ? `${project.name} (completed)` : project.name,
               })),
               "No project",
             ),
           },
-          { name: "assigneeId", label: "Assignee", type: "select", required: true, half: true, options: memberOptions },
+          {
+            name: "assigneeId",
+            label: "Assignee",
+            type: "select",
+            required: true,
+            half: true,
+            options: memberOptions,
+          },
           {
             name: "status",
             label: "Status",
@@ -343,7 +463,14 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             half: true,
             options: TASK_STATUSES.map((status) => ({ value: status.id, label: status.label })),
           },
-          { name: "dueOn", label: "Due date", type: "date", required: true, missing: "Choose a due date.", half: true },
+          {
+            name: "dueOn",
+            label: "Due date",
+            type: "date",
+            required: true,
+            missing: "Choose a due date.",
+            half: true,
+          },
           {
             name: "priority",
             label: "Priority",
@@ -356,7 +483,12 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
               { value: "high", label: "High" },
             ],
           },
-          { name: "description", label: "Notes", type: "textarea", placeholder: "Anything the assignee should know." },
+          {
+            name: "description",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Anything the assignee should know.",
+          },
         ],
         initial: {
           title: task?.title ?? "",
@@ -391,14 +523,47 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
     case "invoice":
       return {
         title: "New invoice",
-        description: "A one-line draft. Open it afterwards to add more lines, a discount or tax. Nothing is sent to the client.",
+        description:
+          "A one-line draft. Open it afterwards to add more lines, a discount or tax. Nothing is sent to the client.",
         submitLabel: "Save draft",
-        warning: contactOptions.length === 0 ? "Add a contact first. An invoice needs a client to bill." : undefined,
+        warning:
+          contactOptions.length === 0
+            ? "Add a contact first. An invoice needs a client to bill."
+            : undefined,
         fields: [
-          { name: "contactId", label: "Client", type: "select", required: true, missing: "Choose a client to bill.", options: contactOptions },
-          { name: "description", label: "Description", type: "text", required: true, missing: "Describe what the invoice is for.", placeholder: "Design work, October" },
-          { name: "amount", label: `Amount (${getRuntime().currency})`, type: "amount", required: true, missing: "Enter the invoice amount.", placeholder: "25,000", half: true },
-          { name: "dueOn", label: "Due date", type: "date", required: true, missing: "Choose a due date.", half: true },
+          {
+            name: "contactId",
+            label: "Client",
+            type: "select",
+            required: true,
+            missing: "Choose a client to bill.",
+            options: contactOptions,
+          },
+          {
+            name: "description",
+            label: "Description",
+            type: "text",
+            required: true,
+            missing: "Describe what the invoice is for.",
+            placeholder: "Design work, October",
+          },
+          {
+            name: "amount",
+            label: `Amount (${getRuntime().currency})`,
+            type: "amount",
+            required: true,
+            missing: "Enter the invoice amount.",
+            placeholder: "25,000",
+            half: true,
+          },
+          {
+            name: "dueOn",
+            label: "Due date",
+            type: "date",
+            required: true,
+            missing: "Choose a due date.",
+            half: true,
+          },
         ],
         initial: { contactId: "", description: "", amount: "", dueOn: addDays(DEMO_TODAY, 15) },
         submit: (v) => {
@@ -408,7 +573,11 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             amountMinor: parseAmountToMinor(v.amount) ?? 0,
             dueOn: v.dueOn,
           });
-          return { message: `Draft ${invoice.number} saved`, viewLabel: "Open draft", href: `/money/invoices/${invoice.id}` };
+          return {
+            message: `Draft ${invoice.number} saved`,
+            viewLabel: "Open draft",
+            href: `/money/invoices/${invoice.id}`,
+          };
         },
       };
     case "catalog": {
@@ -416,10 +585,19 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
       if (id && !item) return null;
       return {
         title: item ? "Edit catalog item" : "New catalog item",
-        description: item ? `Update “${item.name}”.` : "Add a product or service you bill for, with its usual rate.",
+        description: item
+          ? `Update “${item.name}”.`
+          : "Add a product or service you bill for, with its usual rate.",
         submitLabel: item ? "Save changes" : "Add item",
         fields: [
-          { name: "name", label: "Name", type: "text", required: true, missing: "Give the item a name.", placeholder: "Page design" },
+          {
+            name: "name",
+            label: "Name",
+            type: "text",
+            required: true,
+            missing: "Give the item a name.",
+            placeholder: "Page design",
+          },
           {
             name: "type",
             label: "Type",
@@ -431,9 +609,29 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
               { value: "product", label: "Product" },
             ],
           },
-          { name: "unit", label: "Unit", type: "text", required: true, missing: "Say what one unit is, like hour or page.", placeholder: "hour", half: true },
-          { name: "price", label: `Unit price (${getRuntime().currency})`, type: "amount", required: true, missing: "Enter the price for one unit.", placeholder: "2,500" },
-          { name: "description", label: "Description", type: "textarea", placeholder: "What the client gets." },
+          {
+            name: "unit",
+            label: "Unit",
+            type: "text",
+            required: true,
+            missing: "Say what one unit is, like hour or page.",
+            placeholder: "hour",
+            half: true,
+          },
+          {
+            name: "price",
+            label: `Unit price (${getRuntime().currency})`,
+            type: "amount",
+            required: true,
+            missing: "Enter the price for one unit.",
+            placeholder: "2,500",
+          },
+          {
+            name: "description",
+            label: "Description",
+            type: "textarea",
+            placeholder: "What the client gets.",
+          },
         ],
         initial: {
           name: item?.name ?? "",
@@ -444,7 +642,9 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         },
         check: (v) => {
           const name = v.name.trim().toLowerCase();
-          const clash = store.catalog.some((entry) => entry.id !== id && entry.name.toLowerCase() === name);
+          const clash = store.catalog.some(
+            (entry) => entry.id !== id && entry.name.toLowerCase() === name,
+          );
           return clash ? { name: "An item with this name already exists." } : {};
         },
         submit: (v) => {
@@ -458,7 +658,11 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             },
             id,
           );
-          return { message: item ? `Changes to “${saved.name}” saved` : `“${saved.name}” added to the catalog` };
+          return {
+            message: item
+              ? `Changes to “${saved.name}” saved`
+              : `“${saved.name}” added to the catalog`,
+          };
         },
       };
     }
@@ -470,9 +674,32 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         description: expense ? "Update this expense." : "Record something the business paid for.",
         submitLabel: expense ? "Save changes" : "Add expense",
         fields: [
-          { name: "vendor", label: "Paid to", type: "text", required: true, missing: "Enter who was paid.", placeholder: "Panay Print House", half: true },
-          { name: "date", label: "Date", type: "date", required: true, missing: "Choose the date it was paid.", half: true },
-          { name: "amount", label: `Amount (${getRuntime().currency})`, type: "amount", required: true, missing: "Enter the amount paid.", placeholder: "1,500", half: true },
+          {
+            name: "vendor",
+            label: "Paid to",
+            type: "text",
+            required: true,
+            missing: "Enter who was paid.",
+            placeholder: "Panay Print House",
+            half: true,
+          },
+          {
+            name: "date",
+            label: "Date",
+            type: "date",
+            required: true,
+            missing: "Choose the date it was paid.",
+            half: true,
+          },
+          {
+            name: "amount",
+            label: `Amount (${getRuntime().currency})`,
+            type: "amount",
+            required: true,
+            missing: "Enter the amount paid.",
+            placeholder: "1,500",
+            half: true,
+          },
           {
             name: "category",
             label: "Category",
@@ -482,7 +709,14 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             half: true,
             options: EXPENSE_CATEGORIES.map((category) => ({ value: category, label: category })),
           },
-          { name: "description", label: "What it was for", type: "text", required: true, missing: "Say what this was for.", placeholder: "Printed proofs for the catalog" },
+          {
+            name: "description",
+            label: "What it was for",
+            type: "text",
+            required: true,
+            missing: "Say what this was for.",
+            placeholder: "Printed proofs for the catalog",
+          },
           {
             name: "projectId",
             label: "Project",
@@ -501,7 +735,8 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           description: expense?.description ?? "",
           projectId: expense?.projectId ?? NONE,
         },
-        check: (v) => (v.date > DEMO_TODAY ? { date: "An expense can’t be dated in the future." } : {}),
+        check: (v) =>
+          v.date > DEMO_TODAY ? { date: "An expense can’t be dated in the future." } : {},
         submit: (v) => {
           const saved = store.saveExpense(
             {
@@ -514,7 +749,11 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             },
             id,
           );
-          return { message: expense ? `Expense from ${saved.vendor} updated` : `Expense from ${saved.vendor} recorded` };
+          return {
+            message: expense
+              ? `Expense from ${saved.vendor} updated`
+              : `Expense from ${saved.vendor} recorded`,
+          };
         },
       };
     }
@@ -561,7 +800,10 @@ export function EditorDialog() {
   const returnFocus = useFocusReturn(editor !== null);
   return (
     <Dialog open={editor !== null} onOpenChange={(open) => !open && closeEditor()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg" onCloseAutoFocus={returnFocus}>
+      <DialogContent
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
+        onCloseAutoFocus={returnFocus}
+      >
         {editor ? (
           <EditorForm
             key={`${editor.kind}-${editor.id ?? "new"}`}

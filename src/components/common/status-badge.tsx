@@ -73,7 +73,13 @@ const CONTACT_STATUS: Record<ContactStatus, { label: string; tone: Tone }> = {
   inactive: { label: "Inactive", tone: "neutral" },
 };
 
-export function ContactStatusBadge({ status, archived }: { status: ContactStatus; archived?: boolean }) {
+export function ContactStatusBadge({
+  status,
+  archived,
+}: {
+  status: ContactStatus;
+  archived?: boolean;
+}) {
   if (archived) return <Pill tone="warning">Archived</Pill>;
   const { label, tone } = CONTACT_STATUS[status];
   return <Pill tone={tone}>{label}</Pill>;
@@ -81,7 +87,11 @@ export function ContactStatusBadge({ status, archived }: { status: ContactStatus
 
 export function CompanyTypeBadge({ type, archived }: { type: CompanyType; archived?: boolean }) {
   if (archived) return <Pill tone="warning">Archived</Pill>;
-  return <Pill tone={type === "client" ? "success" : "primary"}>{type === "client" ? "Client" : "Prospect"}</Pill>;
+  return (
+    <Pill tone={type === "client" ? "success" : "primary"}>
+      {type === "client" ? "Client" : "Prospect"}
+    </Pill>
+  );
 }
 
 const STAGE_TONE: Record<DealStage, Tone> = {
@@ -95,7 +105,9 @@ const STAGE_TONE: Record<DealStage, Tone> = {
 
 export function DealStageBadge({ stage, archived }: { stage: DealStage; archived?: boolean }) {
   if (archived) return <Pill tone="warning">Archived</Pill>;
-  return <Pill tone={STAGE_TONE[stage]}>{DEAL_STAGES.find((item) => item.id === stage)?.label}</Pill>;
+  return (
+    <Pill tone={STAGE_TONE[stage]}>{DEAL_STAGES.find((item) => item.id === stage)?.label}</Pill>
+  );
 }
 
 const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
@@ -105,7 +117,11 @@ const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
 };
 
 export function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  return <Pill tone={TASK_STATUS_TONE[status]}>{TASK_STATUSES.find((item) => item.id === status)?.label}</Pill>;
+  return (
+    <Pill tone={TASK_STATUS_TONE[status]}>
+      {TASK_STATUSES.find((item) => item.id === status)?.label}
+    </Pill>
+  );
 }
 
 const PRIORITY: Record<TaskPriority, { label: string; tone: Tone }> = {

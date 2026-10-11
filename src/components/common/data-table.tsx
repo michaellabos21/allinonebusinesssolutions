@@ -104,7 +104,11 @@ export function DataTable<T>({
           <tr className="border-b bg-muted/40">
             {columns.map((column) => {
               const active = sort?.id === column.id;
-              const SortIcon = !active ? ChevronsUpDown : sort.direction === "asc" ? ArrowUp : ArrowDown;
+              const SortIcon = !active
+                ? ChevronsUpDown
+                : sort.direction === "asc"
+                  ? ArrowUp
+                  : ArrowDown;
               return (
                 <th
                   key={column.id}
@@ -148,7 +152,10 @@ export function DataTable<T>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={getRowId(row)} className={cn("border-b last:border-b-0 hover:bg-muted/40", rowClassName?.(row))}>
+            <tr
+              key={getRowId(row)}
+              className={cn("border-b last:border-b-0 hover:bg-muted/40", rowClassName?.(row))}
+            >
               {columns.map((column) => (
                 <td
                   key={column.id}

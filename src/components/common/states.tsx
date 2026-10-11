@@ -44,7 +44,10 @@ export function ErrorState({
   className?: string;
 }) {
   return (
-    <div role="alert" className={cn("flex flex-col items-center px-4 py-12 text-center", className)}>
+    <div
+      role="alert"
+      className={cn("flex flex-col items-center px-4 py-12 text-center", className)}
+    >
       <span className="flex size-9 items-center justify-center rounded-md bg-danger-soft text-danger">
         <CircleAlert className="size-4.5" aria-hidden />
       </span>

@@ -27,11 +27,20 @@ export function CompanyDetail() {
 
   const company = store.companies.find((item) => item.id === id);
   if (!company) {
-    return <MissingRecord icon={Building2} noun="company" listHref="/crm/companies" listLabel="Back to companies" />;
+    return (
+      <MissingRecord
+        icon={Building2}
+        noun="company"
+        listHref="/crm/companies"
+        listLabel="Back to companies"
+      />
+    );
   }
 
   const rollup = getCompanyRollup(company, store);
-  const projects = store.projects.filter((project) => project.contactId && rollup.contactIds.has(project.contactId));
+  const projects = store.projects.filter(
+    (project) => project.contactId && rollup.contactIds.has(project.contactId),
+  );
   const contactName = (contactId: string | null) =>
     store.contacts.find((contact) => contact.id === contactId)?.name ?? "";
 
@@ -42,7 +51,11 @@ export function CompanyDetail() {
       value: formatMoney(rollup.openDealMinor),
       note: `${rollup.openDealCount} ${rollup.openDealCount === 1 ? "deal" : "deals"} in the pipeline.`,
     },
-    { label: "Invoiced", value: formatMoney(rollup.billedMinor), note: "Sent and paid invoices, all time." },
+    {
+      label: "Invoiced",
+      value: formatMoney(rollup.billedMinor),
+      note: "Sent and paid invoices, all time.",
+    },
     {
       label: "Unpaid",
       value: formatMoney(rollup.unpaidMinor),
@@ -68,7 +81,8 @@ export function CompanyDetail() {
               <CompanyTypeBadge type={company.type} archived={company.archived} />
             </div>
             <p className="mt-0.5 text-muted-foreground">
-              {[company.industry, company.city, company.website].filter(Boolean).join(", ") || "No details yet"}
+              {[company.industry, company.city, company.website].filter(Boolean).join(", ") ||
+                "No details yet"}
             </p>
           </div>
         </div>
@@ -122,7 +136,11 @@ export function CompanyDetail() {
           title="People"
           empty="No contacts at this company yet."
           action={
-            <Button variant="outline" size="sm" onClick={() => store.openQuickCreate("contact", { companyName: company.name })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => store.openQuickCreate("contact", { companyName: company.name })}
+            >
               <Plus data-icon="inline-start" aria-hidden />
               Add contact
             </Button>
@@ -139,7 +157,11 @@ export function CompanyDetail() {
           title="Deals"
           empty="No deals with this company yet."
           action={
-            <Button variant="outline" size="sm" onClick={() => store.openQuickCreate("deal", { companyId: company.id })}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => store.openQuickCreate("deal", { companyId: company.id })}
+            >
               <Plus data-icon="inline-start" aria-hidden />
               Add deal
             </Button>

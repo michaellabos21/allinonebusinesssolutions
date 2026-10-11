@@ -1,6 +1,17 @@
 "use client";
 
-import { Activity, Building2, FolderKanban, Package, Wallet, Handshake, ListChecks, type LucideIcon, ReceiptText, UserRound } from "lucide-react";
+import {
+  Activity,
+  Building2,
+  FolderKanban,
+  Package,
+  Wallet,
+  Handshake,
+  ListChecks,
+  type LucideIcon,
+  ReceiptText,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 
 import { Panel } from "@/components/common/panel";
@@ -27,7 +38,11 @@ export function RecentActivity() {
   const visible = activity.slice(0, VISIBLE_ENTRIES);
 
   return (
-    <Panel title="Recent activity" description="Latest changes across the workspace." bodyClassName="px-2 pb-2">
+    <Panel
+      title="Recent activity"
+      description="Latest changes across the workspace."
+      bodyClassName="px-2 pb-2"
+    >
       {visible.length === 0 ? (
         <EmptyState
           icon={Activity}

@@ -1,6 +1,14 @@
 "use client";
 
-import { Building2, FolderKanban, Handshake, ListChecks, ReceiptText, Search, UserRound } from "lucide-react";
+import {
+  Building2,
+  FolderKanban,
+  Handshake,
+  ListChecks,
+  ReceiptText,
+  Search,
+  UserRound,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -98,55 +106,57 @@ export function GlobalSearch() {
             ))}
           </CommandGroup>
           {contacts.length > 0 ? (
-          <CommandGroup heading="Contacts">
-            {contacts.map((contact) => (
-              <CommandItem
-                key={contact.id}
-                value={`contact ${contact.name} ${companyName(contact.companyId)} ${contact.id}`}
-                onSelect={() => go(`/crm/contacts/${contact.id}`)}
-              >
-                <UserRound aria-hidden />
-                <span className="truncate">{contact.name}</span>
-                <span className="ml-auto truncate text-xs text-muted-foreground">
-                  {companyName(contact.companyId)}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : null}
-        {companies.length > 0 ? (
-          <CommandGroup heading="Companies">
-            {companies.map((company) => (
-              <CommandItem
-                key={company.id}
-                value={`company ${company.name} ${company.id}`}
-                onSelect={() => go(`/crm/companies/${company.id}`)}
-              >
-                <Building2 aria-hidden />
-                <span className="truncate">{company.name}</span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : null}
-        {deals.length > 0 ? (
-          <CommandGroup heading="Deals">
-            {deals.map((deal) => (
-              <CommandItem
-                key={deal.id}
-                value={`deal ${deal.name} ${companyName(deal.companyId)} ${deal.id}`}
-                onSelect={() => go("/crm/deals")}
-              >
-                <Handshake aria-hidden />
-                <span className="truncate">{deal.name}</span>
-                <span className="truncate text-muted-foreground">{companyName(deal.companyId)}</span>
-                <span className="tabular ml-auto text-xs text-muted-foreground">
-                  {formatMoney(deal.valueMinor)}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        ) : null}
-        {projects.length > 0 ? (
+            <CommandGroup heading="Contacts">
+              {contacts.map((contact) => (
+                <CommandItem
+                  key={contact.id}
+                  value={`contact ${contact.name} ${companyName(contact.companyId)} ${contact.id}`}
+                  onSelect={() => go(`/crm/contacts/${contact.id}`)}
+                >
+                  <UserRound aria-hidden />
+                  <span className="truncate">{contact.name}</span>
+                  <span className="ml-auto truncate text-xs text-muted-foreground">
+                    {companyName(contact.companyId)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {companies.length > 0 ? (
+            <CommandGroup heading="Companies">
+              {companies.map((company) => (
+                <CommandItem
+                  key={company.id}
+                  value={`company ${company.name} ${company.id}`}
+                  onSelect={() => go(`/crm/companies/${company.id}`)}
+                >
+                  <Building2 aria-hidden />
+                  <span className="truncate">{company.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {deals.length > 0 ? (
+            <CommandGroup heading="Deals">
+              {deals.map((deal) => (
+                <CommandItem
+                  key={deal.id}
+                  value={`deal ${deal.name} ${companyName(deal.companyId)} ${deal.id}`}
+                  onSelect={() => go("/crm/deals")}
+                >
+                  <Handshake aria-hidden />
+                  <span className="truncate">{deal.name}</span>
+                  <span className="truncate text-muted-foreground">
+                    {companyName(deal.companyId)}
+                  </span>
+                  <span className="tabular ml-auto text-xs text-muted-foreground">
+                    {formatMoney(deal.valueMinor)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {projects.length > 0 ? (
             <CommandGroup heading="Projects">
               {projects.map((project) => (
                 <CommandItem

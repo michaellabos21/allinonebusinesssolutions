@@ -27,7 +27,8 @@ export function getProjectTeam(project: Project, tasks: Task[]) {
     .map((member) => ({
       member,
       isOwner: member.id === project.ownerId,
-      openTasks: own.filter((task) => task.assigneeId === member.id && task.status !== "done").length,
+      openTasks: own.filter((task) => task.assigneeId === member.id && task.status !== "done")
+        .length,
     }));
 }
 
@@ -132,9 +133,11 @@ export function shiftMonth(monthKey: string, delta: number) {
 }
 
 export function formatMonth(monthKey: string) {
-  return new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(
-    new Date(`${monthKey}-01T00:00:00Z`),
-  );
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${monthKey}-01T00:00:00Z`));
 }
 
 /** "October" from `2026-10`. */

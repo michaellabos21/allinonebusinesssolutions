@@ -1,10 +1,34 @@
 import type { Invitation, TeamMember, Workspace } from "./types";
 
 export const teamMembers: TeamMember[] = [
-  { id: "u1", name: "Mara Dalisay", email: "mara@dalisaystudio.example", title: "Studio director", role: "Owner" },
-  { id: "u2", name: "Paolo Reyes", email: "paolo@dalisaystudio.example", title: "Web lead", role: "Admin" },
-  { id: "u3", name: "Jenna Lim", email: "jenna@dalisaystudio.example", title: "Brand designer", role: "Member" },
-  { id: "u4", name: "Tomas Villareal", email: "tomas@dalisaystudio.example", title: "Production designer", role: "Member" },
+  {
+    id: "u1",
+    name: "Mara Dalisay",
+    email: "mara@dalisaystudio.example",
+    title: "Studio director",
+    role: "Owner",
+  },
+  {
+    id: "u2",
+    name: "Paolo Reyes",
+    email: "paolo@dalisaystudio.example",
+    title: "Web lead",
+    role: "Admin",
+  },
+  {
+    id: "u3",
+    name: "Jenna Lim",
+    email: "jenna@dalisaystudio.example",
+    title: "Brand designer",
+    role: "Member",
+  },
+  {
+    id: "u4",
+    name: "Tomas Villareal",
+    email: "tomas@dalisaystudio.example",
+    title: "Production designer",
+    role: "Member",
+  },
 ];
 
 /** The signed-in person in the prototype. There is no real authentication. */

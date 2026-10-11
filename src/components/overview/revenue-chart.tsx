@@ -2,7 +2,16 @@
 
 import { ReceiptText } from "lucide-react";
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { Panel } from "@/components/common/panel";
 import { EmptyState } from "@/components/common/states";
@@ -16,7 +25,13 @@ const RANGES = [
   { months: 6, label: "6 months" },
 ];
 
-function ChartTooltip({ active, payload }: { active?: boolean; payload?: { payload: MonthRevenue }[] }) {
+function ChartTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: MonthRevenue }[];
+}) {
   const month = payload?.[0]?.payload;
   if (!active || !month) return null;
   return (
@@ -69,7 +84,11 @@ export function RevenueChart() {
         <>
           <div className="h-64" aria-hidden>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barCategoryGap="28%">
+              <BarChart
+                data={data}
+                margin={{ top: 8, right: 4, bottom: 0, left: 0 }}
+                barCategoryGap="28%"
+              >
                 <CartesianGrid vertical={false} stroke="var(--border)" />
                 <XAxis
                   dataKey="label"
@@ -86,9 +105,17 @@ export function RevenueChart() {
                   tickFormatter={(value: number) => formatMoneyCompact(value)}
                 />
                 <Tooltip cursor={{ fill: "var(--muted)" }} content={<ChartTooltip />} />
-                <Bar dataKey="totalMinor" radius={[4, 4, 0, 0]} maxBarSize={44} isAnimationActive={false}>
+                <Bar
+                  dataKey="totalMinor"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={44}
+                  isAnimationActive={false}
+                >
                   {data.map((month) => (
-                    <Cell key={month.key} fill={month.partial ? "var(--chart-2)" : "var(--chart-1)"} />
+                    <Cell
+                      key={month.key}
+                      fill={month.partial ? "var(--chart-2)" : "var(--chart-1)"}
+                    />
                   ))}
                 </Bar>
               </BarChart>

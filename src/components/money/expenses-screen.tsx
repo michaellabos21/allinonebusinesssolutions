@@ -23,7 +23,8 @@ import { EXPENSE_CATEGORIES, type Expense } from "@/mocks";
 const sum = (rows: Expense[]) => rows.reduce((total, row) => total + row.amountMinor, 0);
 
 export function ExpensesScreen() {
-  const { expenses, projects, openQuickCreate, openEditor, removeExpense, saveExpense } = useDemoStore();
+  const { expenses, projects, openQuickCreate, openEditor, removeExpense, saveExpense } =
+    useDemoStore();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [period, setPeriod] = useState("all");
@@ -38,10 +39,12 @@ export function ExpensesScreen() {
   ];
   const categoryOptions = [
     { value: "all", label: "All" },
-    ...[...new Set([...EXPENSE_CATEGORIES, ...expenses.map((expense) => expense.category)])].map((name) => ({
-      value: name,
-      label: name,
-    })),
+    ...[...new Set([...EXPENSE_CATEGORIES, ...expenses.map((expense) => expense.category)])].map(
+      (name) => ({
+        value: name,
+        label: name,
+      }),
+    ),
   ];
 
   const projectName = useMemo(() => {
@@ -66,7 +69,8 @@ export function ExpensesScreen() {
   /** Spend by category for the rows on screen, largest first. */
   const byCategory = useMemo(() => {
     const totals = new Map<string, number>();
-    for (const row of rows) totals.set(row.category, (totals.get(row.category) ?? 0) + row.amountMinor);
+    for (const row of rows)
+      totals.set(row.category, (totals.get(row.category) ?? 0) + row.amountMinor);
     return [...totals.entries()].sort((a, b) => b[1] - a[1]);
   }, [rows]);
   const largest = byCategory[0]?.[1] ?? 1;
@@ -77,7 +81,11 @@ export function ExpensesScreen() {
         id: "date",
         header: "Date",
         sortValue: (expense) => expense.date,
-        cell: (expense) => <span className="tabular whitespace-nowrap text-muted-foreground">{formatDate(expense.date)}</span>,
+        cell: (expense) => (
+          <span className="tabular whitespace-nowrap text-muted-foreground">
+            {formatDate(expense.date)}
+          </span>
+        ),
       },
       {
         id: "vendor",
@@ -86,7 +94,9 @@ export function ExpensesScreen() {
         cell: (expense) => (
           <div className="min-w-36">
             <span className="font-medium">{expense.vendor}</span>
-            <span className="block max-w-72 truncate text-caption text-muted-foreground">{expense.description}</span>
+            <span className="block max-w-72 truncate text-caption text-muted-foreground">
+              {expense.description}
+            </span>
           </div>
         ),
       },
@@ -116,7 +126,9 @@ export function ExpensesScreen() {
         header: "Amount",
         align: "right",
         sortValue: (expense) => expense.amountMinor,
-        cell: (expense) => <span className="whitespace-nowrap">{formatMoney(expense.amountMinor)}</span>,
+        cell: (expense) => (
+          <span className="whitespace-nowrap">{formatMoney(expense.amountMinor)}</span>
+        ),
       },
       {
         id: "actions",
@@ -128,7 +140,12 @@ export function ExpensesScreen() {
             label={`Actions for the ${expense.vendor} expense`}
             actions={[
               { label: "Edit", icon: Pencil, onSelect: () => openEditor("expense", expense.id) },
-              { label: "Delete", icon: Trash2, destructive: true, onSelect: () => setDeleteTarget(expense) },
+              {
+                label: "Delete",
+                icon: Trash2,
+                destructive: true,
+                onSelect: () => setDeleteTarget(expense),
+              },
             ]}
           />
         ),
@@ -137,7 +154,10 @@ export function ExpensesScreen() {
     [projectName, openEditor],
   );
 
-  const table = useTableState(rows, columns, { pageSize: 10, initialSort: { id: "date", direction: "desc" } });
+  const table = useTableState(rows, columns, {
+    pageSize: 10,
+    initialSort: { id: "date", direction: "desc" },
+  });
   const hasFilters = query !== "" || category !== "all" || period !== "all";
   const monthRows = expenses.filter((expense) => expense.date.startsWith(thisMonth));
   const lastMonthRows = expenses.filter((expense) => expense.date.startsWith(lastMonth));
@@ -177,8 +197,18 @@ export function ExpensesScreen() {
         <>
           <TableToolbar>
             <SearchInput value={query} onChange={setQuery} label="Search expenses" />
-            <FilterMenu label="Period" options={periodOptions} value={period} onChange={setPeriod} />
-            <FilterMenu label="Category" options={categoryOptions} value={category} onChange={setCategory} />
+            <FilterMenu
+              label="Period"
+              options={periodOptions}
+              value={period}
+              onChange={setPeriod}
+            />
+            <FilterMenu
+              label="Category"
+              options={categoryOptions}
+              value={category}
+              onChange={setCategory}
+            />
             {hasFilters ? (
               <Button
                 variant="ghost"

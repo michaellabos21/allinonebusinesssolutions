@@ -48,14 +48,7 @@ import type {
 
 /** Record types with a create/edit form. */
 export type EditorKind =
-  | "contact"
-  | "company"
-  | "deal"
-  | "project"
-  | "task"
-  | "invoice"
-  | "catalog"
-  | "expense";
+  "contact" | "company" | "deal" | "project" | "task" | "invoice" | "catalog" | "expense";
 /** The subset offered in the topbar's Create menu and the setup checklist. */
 export type QuickCreateKind = "contact" | "project" | "task" | "invoice";
 
@@ -147,7 +140,12 @@ type DemoStore = {
   /** Bumped when a setting that affects formatting changes; the shell remounts the page on it. */
   settingsVersion: number;
   updateProfile: (input: Pick<TeamMember, "name" | "email" | "title">) => void;
-  updateWorkspace: (input: { name: string } & Pick<WorkspaceSettings, "currency" | "taxRateBps" | "paymentTermDays">) => void;
+  updateWorkspace: (
+    input: { name: string } & Pick<
+      WorkspaceSettings,
+      "currency" | "taxRateBps" | "paymentTermDays"
+    >,
+  ) => void;
   updatePreferences: (input: Pick<WorkspaceSettings, "dateLocale" | "weekStartsOn">) => void;
   setNotificationPref: (id: NotificationPrefId, enabled: boolean) => void;
   setAppearance: (patch: Partial<Appearance>) => void;
@@ -237,12 +235,14 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
   });
   const [notificationPrefs, setNotificationPrefs] = useState(
     () =>
-      Object.fromEntries(NOTIFICATION_OPTIONS.map((option) => [option.id, option.id !== "weeklySummary"])) as Record<
-        NotificationPrefId,
-        boolean
-      >,
+      Object.fromEntries(
+        NOTIFICATION_OPTIONS.map((option) => [option.id, option.id !== "weeklySummary"]),
+      ) as Record<NotificationPrefId, boolean>,
   );
-  const [appearance, setAppearanceState] = useState<Appearance>({ accent: "indigo", density: "comfortable" });
+  const [appearance, setAppearanceState] = useState<Appearance>({
+    accent: "indigo",
+    density: "comfortable",
+  });
   const [settingsVersion, setSettingsVersion] = useState(0);
 
   const [contacts, setContacts] = useState<Contact[]>(seed.contacts);
@@ -289,7 +289,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         ? { ...existing, ...input }
         : { id: newId("co"), createdOn: DEMO_TODAY, archived: false, ...input };
       setCompanies((list) =>
-        existing ? list.map((item) => (item.id === company.id ? company : item)) : [company, ...list],
+        existing
+          ? list.map((item) => (item.id === company.id ? company : item))
+          : [company, ...list],
       );
       logActivity(
         "company",
@@ -332,7 +334,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         ? { ...existing, ...fields, companyId }
         : { id: newId("c"), createdOn: DEMO_TODAY, archived: false, ...fields, companyId };
       setContacts((list) =>
-        existing ? list.map((item) => (item.id === contact.id ? contact : item)) : [contact, ...list],
+        existing
+          ? list.map((item) => (item.id === contact.id ? contact : item))
+          : [contact, ...list],
       );
       logActivity(
         "contact",
@@ -353,7 +357,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       setDeals((list) =>
         existing ? list.map((item) => (item.id === deal.id ? deal : item)) : [deal, ...list],
       );
-      logActivity("deal", existing ? `updated the deal “${deal.name}”` : `added the deal “${deal.name}”`, "/crm/deals");
+      logActivity(
+        "deal",
+        existing ? `updated the deal “${deal.name}”` : `added the deal “${deal.name}”`,
+        "/crm/deals",
+      );
       return deal;
     },
     [deals, newId, logActivity],
@@ -375,7 +383,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       const contact = contacts.find((item) => item.id === id);
       if (!contact) return;
       setContacts((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
-      logActivity("contact", `${archived ? "archived" : "restored"} ${contact.name}`, `/crm/contacts/${id}`);
+      logActivity(
+        "contact",
+        `${archived ? "archived" : "restored"} ${contact.name}`,
+        `/crm/contacts/${id}`,
+      );
     },
     [contacts, logActivity],
   );
@@ -385,7 +397,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       const company = companies.find((item) => item.id === id);
       if (!company) return;
       setCompanies((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
-      logActivity("company", `${archived ? "archived" : "restored"} ${company.name}`, `/crm/companies/${id}`);
+      logActivity(
+        "company",
+        `${archived ? "archived" : "restored"} ${company.name}`,
+        `/crm/companies/${id}`,
+      );
     },
     [companies, logActivity],
   );
@@ -395,7 +411,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       const deal = deals.find((item) => item.id === id);
       if (!deal) return;
       setDeals((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
-      logActivity("deal", `${archived ? "archived" : "restored"} the deal “${deal.name}”`, "/crm/deals");
+      logActivity(
+        "deal",
+        `${archived ? "archived" : "restored"} the deal “${deal.name}”`,
+        "/crm/deals",
+      );
     },
     [deals, logActivity],
   );
@@ -421,7 +441,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         ? { ...existing, ...input }
         : { id: newId("p"), startOn: DEMO_TODAY, ...input };
       setProjects((list) =>
-        existing ? list.map((item) => (item.id === project.id ? project : item)) : [project, ...list],
+        existing
+          ? list.map((item) => (item.id === project.id ? project : item))
+          : [project, ...list],
       );
       logActivity(
         "project",
@@ -472,11 +494,17 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     (input: InvoiceInput, id?: string) => {
       const existing = id ? invoices.find((invoice) => invoice.id === id) : undefined;
       const invoiceId = existing?.id ?? newId("i");
-      const items = input.items.map((item, index) => ({ ...item, id: `${invoiceId}-${index + 1}` }));
+      const items = input.items.map((item, index) => ({
+        ...item,
+        id: `${invoiceId}-${index + 1}`,
+      }));
       const totals = computeInvoiceTotals(items, input.discountMinor, input.taxRateBps);
       // Numbers continue from the highest one in use, so they never collide.
       const nextNumber =
-        Math.max(FIRST_NEW_INVOICE_NUMBER - 1, ...invoices.map((item) => Number(item.number.replace(/\D/g, "")))) + 1;
+        Math.max(
+          FIRST_NEW_INVOICE_NUMBER - 1,
+          ...invoices.map((item) => Number(item.number.replace(/\D/g, ""))),
+        ) + 1;
       const invoice: Invoice = {
         id: invoiceId,
         number: existing?.number ?? `INV-${nextNumber}`,
@@ -493,7 +521,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
         amountMinor: totals.totalMinor,
       };
       setInvoices((list) =>
-        existing ? list.map((item) => (item.id === invoice.id ? invoice : item)) : [invoice, ...list],
+        existing
+          ? list.map((item) => (item.id === invoice.id ? invoice : item))
+          : [invoice, ...list],
       );
       logActivity(
         "invoice",
@@ -523,7 +553,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     (id: string) => {
       const invoice = invoices.find((item) => item.id === id);
       if (!invoice || invoice.status !== "draft") return;
-      setInvoices((list) => list.map((item) => (item.id === id ? { ...item, status: "sent" } : item)));
+      setInvoices((list) =>
+        list.map((item) => (item.id === id ? { ...item, status: "sent" } : item)),
+      );
       logActivity("invoice", `marked invoice ${invoice.number} as sent`, `/money/invoices/${id}`);
     },
     [invoices, logActivity],
@@ -534,9 +566,15 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       const invoice = invoices.find((item) => item.id === id);
       if (!invoice || invoice.status !== "sent") return;
       setInvoices((list) =>
-        list.map((item) => (item.id === id ? { ...item, status: "paid", paidOn: DEMO_TODAY } : item)),
+        list.map((item) =>
+          item.id === id ? { ...item, status: "paid", paidOn: DEMO_TODAY } : item,
+        ),
       );
-      logActivity("invoice", `recorded payment for invoice ${invoice.number}`, `/money/invoices/${id}`);
+      logActivity(
+        "invoice",
+        `recorded payment for invoice ${invoice.number}`,
+        `/money/invoices/${id}`,
+      );
     },
     [invoices, logActivity],
   );
@@ -544,11 +582,19 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
   const saveCatalogItem = useCallback(
     (input: CatalogItemInput, id?: string) => {
       const existing = id ? catalog.find((item) => item.id === id) : undefined;
-      const saved: CatalogItem = existing ? { ...existing, ...input } : { id: newId("k"), archived: false, ...input };
+      const saved: CatalogItem = existing
+        ? { ...existing, ...input }
+        : { id: newId("k"), archived: false, ...input };
       setCatalog((list) =>
         existing ? list.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...list],
       );
-      logActivity("catalog", existing ? `updated “${saved.name}” in the catalog` : `added “${saved.name}” to the catalog`, "/catalog");
+      logActivity(
+        "catalog",
+        existing
+          ? `updated “${saved.name}” in the catalog`
+          : `added “${saved.name}” to the catalog`,
+        "/catalog",
+      );
       return saved;
     },
     [catalog, newId, logActivity],
@@ -559,7 +605,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       const item = catalog.find((entry) => entry.id === id);
       if (!item) return;
       setCatalog((list) => list.map((entry) => (entry.id === id ? { ...entry, archived } : entry)));
-      logActivity("catalog", `${archived ? "archived" : "restored"} “${item.name}” in the catalog`, "/catalog");
+      logActivity(
+        "catalog",
+        `${archived ? "archived" : "restored"} “${item.name}” in the catalog`,
+        "/catalog",
+      );
     },
     [catalog, logActivity],
   );
@@ -571,7 +621,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       setExpenses((list) =>
         existing ? list.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...list],
       );
-      logActivity("expense", `${existing ? "updated" : "recorded"} an expense from ${saved.vendor}`, "/money/expenses");
+      logActivity(
+        "expense",
+        `${existing ? "updated" : "recorded"} an expense from ${saved.vendor}`,
+        "/money/expenses",
+      );
       return saved;
     },
     [expenses, newId, logActivity],
@@ -591,7 +645,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
   // here, in the event handler, and the page is then remounted to pick them up.
   const updateProfile = useCallback(
     (input: Pick<TeamMember, "name" | "email" | "title">) => {
-      const next = team.map((member) => (member.id === seed.currentUser.id ? { ...member, ...input } : member));
+      const next = team.map((member) =>
+        member.id === seed.currentUser.id ? { ...member, ...input } : member,
+      );
       setTeam(next);
       applyRuntime({ team: next });
       setSettingsVersion((version) => version + 1);
@@ -600,24 +656,36 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateWorkspace = useCallback(
-    (input: { name: string } & Pick<WorkspaceSettings, "currency" | "taxRateBps" | "paymentTermDays">) => {
+    (
+      input: { name: string } & Pick<
+        WorkspaceSettings,
+        "currency" | "taxRateBps" | "paymentTermDays"
+      >,
+    ) => {
       const { name, ...rest } = input;
-      setWorkspaceList((list) => list.map((item) => (item.id === workspaceId ? { ...item, name } : item)));
+      setWorkspaceList((list) =>
+        list.map((item) => (item.id === workspaceId ? { ...item, name } : item)),
+      );
       setSettings((current) => ({ ...current, ...rest }));
       applyRuntime({
         ...rest,
-        locale: CURRENCY_OPTIONS.find((option) => option.code === rest.currency)?.locale ?? WORKSPACE_DEFAULTS.locale,
+        locale:
+          CURRENCY_OPTIONS.find((option) => option.code === rest.currency)?.locale ??
+          WORKSPACE_DEFAULTS.locale,
       });
       setSettingsVersion((version) => version + 1);
     },
     [workspaceId],
   );
 
-  const updatePreferences = useCallback((input: Pick<WorkspaceSettings, "dateLocale" | "weekStartsOn">) => {
-    setSettings((current) => ({ ...current, ...input }));
-    applyRuntime(input);
-    setSettingsVersion((version) => version + 1);
-  }, []);
+  const updatePreferences = useCallback(
+    (input: Pick<WorkspaceSettings, "dateLocale" | "weekStartsOn">) => {
+      setSettings((current) => ({ ...current, ...input }));
+      applyRuntime(input);
+      setSettingsVersion((version) => version + 1);
+    },
+    [],
+  );
 
   const inviteMember = useCallback(
     (input: Pick<Invitation, "email" | "role">) => {
@@ -630,7 +698,9 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
 
   const setMemberRole = useCallback(
     (id: string, role: Exclude<TeamRole, "Owner">) => {
-      const next = team.map((member) => (member.id === id && member.role !== "Owner" ? { ...member, role } : member));
+      const next = team.map((member) =>
+        member.id === id && member.role !== "Owner" ? { ...member, role } : member,
+      );
       setTeam(next);
       applyRuntime({ team: next });
     },
@@ -671,7 +741,8 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       updateProfile,
       updateWorkspace,
       updatePreferences,
-      setNotificationPref: (id, enabled) => setNotificationPrefs((current) => ({ ...current, [id]: enabled })),
+      setNotificationPref: (id, enabled) =>
+        setNotificationPrefs((current) => ({ ...current, [id]: enabled })),
       setAppearance: (patch) => setAppearanceState((current) => ({ ...current, ...patch })),
       inviteMember,
       cancelInvitation: (id) => setInvitations((list) => list.filter((item) => item.id !== id)),

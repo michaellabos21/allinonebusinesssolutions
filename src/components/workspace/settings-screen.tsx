@@ -1,6 +1,14 @@
 "use client";
 
-import { Bell, Building2, Check, type LucideIcon, Palette, SlidersHorizontal, UserRound } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  Check,
+  type LucideIcon,
+  Palette,
+  SlidersHorizontal,
+  UserRound,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,7 +27,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ACCENTS, CURRENCY_OPTIONS, DEMO_TODAY, NOTIFICATION_OPTIONS, TAX_OPTIONS } from "@/config/app";
+import {
+  ACCENTS,
+  CURRENCY_OPTIONS,
+  DEMO_TODAY,
+  NOTIFICATION_OPTIONS,
+  TAX_OPTIONS,
+} from "@/config/app";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +112,9 @@ function SectionCard({
 function FormFooter({ dirty }: { dirty: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
-      <p className="text-xs text-muted-foreground">{dirty ? "You have unsaved changes." : "No changes to save."}</p>
+      <p className="text-xs text-muted-foreground">
+        {dirty ? "You have unsaved changes." : "No changes to save."}
+      </p>
       <Button type="submit" disabled={!dirty} className="hover:bg-primary-hover">
         Save changes
       </Button>
@@ -113,14 +129,16 @@ function ProfileSection() {
   const [email, setEmail] = useState(currentUser.email);
   const [title, setTitle] = useState(currentUser.title);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const dirty = name !== currentUser.name || email !== currentUser.email || title !== currentUser.title;
+  const dirty =
+    name !== currentUser.name || email !== currentUser.email || title !== currentUser.title;
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
     const found: Record<string, string> = {};
     if (!name.trim()) found.name = "Enter your name.";
     if (!email.trim()) found.email = "Enter your email address.";
-    else if (!EMAIL_PATTERN.test(email.trim())) found.email = "Enter an email address like name@company.com.";
+    else if (!EMAIL_PATTERN.test(email.trim()))
+      found.email = "Enter an email address like name@company.com.";
     setErrors(found);
     const first = Object.keys(found)[0];
     if (first) {
@@ -132,11 +150,17 @@ function ProfileSection() {
   }
 
   return (
-    <SectionCard title="Profile" description="How you appear to teammates, on tasks you are assigned and in the activity log.">
+    <SectionCard
+      title="Profile"
+      description="How you appear to teammates, on tasks you are assigned and in the activity log."
+    >
       <form onSubmit={submit} noValidate>
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           <div className="flex items-center gap-3 sm:col-span-2">
-            <UserAvatar name={name || currentUser.name} className="size-12 [&_[data-slot=avatar-fallback]]:text-base" />
+            <UserAvatar
+              name={name || currentUser.name}
+              className="size-12 [&_[data-slot=avatar-fallback]]:text-base"
+            />
             <p className="text-caption text-muted-foreground">
               Your avatar uses your initials. Photo uploads are not part of this prototype.
             </p>
@@ -152,9 +176,19 @@ function ProfileSection() {
             />
           </Field>
           <Field id={`${id}-title`} label="Job title">
-            <Input id={`${id}-title`} value={title} autoComplete="off" onChange={(event) => setTitle(event.target.value)} />
+            <Input
+              id={`${id}-title`}
+              value={title}
+              autoComplete="off"
+              onChange={(event) => setTitle(event.target.value)}
+            />
           </Field>
-          <Field id={`${id}-email`} label="Email" error={errors.email} hint="No confirmation email is sent in this prototype.">
+          <Field
+            id={`${id}-email`}
+            label="Email"
+            error={errors.email}
+            hint="No confirmation email is sent in this prototype."
+          >
             <Input
               id={`${id}-email`}
               type="email"
@@ -190,7 +224,8 @@ function WorkspaceSection() {
     event.preventDefault();
     const found: Record<string, string> = {};
     if (!name.trim()) found.name = "Enter a workspace name.";
-    if (!/^\d{1,2}$/.test(terms.trim()) || Number(terms) > 90) found.terms = "Enter a whole number of days from 0 to 90.";
+    if (!/^\d{1,2}$/.test(terms.trim()) || Number(terms) > 90)
+      found.terms = "Enter a whole number of days from 0 to 90.";
     setErrors(found);
     const first = Object.keys(found)[0];
     if (first) {
@@ -207,11 +242,19 @@ function WorkspaceSection() {
   }
 
   return (
-    <SectionCard title="Workspace" description="The business name on your invoices and the defaults for money.">
+    <SectionCard
+      title="Workspace"
+      description="The business name on your invoices and the defaults for money."
+    >
       <form onSubmit={submit} noValidate>
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Field id={`${id}-name`} label="Workspace name" error={errors.name} hint="Shown in the sidebar, on the overview and at the top of invoices.">
+            <Field
+              id={`${id}-name`}
+              label="Workspace name"
+              error={errors.name}
+              hint="Shown in the sidebar, on the overview and at the top of invoices."
+            >
               <Input
                 id={`${id}-name`}
                 value={name}
@@ -228,7 +271,11 @@ function WorkspaceSection() {
             hint="Changes how amounts are shown. Existing amounts are relabelled, not converted."
           >
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger id={`${id}-currency`} className="w-full" aria-describedby={`${id}-currency-hint`}>
+              <SelectTrigger
+                id={`${id}-currency`}
+                className="w-full"
+                aria-describedby={`${id}-currency-hint`}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -240,9 +287,17 @@ function WorkspaceSection() {
               </SelectContent>
             </Select>
           </Field>
-          <Field id={`${id}-tax`} label="Default tax on new invoices" hint="Demo rates only, not tax advice.">
+          <Field
+            id={`${id}-tax`}
+            label="Default tax on new invoices"
+            hint="Demo rates only, not tax advice."
+          >
             <Select value={taxRateBps} onValueChange={setTaxRateBps}>
-              <SelectTrigger id={`${id}-tax`} className="w-full" aria-describedby={`${id}-tax-hint`}>
+              <SelectTrigger
+                id={`${id}-tax`}
+                className="w-full"
+                aria-describedby={`${id}-tax-hint`}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -254,7 +309,12 @@ function WorkspaceSection() {
               </SelectContent>
             </Select>
           </Field>
-          <Field id={`${id}-terms`} label="Payment terms (days)" error={errors.terms} hint="Sets the due date on a new invoice.">
+          <Field
+            id={`${id}-terms`}
+            label="Payment terms (days)"
+            error={errors.terms}
+            hint="Sets the due date on a new invoice."
+          >
             <Input
               id={`${id}-terms`}
               inputMode="numeric"
@@ -268,7 +328,8 @@ function WorkspaceSection() {
           </Field>
           <div className="rounded-md bg-muted/60 px-3 py-2.5 sm:col-span-2">
             <p className="text-caption text-muted-foreground">
-              Amounts currently look like <span className="tabular font-medium text-foreground">{formatMoney(1_234_550)}</span>.
+              Amounts currently look like{" "}
+              <span className="tabular font-medium text-foreground">{formatMoney(1_234_550)}</span>.
             </p>
           </div>
         </div>
@@ -283,14 +344,21 @@ function PreferencesSection() {
   const id = useId();
   const [dateLocale, setDateLocale] = useState(settings.dateLocale);
   const [weekStartsOn, setWeekStartsOn] = useState(String(settings.weekStartsOn));
-  const dirty = dateLocale !== settings.dateLocale || weekStartsOn !== String(settings.weekStartsOn);
+  const dirty =
+    dateLocale !== settings.dateLocale || weekStartsOn !== String(settings.weekStartsOn);
   const sample = (locale: string) =>
-    new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
-      new Date(`${DEMO_TODAY}T00:00:00Z`),
-    );
+    new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(`${DEMO_TODAY}T00:00:00Z`));
 
   return (
-    <SectionCard title="Preferences" description="How dates and the calendar are laid out across the workspace.">
+    <SectionCard
+      title="Preferences"
+      description="How dates and the calendar are laid out across the workspace."
+    >
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -300,7 +368,10 @@ function PreferencesSection() {
       >
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           <Field id={`${id}-date`} label="Date format">
-            <Select value={dateLocale} onValueChange={(value) => setDateLocale(value as typeof dateLocale)}>
+            <Select
+              value={dateLocale}
+              onValueChange={(value) => setDateLocale(value as typeof dateLocale)}
+            >
               <SelectTrigger id={`${id}-date`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -312,7 +383,11 @@ function PreferencesSection() {
           </Field>
           <Field id={`${id}-week`} label="Week starts on" hint="Used by the calendar’s month view.">
             <Select value={weekStartsOn} onValueChange={setWeekStartsOn}>
-              <SelectTrigger id={`${id}-week`} className="w-full" aria-describedby={`${id}-week-hint`}>
+              <SelectTrigger
+                id={`${id}-week`}
+                className="w-full"
+                aria-describedby={`${id}-week-hint`}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -353,7 +428,9 @@ function NotificationsSection() {
               aria-describedby={`${id}-${option.id}-note`}
               onCheckedChange={(checked) => {
                 setNotificationPref(option.id, checked);
-                toast.success(`${option.label}: ${checked ? "on" : "off"}`, { description: SAVED_NOTE });
+                toast.success(`${option.label}: ${checked ? "on" : "off"}`, {
+                  description: SAVED_NOTE,
+                });
               }}
             />
           </li>
@@ -366,11 +443,16 @@ function NotificationsSection() {
 function AppearanceSection() {
   const { appearance, setAppearance } = useDemoStore();
   return (
-    <SectionCard title="Appearance" description="Changes apply straight away, for this session. The prototype has a light theme only.">
+    <SectionCard
+      title="Appearance"
+      description="Changes apply straight away, for this session. The prototype has a light theme only."
+    >
       <div className="space-y-6 px-5 py-5">
         <fieldset>
           <legend className="font-medium">Accent colour</legend>
-          <p className="text-caption text-muted-foreground">Used for primary buttons, links and selected states.</p>
+          <p className="text-caption text-muted-foreground">
+            Used for primary buttons, links and selected states.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Accent colour">
             {ACCENTS.map((accent) => {
               const selected = appearance.accent === accent.id;
@@ -403,7 +485,9 @@ function AppearanceSection() {
           <p className="font-medium" id="density-label">
             Density
           </p>
-          <p className="mb-3 text-caption text-muted-foreground">Compact tightens page spacing and table rows.</p>
+          <p className="mb-3 text-caption text-muted-foreground">
+            Compact tightens page spacing and table rows.
+          </p>
           <div className="inline-flex">
             <SegmentedControl
               label="Density"
@@ -440,7 +524,10 @@ export function SettingsScreen() {
         description="Your profile, workspace defaults and how the app looks. Everything here is kept for this session only."
       />
       <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <nav aria-label="Settings sections" className="relative -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <nav
+          aria-label="Settings sections"
+          className="relative -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"
+        >
           <ul className="flex gap-1 lg:flex-col">
             {SECTIONS.map((item) => (
               <li key={item.id}>
@@ -456,7 +543,13 @@ export function SettingsScreen() {
                     section === item.id && "bg-muted font-medium text-foreground",
                   )}
                 >
-                  <item.icon className={cn("size-4", section === item.id ? "text-primary" : "text-muted-foreground")} aria-hidden />
+                  <item.icon
+                    className={cn(
+                      "size-4",
+                      section === item.id ? "text-primary" : "text-muted-foreground",
+                    )}
+                    aria-hidden
+                  />
                   {item.label}
                 </button>
               </li>

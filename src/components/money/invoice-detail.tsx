@@ -22,7 +22,14 @@ export function InvoiceDetail() {
 
   const invoice = store.invoices.find((item) => item.id === id);
   if (!invoice) {
-    return <MissingRecord icon={ReceiptText} noun="invoice" listHref="/money/invoices" listLabel="Back to invoices" />;
+    return (
+      <MissingRecord
+        icon={ReceiptText}
+        noun="invoice"
+        listHref="/money/invoices"
+        listLabel="Back to invoices"
+      />
+    );
   }
 
   const display = invoiceDisplayStatus(invoice);
@@ -31,8 +38,16 @@ export function InvoiceDetail() {
   const due = describeDue(invoice.dueOn);
 
   const steps = [
-    { label: invoice.status === "draft" ? "Drafted" : "Issued", date: invoice.issuedOn, done: true },
-    { label: "Sent to client", date: invoice.status === "draft" ? null : invoice.issuedOn, done: invoice.status !== "draft" },
+    {
+      label: invoice.status === "draft" ? "Drafted" : "Issued",
+      date: invoice.issuedOn,
+      done: true,
+    },
+    {
+      label: "Sent to client",
+      date: invoice.status === "draft" ? null : invoice.issuedOn,
+      done: invoice.status !== "draft",
+    },
     { label: "Paid", date: invoice.paidOn, done: invoice.status === "paid" },
   ];
 
@@ -78,7 +93,11 @@ export function InvoiceDetail() {
         <InvoiceDocument
           invoice={invoice}
           workspaceName={store.workspace.name}
-          billTo={{ name: contact?.name ?? "Unknown contact", company, email: contact?.email ?? "" }}
+          billTo={{
+            name: contact?.name ?? "Unknown contact",
+            company,
+            email: contact?.email ?? "",
+          }}
         />
 
         <div className="space-y-6">
@@ -97,7 +116,10 @@ export function InvoiceDetail() {
                 <li key={step.label} className="flex items-center gap-3">
                   <span
                     aria-hidden
-                    className={cn("size-2.5 shrink-0 rounded-full border", step.done ? "border-primary bg-primary" : "bg-card")}
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-full border",
+                      step.done ? "border-primary bg-primary" : "bg-card",
+                    )}
                   />
                   <span className={cn("flex-1", !step.done && "text-muted-foreground")}>
                     {step.label}
@@ -120,7 +142,10 @@ export function InvoiceDetail() {
                 <div>
                   <dt className="text-caption text-muted-foreground">Contact</dt>
                   <dd>
-                    <Link href={`/crm/contacts/${contact.id}`} className="text-primary hover:underline">
+                    <Link
+                      href={`/crm/contacts/${contact.id}`}
+                      className="text-primary hover:underline"
+                    >
                       {contact.name}
                     </Link>
                   </dd>
@@ -129,7 +154,10 @@ export function InvoiceDetail() {
                   <div>
                     <dt className="text-caption text-muted-foreground">Company</dt>
                     <dd>
-                      <Link href={`/crm/companies/${contact.companyId}`} className="text-primary hover:underline">
+                      <Link
+                        href={`/crm/companies/${contact.companyId}`}
+                        className="text-primary hover:underline"
+                      >
                         {company}
                       </Link>
                     </dd>
@@ -137,7 +165,9 @@ export function InvoiceDetail() {
                 ) : null}
               </dl>
             ) : (
-              <p className="text-muted-foreground">The contact for this invoice is not available.</p>
+              <p className="text-muted-foreground">
+                The contact for this invoice is not available.
+              </p>
             )}
           </Panel>
         </div>

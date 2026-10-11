@@ -17,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { describeDue, formatDate } from "@/lib/format";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { memberName } from "@/lib/work";
@@ -36,7 +42,9 @@ export function TaskPanel({ taskId, onClose }: { taskId: string | null; onClose:
     if (!task || task.status === status) return;
     setTaskStatus(task.id, status);
     const label = TASK_STATUSES.find((item) => item.id === status)?.label;
-    toast.success(status === "done" ? "Task completed" : `Task moved to ${label}`, { description: task.title });
+    toast.success(status === "done" ? "Task completed" : `Task moved to ${label}`, {
+      description: task.title,
+    });
   }
 
   return (
@@ -63,7 +71,10 @@ export function TaskPanel({ taskId, onClose }: { taskId: string | null; onClose:
             <div className="flex-1 space-y-5 overflow-y-auto p-4">
               <div className="grid gap-1.5">
                 <Label htmlFor={statusId}>Status</Label>
-                <Select value={task.status} onValueChange={(value) => changeStatus(value as TaskStatus)}>
+                <Select
+                  value={task.status}
+                  onValueChange={(value) => changeStatus(value as TaskStatus)}
+                >
                   <SelectTrigger id={statusId} className="w-full">
                     <SelectValue />
                   </SelectTrigger>

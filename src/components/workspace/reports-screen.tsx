@@ -35,7 +35,13 @@ const STATUS_SWATCH: Record<InvoiceDisplayStatus, string> = {
   draft: "bg-input",
 };
 
-function FlowTooltip({ active, payload }: { active?: boolean; payload?: { payload: MonthFlow }[] }) {
+function FlowTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: MonthFlow }[];
+}) {
   const month = payload?.[0]?.payload;
   if (!active || !month) return null;
   return (
@@ -78,7 +84,11 @@ export function ReportsScreen() {
   const hasData = invoices.length + expenses.length + tasks.length + projects.length > 0;
 
   const figures = [
-    { label: "Collected", value: headline.collectedMinor, note: "Payments recorded in this period." },
+    {
+      label: "Collected",
+      value: headline.collectedMinor,
+      note: "Payments recorded in this period.",
+    },
     {
       label: "Invoiced",
       value: headline.billedMinor,
@@ -98,7 +108,14 @@ export function ReportsScreen() {
       <PageHeader
         title="Reports"
         description={`${range.label}: ${formatDate(range.from, "long")} to ${formatDate(range.to, "long")}. Every figure is computed from the records in this workspace.`}
-        actions={<SegmentedControl label="Date range" options={RANGE_OPTIONS} value={rangeId} onChange={setRangeId} />}
+        actions={
+          <SegmentedControl
+            label="Date range"
+            options={RANGE_OPTIONS}
+            value={rangeId}
+            onChange={setRangeId}
+          />
+        }
       />
 
       {!hasData ? (
@@ -112,16 +129,26 @@ export function ReportsScreen() {
         </div>
       ) : (
         <>
-          <section aria-label="Headline figures" className="overflow-hidden rounded-lg border bg-card">
+          <section
+            aria-label="Headline figures"
+            className="overflow-hidden rounded-lg border bg-card"
+          >
             <dl className="grid grid-cols-2 lg:grid-cols-4">
               {figures.map((figure) => (
                 <div key={figure.label} className="-mt-px -ml-px border-t border-l px-5 py-4">
                   <dt className="text-muted-foreground">{figure.label}</dt>
                   <dd className="mt-1">
-                    <span className={cn("block font-display text-figure", figure.negative && "text-danger")}>
+                    <span
+                      className={cn(
+                        "block font-display text-figure",
+                        figure.negative && "text-danger",
+                      )}
+                    >
                       {formatMoney(figure.value)}
                     </span>
-                    <span className="mt-1 block text-caption text-muted-foreground">{figure.note}</span>
+                    <span className="mt-1 block text-caption text-muted-foreground">
+                      {figure.note}
+                    </span>
                   </dd>
                 </div>
               ))}
@@ -147,7 +174,12 @@ export function ReportsScreen() {
             <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className="h-64" aria-hidden>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={flow} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barCategoryGap="24%" barGap={2}>
+                  <BarChart
+                    data={flow}
+                    margin={{ top: 8, right: 4, bottom: 0, left: 0 }}
+                    barCategoryGap="24%"
+                    barGap={2}
+                  >
                     <CartesianGrid vertical={false} stroke="var(--border)" />
                     <XAxis
                       dataKey="label"
@@ -164,8 +196,20 @@ export function ReportsScreen() {
                       tickFormatter={(value: number) => formatMoneyCompact(value)}
                     />
                     <Tooltip cursor={{ fill: "var(--muted)" }} content={<FlowTooltip />} />
-                    <Bar dataKey="collectedMinor" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={32} isAnimationActive={false} />
-                    <Bar dataKey="expenseMinor" fill="var(--chart-3)" radius={[4, 4, 0, 0]} maxBarSize={32} isAnimationActive={false} />
+                    <Bar
+                      dataKey="collectedMinor"
+                      fill="var(--chart-1)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={32}
+                      isAnimationActive={false}
+                    />
+                    <Bar
+                      dataKey="expenseMinor"
+                      fill="var(--chart-3)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={32}
+                      isAnimationActive={false}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -174,10 +218,18 @@ export function ReportsScreen() {
                   <caption className="sr-only">Collected, expenses and net by month</caption>
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
-                      <th scope="col" className="py-2 pr-3 font-medium">Month</th>
-                      <th scope="col" className="py-2 pr-3 text-right font-medium">Collected</th>
-                      <th scope="col" className="py-2 pr-3 text-right font-medium">Expenses</th>
-                      <th scope="col" className="py-2 text-right font-medium">Net</th>
+                      <th scope="col" className="py-2 pr-3 font-medium">
+                        Month
+                      </th>
+                      <th scope="col" className="py-2 pr-3 text-right font-medium">
+                        Collected
+                      </th>
+                      <th scope="col" className="py-2 pr-3 text-right font-medium">
+                        Expenses
+                      </th>
+                      <th scope="col" className="py-2 text-right font-medium">
+                        Net
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="tabular">
@@ -185,10 +237,16 @@ export function ReportsScreen() {
                       <tr key={month.key} className="border-b border-dashed last:border-b-0">
                         <th scope="row" className="py-2 pr-3 font-normal whitespace-nowrap">
                           {month.label}
-                          {month.partial ? <span className="text-muted-foreground"> (to date)</span> : null}
+                          {month.partial ? (
+                            <span className="text-muted-foreground"> (to date)</span>
+                          ) : null}
                         </th>
-                        <td className="py-2 pr-3 text-right whitespace-nowrap">{formatMoney(month.collectedMinor)}</td>
-                        <td className="py-2 pr-3 text-right whitespace-nowrap">{formatMoney(month.expenseMinor)}</td>
+                        <td className="py-2 pr-3 text-right whitespace-nowrap">
+                          {formatMoney(month.collectedMinor)}
+                        </td>
+                        <td className="py-2 pr-3 text-right whitespace-nowrap">
+                          {formatMoney(month.expenseMinor)}
+                        </td>
                         <td className="py-2 text-right font-medium whitespace-nowrap">
                           {formatMoney(month.collectedMinor - month.expenseMinor)}
                         </td>
@@ -209,7 +267,10 @@ export function ReportsScreen() {
                   : "No invoices are dated in this period."
               }
               action={
-                <Link href="/money/invoices" className="text-caption font-medium text-primary hover:underline">
+                <Link
+                  href="/money/invoices"
+                  className="text-caption font-medium text-primary hover:underline"
+                >
                   View invoices
                 </Link>
               }
@@ -220,16 +281,26 @@ export function ReportsScreen() {
                     {statuses
                       .filter((row) => row.amountMinor > 0)
                       .map((row) => (
-                        <span key={row.status} className={cn("rounded-sm", STATUS_SWATCH[row.status])} style={{ flexGrow: row.amountMinor }} />
+                        <span
+                          key={row.status}
+                          className={cn("rounded-sm", STATUS_SWATCH[row.status])}
+                          style={{ flexGrow: row.amountMinor }}
+                        />
                       ))}
                   </div>
                   <table className="mt-4 w-full border-collapse text-left">
                     <caption className="sr-only">Invoices by status</caption>
                     <thead>
                       <tr className="border-b text-xs text-muted-foreground">
-                        <th scope="col" className="py-2 pr-3 font-medium">Status</th>
-                        <th scope="col" className="py-2 pr-3 text-right font-medium">Invoices</th>
-                        <th scope="col" className="py-2 text-right font-medium">Amount</th>
+                        <th scope="col" className="py-2 pr-3 font-medium">
+                          Status
+                        </th>
+                        <th scope="col" className="py-2 pr-3 text-right font-medium">
+                          Invoices
+                        </th>
+                        <th scope="col" className="py-2 text-right font-medium">
+                          Amount
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="tabular">
@@ -237,7 +308,10 @@ export function ReportsScreen() {
                         <tr key={row.status} className="border-b border-dashed last:border-b-0">
                           <th scope="row" className="py-2 pr-3 font-normal">
                             <span className="flex items-center gap-2">
-                              <span className={cn("size-2.5 rounded-[3px]", STATUS_SWATCH[row.status])} aria-hidden />
+                              <span
+                                className={cn("size-2.5 rounded-[3px]", STATUS_SWATCH[row.status])}
+                                aria-hidden
+                              />
                               {row.label}
                             </span>
                           </th>
@@ -259,7 +333,10 @@ export function ReportsScreen() {
                   : "No expenses are dated in this period."
               }
               action={
-                <Link href="/money/expenses" className="text-caption font-medium text-primary hover:underline">
+                <Link
+                  href="/money/expenses"
+                  className="text-caption font-medium text-primary hover:underline"
+                >
                   View expenses
                 </Link>
               }
@@ -280,7 +357,9 @@ export function ReportsScreen() {
                       <div className="mt-1.5 h-1.5 rounded-sm bg-muted" aria-hidden>
                         <div
                           className="h-full rounded-sm bg-[var(--chart-3)]"
-                          style={{ width: `${Math.max((row.amountMinor / topCategory) * 100, 1.5)}%` }}
+                          style={{
+                            width: `${Math.max((row.amountMinor / topCategory) * 100, 1.5)}%`,
+                          }}
                         />
                       </div>
                     </li>
@@ -321,12 +400,31 @@ export function ReportsScreen() {
                         <span className="font-medium">{row.name}</span>
                         <span className="tabular text-caption text-muted-foreground">
                           {row.done} done, {row.open} open
-                          {row.overdue > 0 ? <span className="font-medium text-danger"> ({row.overdue} overdue)</span> : null}
+                          {row.overdue > 0 ? (
+                            <span className="font-medium text-danger">
+                              {" "}
+                              ({row.overdue} overdue)
+                            </span>
+                          ) : null}
                         </span>
                       </div>
-                      <div className="mt-1.5 flex h-2 gap-0.5" style={{ width: `${((row.done + row.open) / busiest) * 100}%` }} aria-hidden>
-                        {row.done > 0 ? <span className="rounded-sm bg-[var(--chart-1)]" style={{ flexGrow: row.done }} /> : null}
-                        {row.open > 0 ? <span className="rounded-sm bg-[var(--chart-2)]" style={{ flexGrow: row.open }} /> : null}
+                      <div
+                        className="mt-1.5 flex h-2 gap-0.5"
+                        style={{ width: `${((row.done + row.open) / busiest) * 100}%` }}
+                        aria-hidden
+                      >
+                        {row.done > 0 ? (
+                          <span
+                            className="rounded-sm bg-[var(--chart-1)]"
+                            style={{ flexGrow: row.done }}
+                          />
+                        ) : null}
+                        {row.open > 0 ? (
+                          <span
+                            className="rounded-sm bg-[var(--chart-2)]"
+                            style={{ flexGrow: row.open }}
+                          />
+                        ) : null}
                       </div>
                     </li>
                   ))}
@@ -342,7 +440,10 @@ export function ReportsScreen() {
                   : "No projects yet."
               }
               action={
-                <Link href="/work/projects" className="text-caption font-medium text-primary hover:underline">
+                <Link
+                  href="/work/projects"
+                  className="text-caption font-medium text-primary hover:underline"
+                >
                   View projects
                 </Link>
               }
@@ -354,16 +455,25 @@ export function ReportsScreen() {
                     <caption className="sr-only">Project progress and spend</caption>
                     <thead>
                       <tr className="border-b text-xs text-muted-foreground">
-                        <th scope="col" className="py-2 pr-3 pl-5 font-medium">Project</th>
-                        <th scope="col" className="py-2 pr-3 font-medium">Tasks done</th>
-                        <th scope="col" className="py-2 pr-5 text-right font-medium">Spend</th>
+                        <th scope="col" className="py-2 pr-3 pl-5 font-medium">
+                          Project
+                        </th>
+                        <th scope="col" className="py-2 pr-3 font-medium">
+                          Tasks done
+                        </th>
+                        <th scope="col" className="py-2 pr-5 text-right font-medium">
+                          Spend
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {projectRows.map(({ project, done, total, spendMinor }) => (
                         <tr key={project.id} className="border-b border-dashed last:border-b-0">
                           <th scope="row" className="py-2.5 pr-3 pl-5 font-normal">
-                            <Link href={`/work/projects/${project.id}`} className="font-medium hover:underline">
+                            <Link
+                              href={`/work/projects/${project.id}`}
+                              className="font-medium hover:underline"
+                            >
                               {project.name}
                             </Link>
                             <span className="mt-0.5 block">
@@ -374,7 +484,11 @@ export function ReportsScreen() {
                             <ProgressBar done={done} total={total} className="min-w-28" />
                           </td>
                           <td className="tabular py-2.5 pr-5 text-right whitespace-nowrap">
-                            {spendMinor > 0 ? formatMoney(spendMinor) : <span className="text-muted-foreground">None</span>}
+                            {spendMinor > 0 ? (
+                              formatMoney(spendMinor)
+                            ) : (
+                              <span className="text-muted-foreground">None</span>
+                            )}
                           </td>
                         </tr>
                       ))}

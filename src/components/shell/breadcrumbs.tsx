@@ -20,21 +20,27 @@ export function Breadcrumbs() {
 
   // Detail routes are `<list>/<id>` and may end in `/edit`.
   const [recordId = null, action] =
-    entry && pathname !== entry.item.href ? pathname.slice(entry.item.href.length + 1).split("/") : [];
+    entry && pathname !== entry.item.href
+      ? pathname.slice(entry.item.href.length + 1).split("/")
+      : [];
   const recordLists: Record<string, { id: string; name: string }[]> = {
     "/crm/contacts": contacts,
     "/crm/companies": companies,
     "/work/projects": projects,
     "/money/invoices": invoices.map((invoice) => ({ id: invoice.id, name: invoice.number })),
   };
-  const recordName = (recordLists[entry?.item.href ?? ""] ?? []).find((item) => item.id === recordId)?.name;
+  const recordName = (recordLists[entry?.item.href ?? ""] ?? []).find(
+    (item) => item.id === recordId,
+  )?.name;
   const record = !recordId
     ? null
     : recordId === "new"
       ? "New"
       : `${action === "edit" ? "Edit " : ""}${recordName ?? "Not found"}`;
 
-  const separator = <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />;
+  const separator = (
+    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+  );
 
   return (
     <nav aria-label="Breadcrumb" className="min-w-0">

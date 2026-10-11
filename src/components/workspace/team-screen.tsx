@@ -26,13 +26,17 @@ const ROLE_TONE: Record<TeamRole, "primary" | "success" | "neutral"> = {
 };
 
 const ROLE_NOTES: { role: TeamRole; note: string }[] = [
-  { role: "Owner", note: "Full access, including billing and deleting the workspace. One per workspace." },
+  {
+    role: "Owner",
+    note: "Full access, including billing and deleting the workspace. One per workspace.",
+  },
   { role: "Admin", note: "Manages members, settings, invoices and every project." },
   { role: "Member", note: "Works on the projects and tasks they are part of." },
 ];
 
 export function TeamScreen() {
-  const { team, invitations, tasks, currentUser, inviteMember, cancelInvitation, setMemberRole } = useDemoStore();
+  const { team, invitations, tasks, currentUser, inviteMember, cancelInvitation, setMemberRole } =
+    useDemoStore();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Invitation | null>(null);
   const returnFocus = useFocusReturn(inviteOpen);
@@ -66,7 +70,9 @@ export function TeamScreen() {
                       <p className="flex flex-wrap items-center gap-x-2 font-medium">
                         <span className="truncate">{member.name}</span>
                         {member.id === currentUser.id ? (
-                          <span className="text-caption font-normal text-muted-foreground">You</span>
+                          <span className="text-caption font-normal text-muted-foreground">
+                            You
+                          </span>
                         ) : null}
                       </p>
                       <p className="truncate text-caption text-muted-foreground">
@@ -90,7 +96,9 @@ export function TeamScreen() {
                                 icon: ShieldCheck,
                                 onSelect: () => {
                                   setMemberRole(member.id, "Admin");
-                                  toast.success(`${member.name} is now an admin`, { description: "Kept for this session only." });
+                                  toast.success(`${member.name} is now an admin`, {
+                                    description: "Kept for this session only.",
+                                  });
                                 },
                               }
                             : {
@@ -98,7 +106,9 @@ export function TeamScreen() {
                                 icon: UserRound,
                                 onSelect: () => {
                                   setMemberRole(member.id, "Member");
-                                  toast.success(`${member.name} is now a member`, { description: "Kept for this session only." });
+                                  toast.success(`${member.name} is now a member`, {
+                                    description: "Kept for this session only.",
+                                  });
                                 },
                               },
                         ]}
@@ -129,11 +139,15 @@ export function TeamScreen() {
             ) : (
               <ul>
                 {invitations.map((invitation) => (
-                  <li key={invitation.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md px-3 py-2.5">
+                  <li
+                    key={invitation.id}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md px-3 py-2.5"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{invitation.email}</p>
                       <p className="text-caption text-muted-foreground">
-                        Invited as {invitation.role.toLowerCase()} on {formatDate(invitation.invitedOn, "long")}
+                        Invited as {invitation.role.toLowerCase()} on{" "}
+                        {formatDate(invitation.invitedOn, "long")}
                       </p>
                     </div>
                     <Pill tone="warning">Pending</Pill>
@@ -188,7 +202,14 @@ export function TeamScreen() {
                 description: "Adds a pending invitation to the list. Simulated: no email is sent.",
                 submitLabel: "Add invitation",
                 fields: [
-                  { name: "email", label: "Work email", type: "email", required: true, missing: "Enter the person’s email address.", placeholder: "name@company.com" },
+                  {
+                    name: "email",
+                    label: "Work email",
+                    type: "email",
+                    required: true,
+                    missing: "Enter the person’s email address.",
+                    placeholder: "name@company.com",
+                  },
                   {
                     name: "role",
                     label: "Role",

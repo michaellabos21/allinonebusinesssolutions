@@ -158,14 +158,7 @@ export type Deal = {
 };
 
 export type ActivityKind =
-  | "contact"
-  | "company"
-  | "project"
-  | "task"
-  | "invoice"
-  | "deal"
-  | "expense"
-  | "catalog";
+  "contact" | "company" | "project" | "task" | "invoice" | "deal" | "expense" | "catalog";
 
 export type ActivityEntry = {
   id: string;

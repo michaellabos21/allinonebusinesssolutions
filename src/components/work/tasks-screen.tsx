@@ -10,7 +10,12 @@ import { PageHeader } from "@/components/common/page-header";
 import { RowActions } from "@/components/common/row-actions";
 import { EmptyState } from "@/components/common/states";
 import { PriorityBadge, TaskStatusBadge } from "@/components/common/status-badge";
-import { FilterMenu, SearchInput, SegmentedControl, TableToolbar } from "@/components/common/table-toolbar";
+import {
+  FilterMenu,
+  SearchInput,
+  SegmentedControl,
+  TableToolbar,
+} from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
@@ -71,14 +76,23 @@ export function TasksScreen() {
     return tasks.filter((task) => {
       if (priority !== "all" && task.priority !== priority) return false;
       if (assignee !== "all" && task.assigneeId !== assignee) return false;
-      return !text || [task.title, projectName(task.projectId)].some((value) => value.toLowerCase().includes(text));
+      return (
+        !text ||
+        [task.title, projectName(task.projectId)].some((value) =>
+          value.toLowerCase().includes(text),
+        )
+      );
     });
   }, [tasks, projectName, query, priority, assignee]);
 
   const listTasks = useMemo(
     () =>
       matching.filter((task) =>
-        status === "all" ? true : status === "open" ? task.status !== "done" : task.status === status,
+        status === "all"
+          ? true
+          : status === "open"
+            ? task.status !== "done"
+            : task.status === status,
       ),
     [matching, status],
   );
@@ -164,7 +178,12 @@ export function TasksScreen() {
           const due = describeDue(task.dueOn);
           const late = task.status !== "done" && due.tone === "overdue";
           return (
-            <span className={cn("tabular whitespace-nowrap", late ? "font-medium text-danger" : "text-muted-foreground")}>
+            <span
+              className={cn(
+                "tabular whitespace-nowrap",
+                late ? "font-medium text-danger" : "text-muted-foreground",
+              )}
+            >
               {late ? due.label : formatDate(task.dueOn)}
             </span>
           );
@@ -186,12 +205,17 @@ export function TasksScreen() {
     [projectName, openEditor],
   );
 
-  const table = useTableState(listTasks, columns, { pageSize: 10, initialSort: { id: "due", direction: "asc" } });
+  const table = useTableState(listTasks, columns, {
+    pageSize: 10,
+    initialSort: { id: "due", direction: "asc" },
+  });
   const hasFilters = query !== "" || priority !== "all" || assignee !== "all";
 
   const open = tasks.filter((task) => task.status !== "done");
   const overdue = open.filter((task) => task.dueOn < DEMO_TODAY).length;
-  const thisWeek = open.filter((task) => task.dueOn >= DEMO_TODAY && task.dueOn <= addDays(DEMO_TODAY, 6)).length;
+  const thisWeek = open.filter(
+    (task) => task.dueOn >= DEMO_TODAY && task.dueOn <= addDays(DEMO_TODAY, 6),
+  ).length;
 
   return (
     <div className="page-container space-y-5">
@@ -229,10 +253,25 @@ export function TasksScreen() {
           <TableToolbar>
             <SearchInput value={query} onChange={setQuery} label="Search tasks" />
             {view === "list" ? (
-              <FilterMenu label="Status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+              <FilterMenu
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={status}
+                onChange={setStatus}
+              />
             ) : null}
-            <FilterMenu label="Priority" options={PRIORITY_OPTIONS} value={priority} onChange={setPriority} />
-            <FilterMenu label="Assignee" options={assigneeOptions} value={assignee} onChange={setAssignee} />
+            <FilterMenu
+              label="Priority"
+              options={PRIORITY_OPTIONS}
+              value={priority}
+              onChange={setPriority}
+            />
+            <FilterMenu
+              label="Assignee"
+              options={assigneeOptions}
+              value={assignee}
+              onChange={setAssignee}
+            />
             {hasFilters ? (
               <Button
                 variant="ghost"
@@ -283,8 +322,11 @@ export function TasksScreen() {
             <div className="relative -mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
               <div className="grid min-w-[780px] grid-cols-3 gap-4 lg:min-w-0">
                 {TASK_STATUSES.map((column) => {
-                  const inColumn = sortTasksForList(matching.filter((task) => task.status === column.id));
-                  const shown = column.id === "done" ? inColumn.slice(0, DONE_COLUMN_LIMIT) : inColumn;
+                  const inColumn = sortTasksForList(
+                    matching.filter((task) => task.status === column.id),
+                  );
+                  const shown =
+                    column.id === "done" ? inColumn.slice(0, DONE_COLUMN_LIMIT) : inColumn;
                   return (
                     <section
                       key={column.id}
@@ -294,7 +336,9 @@ export function TasksScreen() {
                       <header className="border-b px-3 py-2.5">
                         <h2 className="font-semibold">
                           {column.label}{" "}
-                          <span className="tabular font-normal text-muted-foreground">{inColumn.length}</span>
+                          <span className="tabular font-normal text-muted-foreground">
+                            {inColumn.length}
+                          </span>
                         </h2>
                       </header>
                       <ul className="flex flex-1 flex-col gap-2 p-2">
@@ -307,7 +351,10 @@ export function TasksScreen() {
                             const due = describeDue(task.dueOn);
                             const done = task.status === "done";
                             return (
-                              <li key={task.id} className="rounded-md border bg-card p-3 shadow-[0_1px_0_rgb(28_36_52/0.04)]">
+                              <li
+                                key={task.id}
+                                className="rounded-md border bg-card p-3 shadow-[0_1px_0_rgb(28_36_52/0.04)]"
+                              >
                                 <div className="flex items-start justify-between gap-2">
                                   <button
                                     type="button"
@@ -350,11 +397,15 @@ export function TasksScreen() {
                                 </p>
                                 <div className="mt-3 flex items-center justify-between gap-2">
                                   <span className="flex items-center gap-1.5">
-                                    {task.priority === "high" && !done ? <PriorityBadge priority="high" short /> : null}
+                                    {task.priority === "high" && !done ? (
+                                      <PriorityBadge priority="high" short />
+                                    ) : null}
                                     <span
                                       className={cn(
                                         "tabular text-xs",
-                                        !done && due.tone === "overdue" ? "font-medium text-danger" : "text-muted-foreground",
+                                        !done && due.tone === "overdue"
+                                          ? "font-medium text-danger"
+                                          : "text-muted-foreground",
                                       )}
                                     >
                                       {done ? formatDate(task.dueOn) : due.label}
@@ -364,7 +415,9 @@ export function TasksScreen() {
                                     name={memberName(task.assigneeId)}
                                     className="size-5 [&_[data-slot=avatar-fallback]]:text-[10px]"
                                   />
-                                  <span className="sr-only">Assigned to {memberName(task.assigneeId)}</span>
+                                  <span className="sr-only">
+                                    Assigned to {memberName(task.assigneeId)}
+                                  </span>
                                 </div>
                               </li>
                             );

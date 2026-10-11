@@ -20,7 +20,8 @@ export function UpcomingTasks() {
   const { tasks, projects, openQuickCreate } = useDemoStore();
   const open = getUpcomingTasks(tasks);
   const visible = open.slice(0, VISIBLE_TASKS);
-  const projectName = (id: string | null) => projects.find((p) => p.id === id)?.name ?? "No project";
+  const projectName = (id: string | null) =>
+    projects.find((p) => p.id === id)?.name ?? "No project";
 
   return (
     <Panel
@@ -55,7 +56,10 @@ export function UpcomingTasks() {
             {visible.map((task) => {
               const due = describeDue(task.dueOn);
               return (
-                <li key={task.id} className="flex items-start gap-3 rounded-md px-3 py-2.5 hover:bg-muted/50">
+                <li
+                  key={task.id}
+                  className="flex items-start gap-3 rounded-md px-3 py-2.5 hover:bg-muted/50"
+                >
                   <TaskCheck task={task} className="mt-0.5" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{task.title}</p>
@@ -81,7 +85,10 @@ export function UpcomingTasks() {
             })}
           </ul>
           <div className="px-3 pt-2 pb-1">
-            <Link href="/work/tasks" className="text-caption font-medium text-primary hover:underline">
+            <Link
+              href="/work/tasks"
+              className="text-caption font-medium text-primary hover:underline"
+            >
               View all tasks
             </Link>
           </div>
