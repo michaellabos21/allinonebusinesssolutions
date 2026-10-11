@@ -155,7 +155,7 @@ export function StagesDialog({
               id={addId}
               value={newName}
               maxLength={40}
-              placeholder="Demo booked"
+              placeholder="Site visit"
               onChange={(event) => setNewName(event.target.value)}
             />
           </div>

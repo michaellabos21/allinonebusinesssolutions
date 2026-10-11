@@ -13,6 +13,7 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
 
   // Company
   await mainNav(page).getByRole("link", { name: "Companies" }).click();
+  await page.waitForURL((url) => url.pathname === "/crm/companies");
   await main.getByRole("button", { name: "New company" }).first().click();
   let dialog = page.getByRole("dialog");
   await dialog.getByLabel("Company name").fill("Harbor Bakery");
@@ -21,6 +22,7 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
 
   // Contact linked to the company, then a note on it
   await mainNav(page).getByRole("link", { name: "Contacts" }).click();
+  await page.waitForURL((url) => url.pathname === "/crm/contacts");
   await main.getByRole("button", { name: "New contact" }).first().click();
   dialog = page.getByRole("dialog");
   await dialog.getByLabel("Full name").fill("Rosa Lim");
@@ -32,17 +34,21 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
   await page.reload();
   await main.getByRole("link", { name: "Rosa Lim" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Rosa Lim" })).toBeVisible();
-  // Typing before the page hydrates would be lost.
-  await page.waitForLoadState("networkidle");
   await expect(main.getByRole("link", { name: "Harbor Bakery" }).first()).toBeVisible();
-  await main.getByRole("textbox", { name: /note/i }).fill("Prefers email in the morning.");
-  await main.getByRole("button", { name: /add note/i }).click();
+  // Before the page's script has loaded, submitting does a plain form post that
+  // reloads the page and loses the text, so retry until the note appears.
+  await expect(async () => {
+    await main.getByRole("textbox", { name: /note/i }).fill("Prefers email in the morning.");
+    await main.getByRole("button", { name: /add note/i }).click();
+    await expect(page.getByText("Note added")).toBeVisible({ timeout: 3000 });
+  }).toPass({ timeout: 20_000 });
   await expect(main.getByText("Prefers email in the morning.").first()).toBeVisible();
   await page.reload();
   await expect(main.getByText("Prefers email in the morning.").first()).toBeVisible();
 
   // Duplicate email is refused
   await mainNav(page).getByRole("link", { name: "Contacts" }).click();
+  await page.waitForURL((url) => url.pathname === "/crm/contacts");
   await main.getByRole("button", { name: "New contact" }).first().click();
   dialog = page.getByRole("dialog");
   await dialog.getByLabel("Full name").fill("Rosa Again");
@@ -53,6 +59,7 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
 
   // Catalog item
   await mainNav(page).getByRole("link", { name: "Products & Services" }).click();
+  await page.waitForURL((url) => url.pathname === "/catalog");
   await main
     .getByRole("button", { name: /new item/i })
     .first()
@@ -68,6 +75,7 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
 
   // Project, then a task in it, then complete the task
   await mainNav(page).getByRole("link", { name: "Projects" }).click();
+  await page.waitForURL((url) => url.pathname === "/work/projects");
   await main.getByRole("button", { name: "New project" }).first().click();
   dialog = page.getByRole("dialog");
   await dialog.getByLabel("Project name").fill("Bakery rebrand");
@@ -87,15 +95,19 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
   await expect(dialog).toBeHidden();
 
   await mainNav(page).getByRole("link", { name: "Tasks" }).click();
-  await expect(main.getByRole("button", { name: "Draft three logo options" })).toBeVisible();
+  await page.waitForURL((url) => url.pathname === "/work/tasks");
+  await expect(
+    main.getByRole("button", { name: "Draft three logo options", exact: true }),
+  ).toBeVisible();
   await main.getByRole("checkbox", { name: /draft three logo options/i }).click();
   await expect(page.getByText("Task completed")).toBeVisible();
   await page.reload();
   // Done tasks drop out of the default "Open" view; the count proves it was saved.
-  await expect(main.getByText(/^0 open/)).toBeVisible();
+  await expect(main.getByText(/^0 open, \d+ overdue/)).toBeVisible();
 
   // Activity feed on the overview names the real actor
   await mainNav(page).getByRole("link", { name: "Overview" }).click();
+  await page.waitForURL((url) => url.pathname === "/");
   await expect(main.getByText("started project “Bakery rebrand”").first()).toBeVisible();
   await expect(main.getByText("completed “Draft three logo options”").first()).toBeVisible();
 });
@@ -105,6 +117,7 @@ test("import contacts from a CSV file with a preview and row errors", async ({ p
   const main = page.getByRole("main");
 
   await mainNav(page).getByRole("link", { name: "Contacts" }).click();
+  await page.waitForURL((url) => url.pathname === "/crm/contacts");
   await main.getByRole("button", { name: "Import CSV" }).click();
   const dialog = page.getByRole("dialog");
 
