@@ -2,7 +2,7 @@
  * Single source of truth for product-level settings.
  * Rename the product by changing PRODUCT_NAME — nothing else hardcodes it.
  */
-export const PRODUCT_NAME = "Kasama";
+export const PRODUCT_NAME = "Kasama Space";
 
 export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
