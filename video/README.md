@@ -33,4 +33,14 @@ Timings live at the top of `src/LaunchVideo.tsx`; the product name and tagline i
 
 `public/screens/` are captures of the real app screens at 1600×1000 with device scale 1.5 (2400×1500 files), filled with the fictional sample records from `src/mocks`. All names, companies and amounts in them are made up. To refresh them after a UI change, capture the same routes at the same size and keep the file names; the zoom regions in each scene are in screenshot pixels, so a layout change may need those rectangles adjusted.
 
-Fonts are the app's own (Bricolage Grotesque and Hanken Grotesk, SIL Open Font License), bundled in `public/fonts` so rendering needs no network. There is no soundtrack; add one with Remotion's `<Audio>` in `src/LaunchVideo.tsx`.
+Fonts are the app's own (Bricolage Grotesque and Hanken Grotesk, SIL Open Font License), bundled in `public/fonts` so rendering needs no network.
+
+## Sound
+
+`public/audio/music.mp3` is an original 120 BPM track in A minor, and `public/audio/sfx.mp3` holds the effects (whooshes on transitions, the deal grab and drop, task ticks, the payment click and stamp, the key presses, chip pops). Both are synthesised from scratch by `scripts/make-soundtrack.py`, so nothing is sampled and there is no third-party audio to license. The music is timed to the cuts: a hit on the reveal, the groove starts with the dashboard, it breaks down for search, drops on the wall and resolves on the outro.
+
+```bash
+python3 scripts/make-soundtrack.py   # needs numpy and ffmpeg; rewrites both files
+```
+
+Timings in the script are video frames; if you change scene lengths in `src/LaunchVideo.tsx`, update them there too. Volumes are set on the two `<Audio>` tags in `src/LaunchVideo.tsx`. To use a licensed track instead, drop it in `public/audio/` and point the music `<Audio>` at it.
