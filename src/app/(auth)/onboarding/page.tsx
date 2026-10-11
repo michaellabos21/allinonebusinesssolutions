@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { AccountProblemMessage } from "@/components/auth/account-problem";
 import { HardRedirect, SignOutButton } from "@/components/auth/navigate";
 import { WorkspaceForm } from "@/components/auth/workspace-form";
-import { getSession } from "@/server/session";
+import { getAccountProblem, getSession } from "@/server/session";
 
 export const metadata: Metadata = { title: "Set up workspace" };
 
 async function Onboarding() {
   const session = await getSession();
-  if (!session) return <HardRedirect to="/login" />;
+  if (!session) {
+    const problem = await getAccountProblem();
+    return problem ? <AccountProblemMessage problem={problem} /> : <HardRedirect to="/login" />;
+  }
 
   return (
     <>
