@@ -1,18 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+import { mainNav, startWorkspace } from "./helpers";
+
 /**
- * Smoke test for the prototype: the app loads, navigation works, and a record
- * created through the UI shows up in its list. It runs on demo data, so it
- * will be extended, not replaced, when real persistence arrives.
+ * The business screens still run on demo data. This checks that they work for
+ * a signed-in user: navigation, and a record created through the UI showing up
+ * in its list.
  */
 test("create a contact and find it in the list", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: /welcome back/i })).toBeVisible();
+  await startWorkspace(page, "smoke");
 
-  await page
-    .getByRole("navigation", { name: "Main" })
-    .getByRole("link", { name: "Contacts" })
-    .click();
+  await mainNav(page).getByRole("link", { name: "Contacts" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Contacts" })).toBeVisible();
 
   await page.getByRole("main").getByRole("button", { name: "New contact" }).click();

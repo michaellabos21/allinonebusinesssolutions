@@ -92,7 +92,7 @@ export function InvoiceDetail() {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
         <InvoiceDocument
           invoice={invoice}
-          workspaceName={store.workspace.name}
+          workspaceName={store.account.workspace.name}
           billTo={{
             name: contact?.name ?? "Unknown contact",
             company,

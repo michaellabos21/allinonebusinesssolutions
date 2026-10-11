@@ -19,28 +19,42 @@ const SHORTCUTS = [
   { keys: "Esc", action: "Close a menu or dialog" },
 ];
 
+const REAL = [
+  "Your account, sign-in and password reset.",
+  "Workspaces, their settings, and switching between them.",
+  "Team members, roles and invitations, enforced on the server and in the database.",
+];
+
 const SIMULATED = [
-  "Workspaces, notifications and the signed-in profile are sample data.",
-  "Anything you add, edit or archive stays until you reload.",
+  "Contacts, companies, deals, projects, tasks, invoices, expenses and the catalog are sample data.",
+  "Anything you add, edit or archive in those areas stays until you reload.",
   "Marking an invoice as sent or paid only changes its status. Nothing is emailed and no money moves.",
-  "Invitations, role changes and notification switches change what you see here and nothing else.",
+  "Invitation links are shown for you to send; the app does not email them yet.",
 ];
 
 export function HelpDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Help and prototype notes">
+        <Button variant="ghost" size="icon" aria-label="Help: what is real and what is sample data">
           <CircleHelp aria-hidden />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>About this {PRODUCT_NAME} prototype</DialogTitle>
+          <DialogTitle>About {PRODUCT_NAME}</DialogTitle>
           <DialogDescription>{PROTOTYPE_NOTICE}</DialogDescription>
         </DialogHeader>
         <div>
-          <h3 className="font-semibold">What is simulated</h3>
+          <h3 className="font-semibold">What is real</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+            {REAL.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="font-semibold">What is still sample data</h3>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
             {SIMULATED.map((line) => (
               <li key={line}>{line}</li>

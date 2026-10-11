@@ -1,27 +1,12 @@
 /** Shapes for the prototype's demo records. Money is always integer minor units (centavos). */
 
-export type TeamRole = "Owner" | "Admin" | "Member";
-
+/** A fictional teammate on the demo records. Real members live in the database. */
 export type TeamMember = {
   id: string;
   name: string;
   email: string;
   title: string;
-  role: TeamRole;
-};
-
-/** A pending invite. Simulated: no email is sent. */
-export type Invitation = {
-  id: string;
-  email: string;
-  role: Exclude<TeamRole, "Owner">;
-  invitedOn: string;
-};
-
-export type Workspace = {
-  id: string;
-  name: string;
-  plan: string;
+  role: "Owner" | "Admin" | "Member";
 };
 
 export type CompanyType = "client" | "prospect";

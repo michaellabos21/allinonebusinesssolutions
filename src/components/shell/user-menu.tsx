@@ -2,9 +2,11 @@
 
 import { LogOut, Settings, UsersRound } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { useTransition } from "react";
 
+import { hardNavigate } from "@/components/auth/navigate";
 import { UserAvatar } from "@/components/common/user-avatar";
+import { useDemoStore } from "@/components/providers/demo-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,25 +15,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDemoStore } from "@/components/providers/demo-store";
+import { signOutAction } from "@/server/actions/auth";
+import { ROLE_LABEL } from "@/server/permissions";
 
 export function UserMenu() {
-  const { currentUser } = useDemoStore();
+  const { account } = useDemoStore();
+  const { user, workspace } = account;
+  const [pending, startTransition] = useTransition();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`Account menu for ${currentUser.name}`}
+        aria-label={`Account menu for ${user.fullName}`}
         className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <UserAvatar name={currentUser.name} className="size-8" />
+        <UserAvatar name={user.fullName} className="size-8" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel className="font-normal">
-          <span className="block font-semibold text-foreground">{currentUser.name}</span>
-          <span className="block truncate text-xs text-muted-foreground">{currentUser.email}</span>
+          <span className="block font-semibold text-foreground">{user.fullName}</span>
+          <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
-            {currentUser.title ? `${currentUser.title}, ` : ""}
-            {currentUser.role} (demo profile)
+            {user.jobTitle ? `${user.jobTitle}, ` : ""}
+            {ROLE_LABEL[workspace.role]}
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -49,14 +55,16 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
+          disabled={pending}
           onSelect={() =>
-            toast.info("Sign-out is simulated", {
-              description: "This prototype has no accounts, so you stay on the demo profile.",
+            startTransition(async () => {
+              const result = await signOutAction();
+              hardNavigate(result.ok ? (result.data?.redirectTo ?? "/login") : "/login");
             })
           }
         >
           <LogOut aria-hidden />
-          Sign out
+          {pending ? "Signing out" : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

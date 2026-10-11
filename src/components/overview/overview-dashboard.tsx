@@ -14,10 +14,11 @@ import { DEMO_TODAY } from "@/config/app";
 import { formatDate } from "@/lib/format";
 
 export function OverviewDashboard() {
-  const { demoEnabled, created, workspace, currentUser } = useDemoStore();
+  const { demoEnabled, created, account } = useDemoStore();
+  const { workspace } = account;
   const hasOwnRecords = Object.values(created).some((count) => count > 0);
   const showDashboard = demoEnabled || hasOwnRecords;
-  const firstName = currentUser.name.split(" ")[0];
+  const firstName = account.user.fullName.split(" ")[0];
 
   return (
     <div className="page-container space-y-6">

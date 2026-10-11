@@ -152,10 +152,12 @@ export function Sidebar({
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {demoEnabled
-              ? "Showing sample records. Nothing is saved."
-              : "Sample records hidden. Additions last this session."}
+              ? "Clients, work and money show sample records. Nothing there is saved yet."
+              : "Sample records hidden. Anything you add there lasts until you reload."}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">{PRODUCT_NAME} UI prototype</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {PRODUCT_NAME}: your account, workspace and team are real.
+          </p>
         </div>
       )}
     </div>

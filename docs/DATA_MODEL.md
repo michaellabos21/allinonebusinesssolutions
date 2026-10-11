@@ -1,6 +1,6 @@
 # Data model
 
-Status: **no tables exist.** This maps the prototype's record shapes to the tables each phase will create. Tables are built only when their phase starts.
+Status: the Phase 1 tables exist. Everything from Phase 2 down is still a plan: it maps the prototype's record shapes to the tables each phase will create.
 
 ## Rules for every table
 
@@ -13,15 +13,23 @@ Status: **no tables exist.** This maps the prototype's record shapes to the tabl
 - Row-level security is enabled in the migration that creates the table.
 - Workspace-scoped unique constraints where needed, such as invoice numbers.
 
-## Phase 1: platform
+## Phase 1: platform (built)
 
-| Table | Purpose | Prototype source |
+Defined in `supabase/migrations/20261011000001_platform_foundation.sql`.
+
+| Table | Holds | Notes |
 | --- | --- | --- |
-| `workspaces` | Name, timezone, country, default currency, default tax, payment terms | `Workspace` plus the settings in `demo-store.tsx` |
-| `workspace_memberships` | User, workspace, role, status | `TeamMember` |
-| `workspace_invitations` | Email, role, hashed token, expiry, accepted time | `Invitation` (has no token or expiry today) |
-| `user_preferences` | Display name, job title, timezone, date format, week start, notification choices | Profile and preference settings |
-| `audit_logs` | Role changes, invitation acceptance and other high-risk events | None |
+| `profiles` | One row per account: name, job title, timezone, date format, week start, five notification switches, and a copy of the sign-in email | Created by a trigger on sign-up. The email copy lets teammates be listed without exposing the auth schema |
+| `workspaces` | Name, timezone, country, currency, default tax (basis points), payment terms | Created only through `create_workspace` |
+| `workspace_memberships` | User, workspace, role, status (`active` or `removed`) | A unique index allows exactly one active owner per workspace |
+| `workspace_invitations` | Email, role, SHA-256 of the token, inviter, expiry, accepted and revoked times | The token itself is never stored. One open invitation per email per workspace |
+| `audit_logs` | Workspace, actor, event name, target id, short detail | Written only by database functions |
+
+Roles are an enum: `owner`, `admin`, `manager`, `member`, `client`.
+
+**How writes work.** There are no insert, update or delete policies on memberships, invitations or the audit log. Those tables change only through security-definer functions that re-check the caller: `create_workspace`, `set_member_role`, `remove_member`, `create_invitation`, `revoke_invitation`, `accept_invitation`. The two direct writes allowed are a user's own profile and, for owners and admins, their workspace's settings, each limited to named columns.
+
+**Differences from the original sketch.** Preferences live on `profiles`, not a separate `user_preferences` table: they are one-to-one with the account and always read together. Notification choices are five boolean columns, not JSON.
 
 ## Phase 2: core operations
 

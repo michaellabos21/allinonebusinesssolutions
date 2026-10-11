@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
-import { DemoStoreProvider, useDemoStore } from "@/components/providers/demo-store";
+import { PageSkeleton } from "@/components/common/page-skeleton";
+import { type Account, DemoStoreProvider, useDemoStore } from "@/components/providers/demo-store";
 import { GlobalSearch } from "@/components/shell/global-search";
 import { EditorDialog } from "@/components/shell/editor-dialog";
 import { Sidebar } from "@/components/shell/sidebar";
@@ -14,7 +15,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ACCENTS } from "@/config/app";
+import { ACCENTS, CURRENCY_OPTIONS, WORKSPACE_DEFAULTS } from "@/config/app";
+import { applyRuntime } from "@/lib/runtime";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { cn } from "@/lib/utils";
 
@@ -22,9 +24,10 @@ import { cn } from "@/lib/utils";
  * Workspace frame: a sidebar on the canvas and a white working surface that
  * holds the topbar and page. Below `lg` the sidebar moves into a drawer.
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ account, children }: { account: Account; children: React.ReactNode }) {
   return (
-    <DemoStoreProvider>
+    // Keyed on the workspace: switching workspace starts the demo records afresh.
+    <DemoStoreProvider key={account.workspace.id} account={account}>
       <ShellFrame>{children}</ShellFrame>
     </DemoStoreProvider>
   );
@@ -33,8 +36,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 function ShellFrame({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { appearance, settingsVersion } = useDemoStore();
+  const { appearance, account } = useDemoStore();
   const returnFocus = useFocusReturn(mobileNavOpen);
+
+  // Formatting helpers are plain functions, so the workspace's currency and the
+  // user's date preferences are mirrored into `lib/runtime` on the client. The
+  // page renders only once they are applied, and remounts when they change, so
+  // no amount or date is ever drawn with another setting.
+  const { workspace, user } = account;
+  const runtimeKey = [
+    workspace.id,
+    workspace.currency,
+    workspace.taxRateBps,
+    workspace.paymentTermDays,
+    user.dateFormat,
+    user.weekStartsOn,
+  ].join("|");
+  const [appliedKey, setAppliedKey] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    applyRuntime({
+      currency: workspace.currency,
+      locale:
+        CURRENCY_OPTIONS.find((option) => option.code === workspace.currency)?.locale ??
+        WORKSPACE_DEFAULTS.locale,
+      taxRateBps: workspace.taxRateBps,
+      paymentTermDays: workspace.paymentTermDays,
+      dateLocale: user.dateFormat === "mdy" ? "en-US" : "en-GB",
+      weekStartsOn: user.weekStartsOn,
+    });
+    // Syncing React with the module-level runtime is the point of this effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAppliedKey(runtimeKey);
+  }, [runtimeKey, workspace, user]);
 
   // Appearance settings are applied to the document root so that menus and
   // dialogs, which render outside this tree, pick them up too.
@@ -90,15 +123,13 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
             />
             {/* `relative` makes this scroll area the containing block for visually hidden
                 (absolutely positioned) labels, so they cannot stretch the document. */}
-            {/* Keyed on settingsVersion: a currency, date or profile change remounts
-                the page so every formatted value is re-read. */}
             <main
-              key={settingsVersion}
+              key={runtimeKey}
               id="main-content"
               tabIndex={-1}
               className="relative flex-1 outline-none lg:overflow-y-auto"
             >
-              {children}
+              {appliedKey === runtimeKey ? children : <PageSkeleton />}
             </main>
           </div>
         </div>

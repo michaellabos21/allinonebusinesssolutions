@@ -8,7 +8,7 @@ export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
 /** Shown anywhere the UI needs to explain that nothing is persisted. */
 export const PROTOTYPE_NOTICE =
-  "UI prototype. Records are sample data and anything you add lasts for this session only.";
+  "Accounts, workspaces and teams are real and saved. Business records are still sample data while each area is connected to the database.";
 
 /** Workspace-level formatting defaults (editable in a later settings phase). */
 export const WORKSPACE_DEFAULTS = {
@@ -81,3 +81,24 @@ export const TAX_OPTIONS = [
  * invoices and month-to-date totals always reconcile, whenever the app is run.
  */
 export const DEMO_TODAY = "2026-10-11";
+
+/** Countries offered when creating a workspace. ISO 3166-1 alpha-2 codes. */
+export const COUNTRY_OPTIONS = [
+  { code: "PH", label: "Philippines" },
+  { code: "AU", label: "Australia" },
+  { code: "CA", label: "Canada" },
+  { code: "DE", label: "Germany" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "HK", label: "Hong Kong" },
+  { code: "ID", label: "Indonesia" },
+  { code: "IE", label: "Ireland" },
+  { code: "IN", label: "India" },
+  { code: "JP", label: "Japan" },
+  { code: "MY", label: "Malaysia" },
+  { code: "NZ", label: "New Zealand" },
+  { code: "SG", label: "Singapore" },
+  { code: "TH", label: "Thailand" },
+  { code: "AE", label: "United Arab Emirates" },
+  { code: "US", label: "United States" },
+  { code: "VN", label: "Vietnam" },
+] as const;

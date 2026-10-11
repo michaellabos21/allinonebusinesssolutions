@@ -2,15 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 
-import {
-  type AccentId,
-  CURRENCY_OPTIONS,
-  DEMO_TODAY,
-  NOTIFICATION_OPTIONS,
-  type NotificationPrefId,
-  WORKSPACE_DEFAULTS,
-} from "@/config/app";
-import { applyRuntime, memberName } from "@/lib/runtime";
+import { type AccentId, DEMO_TODAY } from "@/config/app";
 import { computeInvoiceTotals } from "@/lib/money";
 import * as seed from "@/mocks";
 import type {
@@ -24,7 +16,6 @@ import type {
   Deal,
   DealStage,
   Expense,
-  Invitation,
   Invoice,
   InvoiceItem,
   Note,
@@ -35,15 +26,19 @@ import type {
   TaskPriority,
   TaskStatus,
   TeamMember,
-  TeamRole,
-  Workspace,
 } from "@/mocks";
+import type { InvitationRow, SessionUser, SessionWorkspace, TeamMemberRow } from "@/server/types";
 
 /**
- * Session-only state for the prototype. Seed records come from `src/mocks`;
- * anything created or edited through the UI is kept in memory and disappears
- * on reload. A later backend phase replaces this provider, not the components
- * that read it.
+ * Client state for the workspace screens.
+ *
+ * Two kinds of data meet here:
+ *   - `account` is real. It is loaded on the server for the signed-in user and
+ *     changed only through server actions.
+ *   - Everything else (contacts, projects, invoices and so on) is still demo
+ *     data from `src/mocks`, held in memory and reset on reload. Each domain
+ *     moves to the database in its own backend phase; until then the UI labels
+ *     it as demo data.
  */
 
 /** Record types with a create/edit form. */
@@ -111,48 +106,38 @@ export type InvoiceInput = {
   taxRateBps: number;
   notes: string;
 };
-export type WorkspaceSettings = {
-  currency: string;
-  taxRateBps: number;
-  paymentTermDays: number;
-  dateLocale: "en-GB" | "en-US";
-  weekStartsOn: 0 | 1;
-};
 export type Appearance = { accent: AccentId; density: "comfortable" | "compact" };
 export type CatalogItemInput = Omit<CatalogItem, "id" | "archived">;
 export type ExpenseInput = Omit<Expense, "id">;
+
+export type Account = {
+  user: SessionUser;
+  workspace: SessionWorkspace;
+  workspaces: SessionWorkspace[];
+  members: TeamMemberRow[];
+  invitations: InvitationRow[];
+};
 
 type DemoStore = {
   demoEnabled: boolean;
   setDemoEnabled: (enabled: boolean) => void;
 
-  workspaces: Workspace[];
-  workspace: Workspace;
-  selectWorkspace: (id: string) => void;
+  /**
+   * The real, signed-in account: user, workspace, members and invitations, as
+   * loaded on the server. Changes go through server actions, not this store.
+   */
+  account: Account;
 
-  /** Team, profile and settings. Changes here are session-only like everything else. */
+  /**
+   * Fictional teammates who own the demo business records. They are not real
+   * members; the real team is `account.members`.
+   */
   team: TeamMember[];
-  currentUser: TeamMember;
-  invitations: Invitation[];
-  settings: WorkspaceSettings;
-  notificationPrefs: Record<NotificationPrefId, boolean>;
+  demoUser: TeamMember;
+
+  /** Look and feel, kept in this browser tab only. */
   appearance: Appearance;
-  /** Bumped when a setting that affects formatting changes; the shell remounts the page on it. */
-  settingsVersion: number;
-  updateProfile: (input: Pick<TeamMember, "name" | "email" | "title">) => void;
-  updateWorkspace: (
-    input: { name: string } & Pick<
-      WorkspaceSettings,
-      "currency" | "taxRateBps" | "paymentTermDays"
-    >,
-  ) => void;
-  updatePreferences: (input: Pick<WorkspaceSettings, "dateLocale" | "weekStartsOn">) => void;
-  setNotificationPref: (id: NotificationPrefId, enabled: boolean) => void;
   setAppearance: (patch: Partial<Appearance>) => void;
-  /** Simulated: records a pending invitation. No email is sent. */
-  inviteMember: (input: Pick<Invitation, "email" | "role">) => Invitation;
-  cancelInvitation: (id: string) => void;
-  setMemberRole: (id: string, role: Exclude<TeamRole, "Owner">) => void;
 
   /** Lists include archived records; screens decide whether to show them. */
   contacts: Contact[];
@@ -220,30 +205,18 @@ const NEW_PREFIX = "new-";
 /** Records added this session carry a `new-` id; everything else is demo data. */
 const isCreated = (record: { id: string }) => record.id.startsWith(NEW_PREFIX);
 
-export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
+export function DemoStoreProvider({
+  account,
+  children,
+}: {
+  account: Account;
+  children: React.ReactNode;
+}) {
   const [demoEnabled, setDemoEnabled] = useState(true);
-  const [workspaceId, setWorkspaceId] = useState(seed.workspaces[0].id);
-  const [workspaceList, setWorkspaceList] = useState<Workspace[]>(seed.workspaces);
-  const [team, setTeam] = useState<TeamMember[]>(seed.teamMembers);
-  const [invitations, setInvitations] = useState<Invitation[]>(seed.invitations);
-  const [settings, setSettings] = useState<WorkspaceSettings>({
-    currency: WORKSPACE_DEFAULTS.currency,
-    taxRateBps: WORKSPACE_DEFAULTS.taxRateBps,
-    paymentTermDays: WORKSPACE_DEFAULTS.paymentTermDays,
-    dateLocale: "en-GB",
-    weekStartsOn: 0,
-  });
-  const [notificationPrefs, setNotificationPrefs] = useState(
-    () =>
-      Object.fromEntries(
-        NOTIFICATION_OPTIONS.map((option) => [option.id, option.id !== "weeklySummary"]),
-      ) as Record<NotificationPrefId, boolean>,
-  );
   const [appearance, setAppearanceState] = useState<Appearance>({
     accent: "indigo",
     density: "comfortable",
   });
-  const [settingsVersion, setSettingsVersion] = useState(0);
 
   const [contacts, setContacts] = useState<Contact[]>(seed.contacts);
   const [companies, setCompanies] = useState<Company[]>(seed.companies);
@@ -266,12 +239,13 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     return `${NEW_PREFIX}${letter}${counter.current}`;
   }, []);
 
+  const actorName = account.user.fullName;
   const logActivity = useCallback(
     (kind: ActivityKind, action: string, href: string, projectId?: string) => {
       const entry: ActivityEntry = {
         id: newId("a"),
         kind,
-        actor: memberName(seed.currentUser.id),
+        actor: actorName,
         action,
         at: `${DEMO_TODAY}T12:00:00`,
         href,
@@ -279,7 +253,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       };
       setActivity((entries) => [entry, ...entries]);
     },
-    [newId],
+    [newId, actorName],
   );
 
   const saveCompany = useCallback(
@@ -641,72 +615,6 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     [expenses, logActivity],
   );
 
-  // Settings that formatting helpers read are mirrored into the runtime module
-  // here, in the event handler, and the page is then remounted to pick them up.
-  const updateProfile = useCallback(
-    (input: Pick<TeamMember, "name" | "email" | "title">) => {
-      const next = team.map((member) =>
-        member.id === seed.currentUser.id ? { ...member, ...input } : member,
-      );
-      setTeam(next);
-      applyRuntime({ team: next });
-      setSettingsVersion((version) => version + 1);
-    },
-    [team],
-  );
-
-  const updateWorkspace = useCallback(
-    (
-      input: { name: string } & Pick<
-        WorkspaceSettings,
-        "currency" | "taxRateBps" | "paymentTermDays"
-      >,
-    ) => {
-      const { name, ...rest } = input;
-      setWorkspaceList((list) =>
-        list.map((item) => (item.id === workspaceId ? { ...item, name } : item)),
-      );
-      setSettings((current) => ({ ...current, ...rest }));
-      applyRuntime({
-        ...rest,
-        locale:
-          CURRENCY_OPTIONS.find((option) => option.code === rest.currency)?.locale ??
-          WORKSPACE_DEFAULTS.locale,
-      });
-      setSettingsVersion((version) => version + 1);
-    },
-    [workspaceId],
-  );
-
-  const updatePreferences = useCallback(
-    (input: Pick<WorkspaceSettings, "dateLocale" | "weekStartsOn">) => {
-      setSettings((current) => ({ ...current, ...input }));
-      applyRuntime(input);
-      setSettingsVersion((version) => version + 1);
-    },
-    [],
-  );
-
-  const inviteMember = useCallback(
-    (input: Pick<Invitation, "email" | "role">) => {
-      const invitation: Invitation = { id: newId("inv"), invitedOn: DEMO_TODAY, ...input };
-      setInvitations((list) => [invitation, ...list]);
-      return invitation;
-    },
-    [newId],
-  );
-
-  const setMemberRole = useCallback(
-    (id: string, role: Exclude<TeamRole, "Owner">) => {
-      const next = team.map((member) =>
-        member.id === id && member.role !== "Owner" ? { ...member, role } : member,
-      );
-      setTeam(next);
-      applyRuntime({ team: next });
-    },
-    [team],
-  );
-
   const toggleTaskDone = useCallback(
     (id: string) => {
       const task = tasks.find((item) => item.id === id);
@@ -727,26 +635,11 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     return {
       demoEnabled,
       setDemoEnabled,
-      workspaces: workspaceList,
-      workspace: workspaceList.find((w) => w.id === workspaceId) ?? workspaceList[0],
-      selectWorkspace: setWorkspaceId,
-
-      team,
-      currentUser: team.find((member) => member.id === seed.currentUser.id) ?? team[0],
-      invitations: visible(invitations),
-      settings,
-      notificationPrefs,
+      account,
+      team: seed.teamMembers,
+      demoUser: seed.currentUser,
       appearance,
-      settingsVersion,
-      updateProfile,
-      updateWorkspace,
-      updatePreferences,
-      setNotificationPref: (id, enabled) =>
-        setNotificationPrefs((current) => ({ ...current, [id]: enabled })),
       setAppearance: (patch) => setAppearanceState((current) => ({ ...current, ...patch })),
-      inviteMember,
-      cancelInvitation: (id) => setInvitations((list) => list.filter((item) => item.id !== id)),
-      setMemberRole,
 
       contacts: visible(contacts),
       companies: visible(companies),
@@ -806,19 +699,8 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     };
   }, [
     demoEnabled,
-    workspaceId,
-    workspaceList,
-    team,
-    invitations,
-    settings,
-    notificationPrefs,
+    account,
     appearance,
-    settingsVersion,
-    updateProfile,
-    updateWorkspace,
-    updatePreferences,
-    inviteMember,
-    setMemberRole,
     contacts,
     companies,
     deals,

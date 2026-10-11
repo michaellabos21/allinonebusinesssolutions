@@ -1,37 +1,54 @@
-# Workspace — business management UI prototype
+# Workspace — small-business management app
 
 An original all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
 
-> **This is a UI-only prototype.** Every record you see is fictional demo data from `src/mocks/`. There is no database, authentication, payment processing, email or external API. Anything you create is held in memory and disappears when you reload the page.
+> **Where it stands.** Accounts, workspaces, teams and settings are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. **The business screens (contacts, deals, projects, tasks, invoices, expenses, catalog, reports) still show fictional sample data** from `src/mocks/`, held in the browser and reset on reload. Nothing here is ready for real customer data.
 
-Current scope: **all UI phases (0 to 6)** of `agiled_inspired_saas_ui_first_plan.md`, plus **backend Phase 0** of `agiled_inspired_saas_mvp_plan.md`: version control, tests, CI, formatting and project documentation. There is still no database or authentication; the app behaves exactly as the approved prototype.
+Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0 and 1 of `agiled_inspired_saas_mvp_plan.md`.
 
 ## Setup
 
-Requires Node.js 20.9 or newer and npm.
+Requires Node.js 20.9 or newer, npm, and Docker Desktop (running) for the local database.
 
 ```bash
 npm install
+npm run db:start
+```
+
+The first `db:start` downloads the database images (about 2 GB) and applies the migrations. Then create `.env.local`:
+
+```bash
+cp .env.example .env.local
+npx supabase status
+```
+
+Copy the API URL, the anon key and the service-role key from that output into `.env.local`. They are development keys for a database on your own machine. Then:
+
+```bash
 npm run dev
 ```
 
-Then open http://localhost:3000.
+Open http://localhost:3000, create an account, and set up a workspace. Email confirmation is off locally, so sign-up signs you in at once. Password-reset emails are caught by Mailpit at http://127.0.0.1:54324 instead of being sent.
 
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Start the development server |
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
+| `npm run db:start` / `db:stop` | Start or stop the local Supabase stack |
+| `npm run db:reset` | Wipe the local database and re-apply every migration |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm test` | Unit tests (Vitest) |
-| `npm run test:e2e` | End-to-end smoke test (Playwright); builds and serves the app on port 3211 |
-| `npm run format` | Format with Prettier |
-| `npm run format:check` | Check formatting without changing files |
+| `npm test` | Unit tests (Vitest); no database needed |
+| `npm run test:integration` | Access-rule tests against the local database |
+| `npm run test:e2e` | Browser tests (Playwright); builds and serves the app on port 3211, needs the local database |
+| `npm run format` / `format:check` | Prettier |
 
-The end-to-end test needs a browser once per machine: `npx playwright install chromium`.
+The browser tests need Chromium once per machine: `npx playwright install chromium`.
 
-No environment variables are needed yet. `.env.example` lists the ones backend Phase 1 will use.
+The integration and browser tests create throwaway accounts (`@isolation.test`, `@e2e.test`) in the local database. The integration tests delete theirs; `npm run db:reset` clears the rest. The integration tests refuse to run against anything but a local database.
+
+If styles look out of date after editing `src/app/globals.css`, stop the dev server, delete `.next/` and start it again.
 
 ## Project documents
 
@@ -41,7 +58,7 @@ No environment variables are needed yet. `.env.example` lists the ones backend P
 | `docs/PRODUCT_ROADMAP.md` | Every backend phase, its status, and what UI already exists for it |
 | `docs/DATA_MODEL.md` | The tables each phase will create and how the prototype's records map to them |
 | `docs/SECURITY.md` | The rules each phase must meet, and a draft permission matrix |
-| `supabase/README.md` | Migration and seed-data workflow |
+| `supabase/README.md` | The local database, migrations and seed data |
 
 If styles look out of date after editing `src/app/globals.css`, stop the dev server, delete `.next/` and start it again.
 
@@ -50,6 +67,18 @@ If styles look out of date after editing `src/app/globals.css`, stop the dev ser
 Next.js 16 (App Router), React 19, strict TypeScript, Tailwind CSS 4, shadcn/ui on Radix primitives, Lucide icons, Recharts, Sonner toasts.
 
 ## Routes
+
+Signed-out pages:
+
+| Route | Purpose |
+| --- | --- |
+| `/login`, `/signup` | Sign in, create an account |
+| `/forgot-password`, `/reset-password` | Request a reset link, choose a new password |
+| `/invite/[token]` | Accept an invitation |
+| `/onboarding` | Create a workspace (needs a session) |
+| `/auth/callback` | Landing point for links in auth emails |
+
+The app itself, all behind sign-in:
 
 | Route | Status |
 | --- | --- |
@@ -74,6 +103,19 @@ Next.js 16 (App Router), React 19, strict TypeScript, Tailwind CSS 4, shadcn/ui 
 | `/settings` | Profile, workspace, preferences, notifications, appearance (built) |
 
 ## What works so far
+
+### Accounts, workspaces and team (real)
+
+- Sign up, sign in, sign out, and reset a forgotten password by email
+- Create a workspace with a name, country, currency and time zone; belong to several and switch between them
+- Invite a teammate by email address: the app creates a single-use link, valid for seven days, that only that address can accept. **It does not send the email.** You are shown the link once to pass on yourself
+- Five roles (owner, admin, manager, member, client). Owners and admins change settings, invite people, change roles and remove members; only the owner manages admins; nobody can change their own role or the owner's
+- Profile (name, job title), preferences (date format, first day of the week) and notification choices, saved per account
+- Workspace settings (name, currency, default tax, payment terms), saved per workspace and read-only for anyone below admin
+
+Every rule above is enforced three times: in the server action, in a database function, and by row-level security. `npm run test:integration` proves it with 25 tests.
+
+Everything below this line still runs on sample data.
 
 ### Shell and overview
 
@@ -117,18 +159,17 @@ Completing or moving a task updates the counts on the tasks page, its project an
 ### Reports, team and settings
 
 - **Reports:** a date range (this month, last 3 or 6 months, year to date) drives every panel: headline figures, money in and out by month with a table beside the chart, invoice status, expenses by category, tasks by person, and project progress and spend
-- **Team:** members with roles and open task counts, role changes between Admin and Member, and an invite flow that adds a pending invitation you can resend or cancel
+- **Team:** real members, roles and invitations (see the first section)
 - **Settings:** profile, workspace (name, currency, default tax, payment terms), preferences (date format, first day of the week), notification switches, and appearance (accent colour, density)
 
-What settings change, and what they don't:
+What settings change:
 
 - **Workspace name** updates the sidebar, the overview and invoices.
 - **Currency** changes how every amount is displayed. Amounts are relabelled, not converted.
 - **Default tax and payment terms** apply to new invoices only.
 - **Date format and week start** apply everywhere dates and the calendar appear.
-- **Profile name** updates the account menu, task and deal assignee names and new activity entries. Activity already logged keeps the old name.
-- **Invitations, role changes and notification switches** only change what is shown. No email is sent, nobody can accept an invitation, and roles do not restrict anything.
-- Saving a profile, workspace or preference change re-renders the page so every formatted value updates (`src/lib/runtime.ts` explains why).
+- **Notification switches** are saved, but nothing is sent yet.
+- **Accent colour and density** apply in the current browser tab only and reset on reload.
 
 How invoice money is handled:
 
@@ -194,16 +235,29 @@ To rename the product, change `PRODUCT_NAME` in `src/config/app.ts`.
 
 ## Known limitations
 
-- Nothing is saved. Reloading resets every change.
-- The demo is pinned to 11 October 2026 (`DEMO_TODAY`) so due dates and month-to-date totals stay consistent whenever it is run.
-- Money is stored as integer minor units. Changing the currency in settings relabels amounts; it does not convert them.
+Accounts and workspaces:
+
+- Invitation emails are not sent. The link is shown once to the inviter.
+- The owner role cannot be transferred, and a workspace cannot be deleted from the app.
+- The sign-in email cannot be changed. There are no profile photos.
+- The workspace time zone is stored but not yet used: the sample data is pinned to one date (below).
+- Manager and client roles exist but have no extra screens or restrictions of their own yet.
+- There is no screen for reading the audit log.
+- Rate limiting is whatever Supabase Auth provides; the app adds none of its own.
+- Nothing is deployed. Email confirmation, production auth limits and a hosted database are all still to set up.
+
+Sample-data screens:
+
+- Business records are not saved. Reloading resets them, and they are the same in every workspace.
+- The people on sample tasks, projects and deals (Mara, Paolo, Jenna, Tomas) are fictional, not your team.
+- The sample data is pinned to 11 October 2026 (`DEMO_TODAY`) so due dates and month-to-date totals stay consistent.
+- Marking an invoice as sent or paid only changes its status. Nothing is emailed and no money moves.
+- Money is stored as integer minor units. Changing the currency relabels amounts; it does not convert them.
 - Expenses appear in Reports but not on the overview.
 - Reports use preset date ranges only; there is no custom range and no export.
 - Invoice quantities are whole numbers. There are no partial payments, credit notes, PDFs or printing.
-- Sign-out, workspace switching, notifications, invitations and roles are simulated.
-- Light theme only. The accent colour and density can be changed in settings.
-- A detail URL for a record created in an earlier session shows a "not available" state, because nothing is persisted.
-- Archiving is the only removal; there is no permanent delete.
-- Tasks and projects cannot be deleted. A task can be marked done and a project marked completed.
-- A project's team is derived from its owner and task assignees; there is no separate member list to manage.
-- The calendar has month and agenda views only. There is no week view and nothing can be dragged to a new date.
+- A detail URL for a record created before a reload shows a "not available" state.
+- Archiving is the only removal for contacts, companies, deals and catalog items. Tasks and projects cannot be deleted.
+- A project's team is derived from its owner and task assignees.
+- The calendar has month and agenda views only.
+- Light theme only.

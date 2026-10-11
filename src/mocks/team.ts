@@ -1,4 +1,4 @@
-import type { Invitation, TeamMember, Workspace } from "./types";
+import type { TeamMember } from "./types";
 
 export const teamMembers: TeamMember[] = [
   {
@@ -31,15 +31,8 @@ export const teamMembers: TeamMember[] = [
   },
 ];
 
-/** The signed-in person in the prototype. There is no real authentication. */
+/**
+ * Default owner and assignee for demo records. These four people are fictional
+ * and are not workspace members; the real team comes from the database.
+ */
 export const currentUser = teamMembers[0];
-
-export const workspaces: Workspace[] = [
-  { id: "w1", name: "Dalisay Studio", plan: "Studio plan" },
-  { id: "w2", name: "Dalisay Events", plan: "Starter plan" },
-  { id: "w3", name: "Mara's sandbox", plan: "Free plan" },
-];
-
-export const invitations: Invitation[] = [
-  { id: "inv-1", email: "carmi@dalisaystudio.example", role: "Member", invitedOn: "2026-10-08" },
-];

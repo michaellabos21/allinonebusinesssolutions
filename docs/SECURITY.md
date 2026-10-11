@@ -1,6 +1,6 @@
 # Security
 
-Status: backend Phase 0. **The app has no authentication, no database and no server-side logic, so none of these controls exist yet.** It must not be given real customer data in its current form. This document sets the rules each phase has to meet.
+Status: backend Phase 1. Accounts, workspaces, membership and invitations are real and protected as described below. **The business screens (contacts, projects, invoices and the rest) still run on sample data in the browser and have no access control**, because they hold no real data yet. Each gets the same treatment in its own phase. The app is not ready for real customer data.
 
 ## Principles
 
@@ -11,13 +11,40 @@ Status: backend Phase 0. **The app has no authentication, no database and no ser
 
 ## Tenant isolation
 
-- A workspace id is resolved from the signed-in user's membership on every request.
-- Row-level security policies check membership through the database's own view of the user, never a value from the request.
-- Each domain ships with an automated test in which a member of Workspace A tries to read, update and delete a Workspace B record and is refused. A phase is not done without it.
+- The active workspace is resolved on the server from the signed-in user's own memberships (`src/server/session.ts`). A cookie records which one they last used, but it is only honoured if it matches a membership, so pointing it at another workspace does nothing.
+- Server actions take the workspace id from that verified session, never from the form.
+- Row-level security policies check membership through the database's own view of the user (`auth.uid()`), never a value from the request.
+- `tests/integration/platform.test.ts` proves it against a real database: 25 tests in which an outsider, an ordinary member, an admin and an anonymous visitor try to read and write what they should not. Every later domain ships with the same kind of test.
 
-## Roles and permissions (draft for Phase 1)
+## Sessions and navigation
 
-The prototype shows Owner, Admin and Member as labels only. The plan calls for five roles. Proposed starting matrix, to be agreed before Phase 1:
+- The request proxy (`src/proxy.ts`) refreshes the session and redirects signed-out visitors. It is a convenience. The workspace layout and every server action verify the session again, with the auth server, not from the cookie alone.
+- Signing in or out, creating or joining a workspace and switching workspace all end with a full page load, so the browser cannot replay a page it cached for the previous session.
+- Sign-in gives one message for a wrong email and a wrong password. Password reset gives one message whether or not the address has an account.
+- The destination after sign-in (`?next=`) is restricted to same-site paths.
+
+## Invitations
+
+- A token is 32 random bytes. Only its SHA-256 hash is stored, so a database leak does not expose usable links.
+- An invitation works once, for seven days, and only for an account whose email is the invited address. A forwarded link is useless to anyone else.
+- **Email delivery is not configured.** The inviter is shown the link once and passes it on themselves. The app does not claim to have sent anything.
+
+## Roles and permissions
+
+Five roles exist: owner, admin, manager, member, client. What Phase 1 enforces, in `src/server/permissions.ts`, in the database functions, and in row-level security:
+
+| Action | Owner | Admin | Manager | Member | Client |
+| --- | --- | --- | --- | --- | --- |
+| Change workspace settings | Yes | Yes | No | No | No |
+| Invite people, cancel invitations | Yes | Yes | No | No | No |
+| Change a role or remove a member | Yes | Yes, except admins | No | No | No |
+| Grant or take away the admin role | Yes | No | No | No | No |
+| See the member list | Yes | Yes | Yes | Yes | Yes (see note) |
+| See invitations and the audit log | Yes | Yes | No | No | No |
+
+Note: the database lets any active member read their workspace's membership rows, including a client. Restricting what clients see is Phase 5 work; no client-facing screens exist yet.
+
+The matrix below is the **draft for later phases**. Its business-record rows are not built:
 
 | Action | Owner | Admin | Manager | Member | Client |
 | --- | --- | --- | --- | --- | --- |
@@ -47,7 +74,7 @@ Rules that hold whatever the matrix says: nobody can raise their own role, a wor
 ## Logging and audit
 
 - Application logs go through `src/lib/logger.ts`: an event name and structured fields, never passwords, tokens, secrets or request bodies.
-- From Phase 1, an `audit_logs` table records role changes, invitation acceptance, and later invoice issue, void and payment.
+- The `audit_logs` table records workspace creation, invitations created, revoked and accepted, role changes and member removal. Invoice issue, void and payment are added in Phase 4. There is no screen for reading the log yet.
 
 ## Files (from Phase 4)
 

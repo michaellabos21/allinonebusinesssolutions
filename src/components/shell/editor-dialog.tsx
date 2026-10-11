@@ -297,7 +297,7 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           contactId: deal?.contactId ?? NONE,
           value: deal ? formatAmountInput(deal.valueMinor) : "",
           stage: deal?.stage ?? "lead",
-          ownerId: deal?.ownerId ?? store.currentUser.id,
+          ownerId: deal?.ownerId ?? store.demoUser.id,
           expectedCloseOn: deal?.expectedCloseOn ?? addDays(DEMO_TODAY, 30),
         },
         check: (v) => {
@@ -389,7 +389,7 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         initial: {
           name: project?.name ?? "",
           contactId: project?.contactId ?? NONE,
-          ownerId: project?.ownerId ?? store.currentUser.id,
+          ownerId: project?.ownerId ?? store.demoUser.id,
           status: project?.status ?? "active",
           dueOn: project?.dueOn ?? addDays(DEMO_TODAY, 30),
           description: project?.description ?? "",
@@ -493,7 +493,7 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         initial: {
           title: task?.title ?? "",
           projectId: task?.projectId ?? NONE,
-          assigneeId: task?.assigneeId ?? store.currentUser.id,
+          assigneeId: task?.assigneeId ?? store.demoUser.id,
           status: task?.status ?? "todo",
           dueOn: task?.dueOn ?? addDays(DEMO_TODAY, 2),
           priority: task?.priority ?? "medium",

@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
   UserRound,
 } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/page-header";
@@ -36,6 +36,14 @@ import {
 } from "@/config/app";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import {
+  setNotificationPrefAction,
+  updatePreferencesAction,
+  updateProfileAction,
+} from "@/server/actions/profile";
+import { updateWorkspaceSettingsAction } from "@/server/actions/workspace";
+import { can } from "@/server/permissions";
+import type { ActionResult } from "@/server/types";
 
 type SectionId = "profile" | "workspace" | "preferences" | "notifications" | "appearance";
 
@@ -52,9 +60,6 @@ const SECTIONS: { id: SectionId; label: string; icon: LucideIcon }[] = [
  * formatted value is re-read. This remembers which section was open across that.
  */
 let lastSection: SectionId = "profile";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const SAVED_NOTE = "Kept for this session only.";
 
 function Field({
   id,
@@ -109,145 +114,142 @@ function SectionCard({
   );
 }
 
-function FormFooter({ dirty }: { dirty: boolean }) {
+function FormFooter({ dirty, pending }: { dirty: boolean; pending: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 border-t px-5 py-3">
       <p className="text-xs text-muted-foreground">
         {dirty ? "You have unsaved changes." : "No changes to save."}
       </p>
-      <Button type="submit" disabled={!dirty} className="hover:bg-primary-hover">
-        Save changes
+      <Button type="submit" disabled={!dirty || pending} className="hover:bg-primary-hover">
+        {pending ? "Saving" : "Save changes"}
       </Button>
     </div>
   );
 }
 
-function ProfileSection() {
-  const { currentUser, updateProfile } = useDemoStore();
-  const id = useId();
-  const [name, setName] = useState(currentUser.name);
-  const [email, setEmail] = useState(currentUser.email);
-  const [title, setTitle] = useState(currentUser.title);
+/** Runs a server action from a form and reports the outcome. */
+function useSave() {
+  const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const dirty =
-    name !== currentUser.name || email !== currentUser.email || title !== currentUser.title;
+  const save = (action: () => Promise<ActionResult>) =>
+    startTransition(async () => {
+      const result = await action();
+      if (result.ok) {
+        setErrors({});
+        toast.success(result.message ?? "Saved");
+      } else {
+        setErrors(result.fieldErrors ?? {});
+        toast.error(result.error);
+      }
+    });
+  return { pending, errors, setErrors, save };
+}
 
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const found: Record<string, string> = {};
-    if (!name.trim()) found.name = "Enter your name.";
-    if (!email.trim()) found.email = "Enter your email address.";
-    else if (!EMAIL_PATTERN.test(email.trim()))
-      found.email = "Enter an email address like name@company.com.";
-    setErrors(found);
-    const first = Object.keys(found)[0];
-    if (first) {
-      document.getElementById(`${id}-${first}`)?.focus();
-      return;
-    }
-    updateProfile({ name: name.trim(), email: email.trim(), title: title.trim() });
-    toast.success("Profile updated", { description: SAVED_NOTE });
-  }
+function ProfileSection() {
+  const { user } = useDemoStore().account;
+  const id = useId();
+  const { pending, errors, save } = useSave();
+  const [fullName, setFullName] = useState(user.fullName);
+  const [jobTitle, setJobTitle] = useState(user.jobTitle);
+  const dirty = fullName !== user.fullName || jobTitle !== user.jobTitle;
 
   return (
     <SectionCard
       title="Profile"
-      description="How you appear to teammates, on tasks you are assigned and in the activity log."
+      description="How you appear to teammates in this and every other workspace you belong to."
     >
-      <form onSubmit={submit} noValidate>
+      <form
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          save(() => updateProfileAction({ fullName, jobTitle }));
+        }}
+      >
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           <div className="flex items-center gap-3 sm:col-span-2">
             <UserAvatar
-              name={name || currentUser.name}
+              name={fullName || user.fullName}
               className="size-12 [&_[data-slot=avatar-fallback]]:text-base"
             />
             <p className="text-caption text-muted-foreground">
-              Your avatar uses your initials. Photo uploads are not part of this prototype.
+              Your avatar uses your initials. Photo uploads aren’t available yet.
             </p>
           </div>
-          <Field id={`${id}-name`} label="Full name" error={errors.name}>
+          <Field id={`${id}-fullName`} label="Full name" error={errors.fullName}>
             <Input
-              id={`${id}-name`}
-              value={name}
-              autoComplete="off"
-              onChange={(event) => setName(event.target.value)}
-              aria-invalid={Boolean(errors.name)}
-              aria-describedby={errors.name ? `${id}-name-error` : undefined}
+              id={`${id}-fullName`}
+              value={fullName}
+              autoComplete="name"
+              onChange={(event) => setFullName(event.target.value)}
+              aria-invalid={Boolean(errors.fullName)}
+              aria-describedby={errors.fullName ? `${id}-fullName-error` : undefined}
             />
           </Field>
-          <Field id={`${id}-title`} label="Job title">
+          <Field id={`${id}-jobTitle`} label="Job title" error={errors.jobTitle}>
             <Input
-              id={`${id}-title`}
-              value={title}
-              autoComplete="off"
-              onChange={(event) => setTitle(event.target.value)}
+              id={`${id}-jobTitle`}
+              value={jobTitle}
+              autoComplete="organization-title"
+              onChange={(event) => setJobTitle(event.target.value)}
+              aria-invalid={Boolean(errors.jobTitle)}
+              aria-describedby={errors.jobTitle ? `${id}-jobTitle-error` : undefined}
             />
           </Field>
           <Field
             id={`${id}-email`}
-            label="Email"
-            error={errors.email}
-            hint="No confirmation email is sent in this prototype."
+            label="Sign-in email"
+            hint="Changing your sign-in email isn’t available yet."
           >
             <Input
               id={`${id}-email`}
-              type="email"
-              value={email}
-              autoComplete="off"
-              onChange={(event) => setEmail(event.target.value)}
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby={errors.email ? `${id}-email-error` : `${id}-email-hint`}
+              value={user.email}
+              readOnly
+              aria-describedby={`${id}-email-hint`}
             />
           </Field>
         </div>
-        <FormFooter dirty={dirty} />
+        <FormFooter dirty={dirty} pending={pending} />
       </form>
     </SectionCard>
   );
 }
 
 function WorkspaceSection() {
-  const { workspace, settings, updateWorkspace } = useDemoStore();
+  const { workspace } = useDemoStore().account;
   const id = useId();
+  const { pending, errors, save } = useSave();
+  const editable = can(workspace.role, "workspace.update_settings");
   const [name, setName] = useState(workspace.name);
-  const [currency, setCurrency] = useState(settings.currency);
-  const [taxRateBps, setTaxRateBps] = useState(String(settings.taxRateBps));
-  const [terms, setTerms] = useState(String(settings.paymentTermDays));
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [currency, setCurrency] = useState(workspace.currency);
+  const [taxRateBps, setTaxRateBps] = useState(String(workspace.taxRateBps));
+  const [terms, setTerms] = useState(String(workspace.paymentTermDays));
   const dirty =
     name !== workspace.name ||
-    currency !== settings.currency ||
-    taxRateBps !== String(settings.taxRateBps) ||
-    terms !== String(settings.paymentTermDays);
-
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const found: Record<string, string> = {};
-    if (!name.trim()) found.name = "Enter a workspace name.";
-    if (!/^\d{1,2}$/.test(terms.trim()) || Number(terms) > 90)
-      found.terms = "Enter a whole number of days from 0 to 90.";
-    setErrors(found);
-    const first = Object.keys(found)[0];
-    if (first) {
-      document.getElementById(`${id}-${first}`)?.focus();
-      return;
-    }
-    updateWorkspace({
-      name: name.trim(),
-      currency,
-      taxRateBps: Number(taxRateBps),
-      paymentTermDays: Number(terms),
-    });
-    toast.success("Workspace settings saved", { description: SAVED_NOTE });
-  }
+    currency !== workspace.currency ||
+    taxRateBps !== String(workspace.taxRateBps) ||
+    terms !== String(workspace.paymentTermDays);
 
   return (
     <SectionCard
       title="Workspace"
       description="The business name on your invoices and the defaults for money."
     >
-      <form onSubmit={submit} noValidate>
-        <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
+      <form
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          save(() =>
+            updateWorkspaceSettingsAction({ name, currency, taxRateBps, paymentTermDays: terms }),
+          );
+        }}
+      >
+        <fieldset disabled={!editable} className="grid gap-4 px-5 py-5 sm:grid-cols-2">
+          <legend className="sr-only">Workspace settings</legend>
+          {editable ? null : (
+            <p className="rounded-md bg-muted/60 px-3 py-2.5 text-muted-foreground sm:col-span-2">
+              Only an owner or admin can change workspace settings. You can see them here.
+            </p>
+          )}
           <div className="sm:col-span-2">
             <Field
               id={`${id}-name`}
@@ -268,9 +270,10 @@ function WorkspaceSection() {
           <Field
             id={`${id}-currency`}
             label="Currency"
+            error={errors.currency}
             hint="Changes how amounts are shown. Existing amounts are relabelled, not converted."
           >
-            <Select value={currency} onValueChange={setCurrency}>
+            <Select value={currency} onValueChange={setCurrency} disabled={!editable}>
               <SelectTrigger
                 id={`${id}-currency`}
                 className="w-full"
@@ -290,9 +293,10 @@ function WorkspaceSection() {
           <Field
             id={`${id}-tax`}
             label="Default tax on new invoices"
+            error={errors.taxRateBps}
             hint="Demo rates only, not tax advice."
           >
-            <Select value={taxRateBps} onValueChange={setTaxRateBps}>
+            <Select value={taxRateBps} onValueChange={setTaxRateBps} disabled={!editable}>
               <SelectTrigger
                 id={`${id}-tax`}
                 className="w-full"
@@ -310,20 +314,24 @@ function WorkspaceSection() {
             </Select>
           </Field>
           <Field
-            id={`${id}-terms`}
+            id={`${id}-paymentTermDays`}
             label="Payment terms (days)"
-            error={errors.terms}
+            error={errors.paymentTermDays}
             hint="Sets the due date on a new invoice."
           >
             <Input
-              id={`${id}-terms`}
+              id={`${id}-paymentTermDays`}
               inputMode="numeric"
               value={terms}
               autoComplete="off"
               className="tabular"
               onChange={(event) => setTerms(event.target.value)}
-              aria-invalid={Boolean(errors.terms)}
-              aria-describedby={errors.terms ? `${id}-terms-error` : `${id}-terms-hint`}
+              aria-invalid={Boolean(errors.paymentTermDays)}
+              aria-describedby={
+                errors.paymentTermDays
+                  ? `${id}-paymentTermDays-error`
+                  : `${id}-paymentTermDays-hint`
+              }
             />
           </Field>
           <div className="rounded-md bg-muted/60 px-3 py-2.5 sm:col-span-2">
@@ -332,20 +340,20 @@ function WorkspaceSection() {
               <span className="tabular font-medium text-foreground">{formatMoney(1_234_550)}</span>.
             </p>
           </div>
-        </div>
-        <FormFooter dirty={dirty} />
+        </fieldset>
+        {editable ? <FormFooter dirty={dirty} pending={pending} /> : null}
       </form>
     </SectionCard>
   );
 }
 
 function PreferencesSection() {
-  const { settings, updatePreferences } = useDemoStore();
+  const { user } = useDemoStore().account;
   const id = useId();
-  const [dateLocale, setDateLocale] = useState(settings.dateLocale);
-  const [weekStartsOn, setWeekStartsOn] = useState(String(settings.weekStartsOn));
-  const dirty =
-    dateLocale !== settings.dateLocale || weekStartsOn !== String(settings.weekStartsOn);
+  const { pending, save } = useSave();
+  const [dateFormat, setDateFormat] = useState(user.dateFormat);
+  const [weekStartsOn, setWeekStartsOn] = useState(String(user.weekStartsOn));
+  const dirty = dateFormat !== user.dateFormat || weekStartsOn !== String(user.weekStartsOn);
   const sample = (locale: string) =>
     new Intl.DateTimeFormat(locale, {
       day: "numeric",
@@ -357,27 +365,26 @@ function PreferencesSection() {
   return (
     <SectionCard
       title="Preferences"
-      description="How dates and the calendar are laid out across the workspace."
+      description="How dates and the calendar are laid out for you, in every workspace."
     >
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          updatePreferences({ dateLocale, weekStartsOn: weekStartsOn === "1" ? 1 : 0 });
-          toast.success("Preferences saved", { description: SAVED_NOTE });
+          save(() => updatePreferencesAction({ dateFormat, weekStartsOn }));
         }}
       >
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
           <Field id={`${id}-date`} label="Date format">
             <Select
-              value={dateLocale}
-              onValueChange={(value) => setDateLocale(value as typeof dateLocale)}
+              value={dateFormat}
+              onValueChange={(value) => setDateFormat(value as typeof dateFormat)}
             >
               <SelectTrigger id={`${id}-date`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="en-GB">Day first: {sample("en-GB")}</SelectItem>
-                <SelectItem value="en-US">Month first: {sample("en-US")}</SelectItem>
+                <SelectItem value="dmy">Day first: {sample("en-GB")}</SelectItem>
+                <SelectItem value="mdy">Month first: {sample("en-US")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -397,19 +404,22 @@ function PreferencesSection() {
             </Select>
           </Field>
         </div>
-        <FormFooter dirty={dirty} />
+        <FormFooter dirty={dirty} pending={pending} />
       </form>
     </SectionCard>
   );
 }
 
 function NotificationsSection() {
-  const { notificationPrefs, setNotificationPref } = useDemoStore();
+  const { notifications } = useDemoStore().account.user;
   const id = useId();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+
   return (
     <SectionCard
       title="Notifications"
-      description="Choose what you want to hear about. Switches save as you change them. Nothing is sent in this prototype."
+      description="Choose what you want to hear about. Your choices are saved, but nothing is sent yet: notifications arrive in a later phase."
     >
       <ul className="divide-y">
         {NOTIFICATION_OPTIONS.map((option) => (
@@ -424,12 +434,16 @@ function NotificationsSection() {
             </div>
             <Switch
               id={`${id}-${option.id}`}
-              checked={notificationPrefs[option.id]}
+              checked={notifications[option.id]}
+              disabled={pendingId === option.id}
               aria-describedby={`${id}-${option.id}-note`}
-              onCheckedChange={(checked) => {
-                setNotificationPref(option.id, checked);
-                toast.success(`${option.label}: ${checked ? "on" : "off"}`, {
-                  description: SAVED_NOTE,
+              onCheckedChange={(enabled) => {
+                setPendingId(option.id);
+                startTransition(async () => {
+                  const result = await setNotificationPrefAction({ id: option.id, enabled });
+                  setPendingId(null);
+                  if (result.ok) toast.success(`${option.label}: ${enabled ? "on" : "off"}`);
+                  else toast.error(result.error);
                 });
               }}
             />
@@ -445,7 +459,7 @@ function AppearanceSection() {
   return (
     <SectionCard
       title="Appearance"
-      description="Changes apply straight away, for this session. The prototype has a light theme only."
+      description="Applies straight away in this browser tab and resets when you reload. Light theme only for now."
     >
       <div className="space-y-6 px-5 py-5">
         <fieldset>
@@ -521,7 +535,7 @@ export function SettingsScreen() {
     <div className="page-container space-y-6">
       <PageHeader
         title="Settings"
-        description="Your profile, workspace defaults and how the app looks. Everything here is kept for this session only."
+        description="Your profile, workspace defaults and how the app looks."
       />
       <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
         <nav

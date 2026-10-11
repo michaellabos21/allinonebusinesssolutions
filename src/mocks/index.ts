@@ -4,7 +4,7 @@
  * so edit the records, not the totals.
  */
 export * from "./types";
-export { teamMembers, currentUser, workspaces, invitations } from "./team";
+export { teamMembers, currentUser } from "./team";
 export { companies } from "./companies";
 export { contacts, CONTACT_TAGS, notes } from "./contacts";
 export { projects } from "./projects";

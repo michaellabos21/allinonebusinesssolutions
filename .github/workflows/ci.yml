@@ -23,9 +23,10 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
 
-  e2e:
+  # Everything that needs a database: the build reads public env vars, and the
+  # integration and browser tests talk to a local Supabase stack.
+  database:
     runs-on: ubuntu-latest
     needs: checks
     steps:
@@ -34,6 +35,22 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
       - run: npm ci
+      - name: Start the local Supabase stack and apply migrations
+        run: supabase start
+      - name: Write .env.local from the local stack
+        run: |
+          supabase status -o env > status.env
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' status.env | cut -d= -f2- | tr -d '"')"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' status.env | cut -d= -f2- | tr -d '"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' status.env | cut -d= -f2- | tr -d '"')"
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3211"
+          } > .env.local
+          rm status.env
+      - run: npm run test:integration
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
