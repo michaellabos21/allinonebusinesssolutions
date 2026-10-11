@@ -113,6 +113,16 @@ The app itself, all behind sign-in:
 
 ## What works so far
 
+### Landing page (public)
+
+Visitors who aren't signed in see the landing page at `/` (served from `/welcome` by `src/proxy.ts`); signed-in people get their workspace there as before. It lives in `src/components/landing/`:
+
+- **Screenshots** are real captures of the app with sample records, in `src/components/landing/shots/`.
+- **Motion** (`landing.css`, `landing-motion.tsx`): the headline rises word by word, the hero screenshot flattens from a 3D tilt as you scroll, floating cards follow the pointer, a line draws through the lead-to-paid steps, sections slide in, and the module strip scrolls. With "reduce motion" switched on, the page is still and nothing is hidden.
+- **Video:** put the file at `public/landing/demo.mp4` and set `LANDING_VIDEO` in `src/config/app.ts` to `{ src: "/landing/demo.mp4" }`. The video section and a "Watch the video" button then appear.
+
+`e2e/landing.spec.ts` checks visitors and signed-in people each get the right page.
+
 ### Accounts, workspaces and team (real)
 
 - Sign up, sign in, sign out, and reset a forgotten password by email
