@@ -29,7 +29,7 @@ export function UserMenu() {
         aria-label={`Account menu for ${user.fullName}`}
         className="rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <UserAvatar name={user.fullName} className="size-8" />
+        <UserAvatar name={user.fullName} photoPath={user.avatarPath} className="size-8" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel className="font-normal">

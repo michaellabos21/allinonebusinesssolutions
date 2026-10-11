@@ -19,7 +19,7 @@ import {
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { setTaskStatus } from "@/lib/record-actions";
-import { getToday } from "@/lib/runtime";
+import { getToday, memberPhoto } from "@/lib/runtime";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -153,7 +153,11 @@ export function TasksScreen() {
         className: "hidden md:table-cell",
         cell: (task) => (
           <span className="flex items-center gap-2 whitespace-nowrap">
-            <UserAvatar name={memberName(task.assigneeId)} className="size-6" />
+            <UserAvatar
+              name={memberName(task.assigneeId)}
+              photoPath={memberPhoto(task.assigneeId)}
+              className="size-6"
+            />
             {memberName(task.assigneeId)}
           </span>
         ),
@@ -415,6 +419,7 @@ export function TasksScreen() {
                                   </span>
                                   <UserAvatar
                                     name={memberName(task.assigneeId)}
+                                    photoPath={memberPhoto(task.assigneeId)}
                                     className="size-5 [&_[data-slot=avatar-fallback]]:text-[10px]"
                                   />
                                   <span className="sr-only">

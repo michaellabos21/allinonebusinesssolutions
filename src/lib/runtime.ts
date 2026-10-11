@@ -47,6 +47,10 @@ export function applyRuntime(patch: Partial<Runtime>) {
 export const memberName = (id: string) =>
   runtime.team.find((member) => member.id === id)?.name ?? "Unassigned";
 
+/** A member's profile photo path, or null when they have none. */
+export const memberPhoto = (id: string) =>
+  runtime.team.find((member) => member.id === id)?.photoPath ?? null;
+
 /**
  * Today's date (`YYYY-MM-DD`) in the workspace's time zone, used for
  * "overdue", "due today", "expired" and form defaults.

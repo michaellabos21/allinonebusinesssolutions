@@ -282,7 +282,11 @@ export function TeamScreen() {
                 const otherRoles = roles.filter((role) => role !== member.role);
                 return (
                   <li key={member.membershipId} className="flex items-center gap-3 px-5 py-3">
-                    <UserAvatar name={member.fullName} className="size-9" />
+                    <UserAvatar
+                      name={member.fullName}
+                      photoPath={member.avatarPath}
+                      className="size-9"
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-x-2 font-medium">
                         <span className="truncate">{member.fullName}</span>

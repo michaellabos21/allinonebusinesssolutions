@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/common/page-header";
 import { SegmentedControl } from "@/components/common/table-toolbar";
-import { UserAvatar } from "@/components/common/user-avatar";
+import { PhotoPicker } from "@/components/common/photo-picker";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ import {
   updatePreferencesAction,
   updateProfileAction,
 } from "@/server/actions/profile";
+import { removeProfilePhotoAction, uploadProfilePhotoAction } from "@/server/actions/photos";
 import { updateWorkspaceSettingsAction } from "@/server/actions/workspace";
 import { can } from "@/server/permissions";
 import type { ActionResult } from "@/server/types";
@@ -161,13 +162,17 @@ function ProfileSection() {
         }}
       >
         <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
-          <div className="flex items-center gap-3 sm:col-span-2">
-            <UserAvatar
+          <div className="sm:col-span-2">
+            <PhotoPicker
               name={fullName || user.fullName}
-              className="size-12 [&_[data-slot=avatar-fallback]]:text-base"
+              photoPath={user.avatarPath}
+              onUpload={uploadProfilePhotoAction}
+              onRemove={removeProfilePhotoAction}
+              avatarClassName="size-14 [&_[data-slot=avatar-fallback]]:text-lg"
             />
-            <p className="text-caption text-muted-foreground">
-              Your avatar uses your initials. Photo uploads aren’t available yet.
+            <p className="mt-2 text-caption text-muted-foreground">
+              Shown to people in your workspaces. It’s cropped to a square and made smaller before
+              upload.
             </p>
           </div>
           <Field id={`${id}-fullName`} label="Full name" error={errors.fullName}>

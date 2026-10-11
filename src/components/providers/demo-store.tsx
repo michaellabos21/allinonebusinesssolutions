@@ -145,6 +145,7 @@ export function DemoStoreProvider({
           name: member.fullName,
           email: member.email,
           title: member.jobTitle,
+          photoPath: member.avatarPath,
           role: ROLE_LABEL[member.role] as TeamMember["role"],
         })),
       appearance,

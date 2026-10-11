@@ -84,7 +84,7 @@ export function ContactsScreen() {
         sortValue: (contact) => contact.name,
         cell: (contact) => (
           <div className="flex min-w-0 items-center gap-3">
-            <UserAvatar name={contact.name} />
+            <UserAvatar name={contact.name} photoPath={contact.photoPath} />
             <div className="min-w-0">
               <Link
                 href={`/crm/contacts/${contact.id}`}

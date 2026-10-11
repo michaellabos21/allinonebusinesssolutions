@@ -108,7 +108,7 @@ export async function getWorkspaceRecords(
     ).order("name"),
     scoped(
       "contacts",
-      "id, company_id, name, email, phone, title, status, tags, archived_at, created_at",
+      "id, company_id, name, email, phone, title, status, tags, photo_path, archived_at, created_at",
     ).order("name"),
     scoped("contact_notes", "id, contact_id, author_id, body, created_at").order("created_at", {
       ascending: false,
@@ -191,6 +191,7 @@ export async function getWorkspaceRecords(
       title: row.title,
       status: row.status as Contact["status"],
       tags: row.tags,
+      photoPath: row.photo_path,
       createdOn: day(row.created_at),
       archived: row.archived_at !== null,
     })),

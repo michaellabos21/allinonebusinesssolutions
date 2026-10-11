@@ -75,6 +75,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
       email: profile.email,
       fullName: profile.full_name,
       jobTitle: profile.job_title,
+      avatarPath: profile.avatar_path ?? null,
       timezone: profile.timezone,
       dateFormat: profile.date_format,
       weekStartsOn: profile.week_starts_on,
@@ -130,7 +131,7 @@ export async function getTeam(workspaceId: string): Promise<TeamMemberRow[]> {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, full_name, email, job_title")
+    .select("id, full_name, email, job_title, avatar_path")
     .in(
       "id",
       memberships.map((row) => row.user_id),
@@ -143,6 +144,7 @@ export async function getTeam(workspaceId: string): Promise<TeamMemberRow[]> {
     fullName: byId.get(row.user_id)?.full_name ?? "Unknown member",
     email: byId.get(row.user_id)?.email ?? "",
     jobTitle: byId.get(row.user_id)?.job_title ?? "",
+    avatarPath: byId.get(row.user_id)?.avatar_path ?? null,
     role: row.role as Role,
   }));
 }

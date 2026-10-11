@@ -110,6 +110,8 @@ Rules that hold whatever the matrix says: nobody can raise their own role, a wor
 
 Receipts are in the private `receipts` bucket. The server checks the type (JPEG, PNG, WebP, HEIC, PDF) and size (5 MB) before upload, and stores the file at `<workspace>/<expense>/<random>.<ext>`. Storage policies allow reading and writing only under a workspace where the user manages finance. A receipt is viewed through a signed link valid for 60 seconds, created after that check.
 
+Profile and contact photos are in the private `avatars` bucket (`supabase/migrations/20261011000005_photos.sql`): JPEG, PNG or WebP up to 2 MB, at `users/<user>/<random>.<ext>` or `<workspace>/contacts/<contact>/<random>.<ext>`. `private.photo_access` reads the path and decides: a profile photo is visible to its owner and anyone sharing a workspace with them, and only its owner can add or remove it; a contact photo is visible to and changeable by the workspace's owners, admins, managers and members, never clients, and only for a contact in that workspace. Malformed paths are refused. The app serves photos at `/photos/<path>` by downloading them with the viewer's own session, so these rules apply; anyone else gets a 404. The database also checks that `profiles.avatar_path` and `contacts.photo_path` point inside the right folder.
+
 ## Not claimed
 
 This product makes no claim of tax, privacy, e-signature or other legal compliance in any country. The invoice tax options are a starting point, not advice. Invoice numbering, tax and record-keeping rules (for example the BIR's in the Philippines) have not been checked, and must be reviewed by qualified professionals before production use.
