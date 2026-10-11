@@ -1,0 +1,189 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Theme tokens. Raw values live in :root below; this block exposes them to
+ * Tailwind as utilities (bg-success-soft, text-title, shadow-popover, ...).
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-app), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-display-face), var(--font-app), ui-sans-serif, sans-serif;
+  --font-display: var(--font-display-face), var(--font-app), ui-sans-serif, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-canvas: var(--canvas);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  /*
+   * Type scale: statement, page title, section title, figure, caption. Body is
+   * text-sm. Statement, title and figure are set in the display face.
+   */
+  --text-statement: clamp(1.75rem, 1.2rem + 1.6vw, 2.375rem);
+  --text-statement--line-height: 1.08;
+  --text-statement--letter-spacing: -0.025em;
+  --text-statement--font-weight: 600;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.875rem;
+  --text-title--letter-spacing: -0.02em;
+  --text-title--font-weight: 600;
+  --text-section: 0.9375rem;
+  --text-section--line-height: 1.375rem;
+  --text-section--font-weight: 600;
+  --text-figure: 1.75rem;
+  --text-figure--line-height: 2rem;
+  --text-figure--letter-spacing: -0.02em;
+  --text-figure--font-weight: 600;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.125rem;
+
+  --shadow-popover: 0 1px 2px rgb(28 36 52 / 0.06), 0 8px 24px -6px rgb(28 36 52 / 0.14);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Surfaces */
+  --canvas: #f5f4f0; /* app frame behind the sidebar and topbar */
+  --background: #ffffff; /* working surface */
+  --card: #ffffff;
+  --popover: #ffffff; /* elevated surface, paired with shadow-popover */
+  --muted: #f2f1ec;
+  --secondary: #f2f1ec;
+  --accent: #f2f1ec;
+
+  /* Text */
+  --foreground: #1c2434;
+  --card-foreground: #1c2434;
+  --popover-foreground: #1c2434;
+  --secondary-foreground: #1c2434;
+  --accent-foreground: #1c2434;
+  --muted-foreground: #5b6577;
+
+  /* Lines */
+  --border: #e4e2db;
+  --input: #8f8d85; /* form control outlines: 3:1 against white and canvas */
+  --ring: #34479e;
+
+  /* Brand accent */
+  --primary: #34479e;
+  --primary-hover: #2a3a85;
+  --primary-soft: #eceef8;
+  --primary-foreground: #ffffff;
+
+  /* Status */
+  --success: #1e7a4c;
+  --success-soft: #e6f3eb;
+  --warning: #955706;
+  --warning-soft: #fbf0dc;
+  --danger: #b4322a;
+  --danger-soft: #fbe9e7;
+  --destructive: #b4322a;
+
+  /* Charts use one hue: a full step for values and a tint for partial periods. */
+  --chart-1: #34479e;
+  --chart-2: #7b89c8; /* tint of chart-1, still 3:1 against the surface */
+  --chart-3: #c2700c; /* second series; validated against chart-1 for colour-blind separation */
+  --chart-4: #e4e2db;
+  --chart-5: #1c2434;
+
+  --radius: 0.5rem;
+
+  --sidebar: var(--canvas);
+  --sidebar-foreground: #1c2434;
+  --sidebar-primary: #34479e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eae8e1;
+  --sidebar-accent-foreground: #1c2434;
+  --sidebar-border: #e4e2db;
+  --sidebar-ring: #34479e;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-canvas text-sm text-foreground;
+  }
+  /* Links and custom focusable elements get the same ring as form controls. */
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Standard page gutter and max width for workspace screens. */
+  .page-container {
+    @apply mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+  }
+  /* Compact density (appearance settings): tighter page gutters and table rows. */
+  [data-density="compact"] .page-container {
+    @apply py-4 lg:py-5;
+  }
+  [data-density="compact"] tbody td {
+    padding-block: 0.3125rem;
+  }
+  /* Money, counts and dates line up in columns. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}

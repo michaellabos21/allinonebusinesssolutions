@@ -1,0 +1,23 @@
+import type { Company } from "./types";
+
+const company = (
+  id: string,
+  name: string,
+  industry: string,
+  city: string,
+  website: string,
+  type: Company["type"],
+  createdOn: string,
+): Company => ({ id, name, industry, city, website, type, createdOn, archived: false });
+
+export const companies: Company[] = [
+  company("co1", "Kusina Lokal", "Restaurants", "Iloilo City", "kusinalokal.example", "client", "2026-03-02"),
+  company("co2", "Ong Hardware Supply", "Retail", "Bacolod", "onghardware.example", "client", "2026-03-19"),
+  company("co3", "Mercado Dental Clinic", "Healthcare", "Iloilo City", "mercadodental.example", "client", "2026-04-08"),
+  company("co4", "Isla Surf Hostel", "Hospitality", "Siargao", "islasurf.example", "client", "2026-05-21"),
+  company("co5", "Tan & Uy Accounting", "Professional services", "Cebu City", "tanuy.example", "client", "2026-02-11"),
+  company("co6", "Verde Farm Co-op", "Agriculture", "Guimaras", "verdefarm.example", "client", "2026-06-15"),
+  company("co7", "Bayside Dental Group", "Healthcare", "Roxas City", "baysidedental.example", "prospect", "2026-09-08"),
+  company("co8", "Panay Coffee Roasters", "Food and beverage", "Iloilo City", "panaycoffee.example", "prospect", "2026-09-17"),
+  company("co9", "Lakbay Tours", "Travel", "Kalibo", "lakbaytours.example", "prospect", "2026-09-30"),
+];

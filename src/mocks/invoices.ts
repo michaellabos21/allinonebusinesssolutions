@@ -1,0 +1,62 @@
+import { computeInvoiceTotals } from "@/lib/money";
+
+import type { Invoice } from "./types";
+
+type Line = [description: string, quantity: number, unitPriceMinor: number];
+
+/** Builds a demo invoice; the total is computed from its lines, never typed. */
+const invoice = (
+  id: string,
+  number: string,
+  contactId: string,
+  description: string,
+  status: Invoice["status"],
+  issuedOn: string,
+  dueOn: string,
+  paidOn: string | null,
+  lines: Line[],
+): Invoice => {
+  const items = lines.map(([lineDescription, quantity, unitPriceMinor], index) => ({
+    id: `${id}-${index + 1}`,
+    description: lineDescription,
+    quantity,
+    unitPriceMinor,
+  }));
+  return {
+    id,
+    number,
+    contactId,
+    description,
+    items,
+    discountMinor: 0,
+    taxRateBps: 0,
+    notes: "",
+    amountMinor: computeInvoiceTotals(items).totalMinor,
+    status,
+    issuedOn,
+    dueOn,
+    paidOn,
+  };
+};
+
+/** Amounts are centavos. Paid invoices drive the revenue chart by `paidOn` month. */
+export const invoices: Invoice[] = [
+  invoice("i1", "INV-1021", "c5", "Quarterly report design", "paid", "2026-05-04", "2026-05-19", "2026-05-18", [["Quarterly report design", 1, 4_800_000]]),
+  invoice("i2", "INV-1022", "c1", "Menu redesign", "paid", "2026-05-12", "2026-05-27", "2026-05-27", [["Menu redesign", 1, 3_500_000]]),
+  invoice("i3", "INV-1023", "c2", "Catalog retainer: June", "paid", "2026-06-01", "2026-06-15", "2026-06-12", [["Design retainer hours", 25, 250_000]]),
+  invoice("i4", "INV-1024", "c3", "Clinic signage concepts", "paid", "2026-06-10", "2026-06-25", "2026-06-25", [["Signage concepts", 2, 1_400_000]]),
+  invoice("i5", "INV-1025", "c1", "Ordering site: discovery", "paid", "2026-06-26", "2026-07-11", "2026-07-09", [["Discovery workshop", 1, 1_800_000], ["Site map and wireframes", 1, 3_600_000]]),
+  invoice("i6", "INV-1026", "c6", "Label concepts", "paid", "2026-07-08", "2026-07-23", "2026-07-22", [["Label design", 4, 560_000]]),
+  invoice("i7", "INV-1027", "c5", "Annual report: deposit", "paid", "2026-07-15", "2026-07-30", "2026-07-30", [["Annual report layout, deposit", 1, 4_000_000]]),
+  invoice("i8", "INV-1028", "c4", "Booking page: deposit", "paid", "2026-08-01", "2026-08-16", "2026-08-14", [["Booking page, deposit", 1, 4_500_000]]),
+  invoice("i9", "INV-1029", "c2", "Catalog retainer: August", "paid", "2026-08-14", "2026-08-29", "2026-08-28", [["Design retainer hours", 25, 250_000]]),
+  invoice("i10", "INV-1030", "c5", "Annual report: final", "paid", "2026-08-25", "2026-09-09", "2026-09-08", [["Annual report layout, balance", 1, 5_600_000]]),
+  invoice("i11", "INV-1031", "c1", "Ordering site: design", "paid", "2026-09-04", "2026-09-19", "2026-09-19", [["Page design", 6, 1_200_000]]),
+  invoice("i12", "INV-1032", "c3", "Brand kit: moodboards", "paid", "2026-09-14", "2026-09-29", "2026-09-29", [["Moodboards and direction", 1, 1_850_000]]),
+  invoice("i13", "INV-1033", "c2", "Catalog retainer: October", "paid", "2026-09-21", "2026-10-06", "2026-10-03", [["Design retainer hours", 25, 250_000]]),
+  invoice("i14", "INV-1034", "c6", "Packaging labels: deposit", "paid", "2026-09-25", "2026-10-10", "2026-10-09", [["Label design", 6, 560_000]]),
+  invoice("i15", "INV-1035", "c1", "Ordering site: build, part 1", "sent", "2026-10-01", "2026-10-31", null, [["Website build days", 7, 800_000], ["Ordering and menu setup", 1, 3_000_000]]),
+  invoice("i16", "INV-1036", "c3", "Brand kit: final delivery", "sent", "2026-10-06", "2026-10-20", null, [["Logo and brand kit", 1, 3_000_000], ["Signage template", 3, 400_000]]),
+  invoice("i17", "INV-1037", "c4", "Booking page: design", "sent", "2026-09-05", "2026-09-30", null, [["Booking page design", 1, 4_500_000]]),
+  invoice("i18", "INV-1038", "c6", "Packaging labels: print files", "draft", "2026-10-10", "2026-10-25", null, [["Print-ready file prep", 5, 550_000]]),
+];

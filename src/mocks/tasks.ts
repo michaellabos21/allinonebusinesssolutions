@@ -1,0 +1,43 @@
+import type { Task, TaskStatus } from "./types";
+
+export const TASK_STATUSES: { id: TaskStatus; label: string }[] = [
+  { id: "todo", label: "To do" },
+  { id: "in_progress", label: "In progress" },
+  { id: "done", label: "Done" },
+];
+
+const task = (
+  id: string,
+  title: string,
+  projectId: string | null,
+  assigneeId: string,
+  status: TaskStatus,
+  priority: Task["priority"],
+  dueOn: string,
+  description = "",
+): Task => ({ id, title, projectId, assigneeId, status, priority, dueOn, description });
+
+export const tasks: Task[] = [
+  task("t1", "Send revised logo options to Liza", "p3", "u3", "in_progress", "high", "2026-10-09", "Three options in the teal palette she preferred, on white and on the clinic\u2019s wall colour."),
+  task("t2", "Fix product photo crops for power tools", "p2", "u4", "todo", "medium", "2026-10-10"),
+  task("t3", "Review menu page copy with Bianca", "p1", "u1", "todo", "high", "2026-10-11", "Go through dish names, allergen notes and branch-specific items on a call."),
+  task("t4", "Follow up on Isla Surf overdue invoice", null, "u1", "todo", "high", "2026-10-12", "INV-1037 was due 30 September. Carlo said it would be settled when they reopen."),
+  task("t5", "Set up payment page staging link", "p1", "u2", "in_progress", "medium", "2026-10-13"),
+  task("t6", "Export catalog PDF for print proof", "p2", "u4", "todo", "medium", "2026-10-14"),
+  task("t7", "Prepare brand kit handover folder", "p3", "u3", "todo", "low", "2026-10-16"),
+  task("t8", "Draft label sizes for 250g and 1kg packs", "p6", "u3", "todo", "medium", "2026-10-20"),
+  task("t9", "Write proposal for Ong Hardware e-commerce", null, "u2", "in_progress", "high", "2026-10-22"),
+  task("t10", "Collect dietary icons for menu filters", "p1", "u4", "done", "low", "2026-10-07"),
+  task("t11", "Confirm clinic signage dimensions", "p3", "u1", "done", "medium", "2026-10-06"),
+  task("t12", "Archive annual report source files", "p5", "u2", "done", "low", "2026-09-15"),
+  task("t13", "Wireframe the ordering flow", "p1", "u2", "done", "high", "2026-09-12"),
+  task("t14", "Get homepage design approved", "p1", "u1", "done", "medium", "2026-09-26"),
+  task("t15", "Audit discontinued catalog items", "p2", "u4", "done", "medium", "2026-09-22"),
+  task("t16", "Shoot new product photos", "p2", "u4", "done", "high", "2026-09-30"),
+  task("t17", "Review moodboards with the clinic", "p3", "u3", "done", "medium", "2026-09-16"),
+  task("t18", "Draft booking page layout", "p4", "u1", "done", "medium", "2026-08-28"),
+  task("t19", "Integrate the calendar widget", "p4", "u2", "todo", "medium", "2026-11-20"),
+  task("t20", "Lay out financial tables", "p5", "u2", "done", "high", "2026-09-02"),
+  task("t21", "Final proofread", "p5", "u3", "done", "medium", "2026-09-10"),
+  task("t22", "Gather label regulations", "p6", "u3", "done", "medium", "2026-10-02"),
+];

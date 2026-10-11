@@ -1,0 +1,32 @@
+import type { Expense } from "./types";
+
+export const EXPENSE_CATEGORIES = ["Software", "Contractors", "Printing", "Travel", "Equipment", "Office", "Meals"];
+
+const expense = (
+  id: string,
+  date: string,
+  vendor: string,
+  category: string,
+  amountMinor: number,
+  description: string,
+  projectId: string | null = null,
+): Expense => ({ id, date, vendor, category, amountMinor, description, projectId });
+
+/** Newest first. Amounts are centavos. */
+export const expenses: Expense[] = [
+  expense("e1", "2026-10-09", "Dot PH Domains", "Software", 115_000, "Studio domain renewal, one year"),
+  expense("e2", "2026-10-08", "Madge Café", "Meals", 86_000, "Coffee meeting with Bayside Dental Group"),
+  expense("e3", "2026-10-05", "Adobe", "Software", 320_000, "Creative Cloud, October"),
+  expense("e4", "2026-10-05", "Figma", "Software", 270_000, "Team plan, October"),
+  expense("e5", "2026-10-02", "Type Network", "Software", 440_000, "Font licence for the clinic brand kit", "p3"),
+  expense("e6", "2026-10-01", "R. Villanueva Consulting", "Contractors", 350_000, "Food label regulation review", "p6"),
+  expense("e7", "2026-09-29", "Lightbox Studio Rentals", "Equipment", 250_000, "Backdrop and lights for the product shoot", "p2"),
+  expense("e8", "2026-09-28", "Kim Abella", "Contractors", 600_000, "Photography assistant, two days", "p2"),
+  expense("e9", "2026-09-23", "FastCat and van hire", "Travel", 164_000, "Site visit to Verde Farm in Guimaras", "p6"),
+  expense("e10", "2026-09-12", "Hub Iloilo", "Office", 180_000, "Coworking day passes"),
+  expense("e11", "2026-09-05", "Adobe", "Software", 320_000, "Creative Cloud, September"),
+  expense("e12", "2026-09-05", "Figma", "Software", 270_000, "Team plan, September"),
+  expense("e13", "2026-08-20", "Panay Print House", "Printing", 485_000, "Annual report printed proofs", "p5"),
+  expense("e14", "2026-08-05", "Adobe", "Software", 320_000, "Creative Cloud, August"),
+  expense("e15", "2026-08-05", "Figma", "Software", 270_000, "Team plan, August"),
+];
