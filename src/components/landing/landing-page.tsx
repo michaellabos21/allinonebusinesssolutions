@@ -115,7 +115,9 @@ function SiteHeader() {
           >
             K
           </span>
-          <span className="text-[17px] tracking-[-0.01em]">{MARKETING_NAME}</span>
+          <span className="hidden text-[17px] tracking-[-0.01em] min-[400px]:inline">
+            {MARKETING_NAME}
+          </span>
         </Link>
         <nav aria-label="Sections" className="ml-4 hidden items-center gap-1 md:flex">
           {[

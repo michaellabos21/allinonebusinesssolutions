@@ -1,6 +1,6 @@
-# Kasama — small-business management app
+# Kasama Space — small-business management app
 
-Kasama ("partner" in Filipino) is an all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
+Kasama Space ("kasama" means partner in Filipino) is an all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
 
 > **Where it stands.** Accounts, workspaces, teams and settings, the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed), the Phase 3 sales records (leads, deals, pipeline stages and public lead forms) and the Phase 4 finance records (estimates, invoices, payments and expenses with receipts) are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. Nothing is emailed and no money moves through the app.
 
