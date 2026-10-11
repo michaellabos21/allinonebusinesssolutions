@@ -8,7 +8,7 @@ export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
 /** Shown anywhere the UI needs to explain that nothing is persisted. */
 export const PROTOTYPE_NOTICE =
-  "Everything you add is saved to your workspace. This is an early version: some areas, like notifications and the client portal, are not built yet.";
+  "Everything you add is saved to your workspace. This is an early version: some areas, like emails and the client portal, are not built yet.";
 
 /** Workspace-level formatting defaults (editable in a later settings phase). */
 export const WORKSPACE_DEFAULTS = {
@@ -36,28 +36,50 @@ export const ACCENTS = [
 ] as const;
 export type AccentId = (typeof ACCENTS)[number]["id"];
 
-/** Notification switches shown in settings. Nothing is sent in the prototype. */
+/**
+ * Notification switches shown in settings, each matching a `notify_*` column
+ * on profiles. All but the weekly summary appear in the bell in the top bar.
+ */
 export const NOTIFICATION_OPTIONS = [
   {
-    id: "invoiceOverdue",
-    label: "Invoice becomes overdue",
-    description: "When a sent invoice passes its due date.",
+    id: "taskAssigned",
+    label: "Assigned to a task",
+    description: "When a teammate assigns you a task.",
   },
   {
-    id: "paymentReceived",
-    label: "Payment recorded",
-    description: "When an invoice is marked as paid.",
+    id: "mentions",
+    label: "Mentions",
+    description: "When a teammate @mentions you in a task comment.",
+  },
+  {
+    id: "taskComments",
+    label: "Comments on your tasks",
+    description: "New comments on tasks you’re assigned to or created.",
   },
   {
     id: "taskDue",
     label: "Task due today",
-    description: "A morning reminder for tasks assigned to you.",
+    description: "A reminder for your open tasks on the day they’re due.",
   },
-  { id: "mentions", label: "Mentions", description: "When a teammate mentions you in a note." },
+  {
+    id: "paymentReceived",
+    label: "Payment recorded",
+    description: "When a payment is recorded on an invoice. Managers and above.",
+  },
+  {
+    id: "invoiceOverdue",
+    label: "Invoice becomes overdue",
+    description: "When an issued invoice passes its due date. Managers and above.",
+  },
+  {
+    id: "newLeads",
+    label: "New leads from forms",
+    description: "When someone sends an enquiry through one of your lead forms.",
+  },
   {
     id: "weeklySummary",
     label: "Weekly summary email",
-    description: "Revenue, open invoices and overdue tasks every Monday.",
+    description: "Revenue, open invoices and overdue tasks every Monday. Emails aren’t sent yet.",
   },
 ] as const;
 export type NotificationPrefId = (typeof NOTIFICATION_OPTIONS)[number]["id"];

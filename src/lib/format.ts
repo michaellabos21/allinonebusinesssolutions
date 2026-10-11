@@ -88,6 +88,18 @@ export function formatRelativeDay(iso: string, today: string = getToday()) {
   return formatDate(iso);
 }
 
+/**
+ * "Just now", "5m ago", "3h ago", then as `formatRelativeDay`. `at` is a full
+ * timestamp; days are counted in the workspace's time zone.
+ */
+export function formatRelativeTime(at: string, now: Date = new Date()) {
+  const minutes = Math.floor((now.getTime() - new Date(at).getTime()) / 60_000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 12 * 60) return `${Math.floor(minutes / 60)}h ago`;
+  return formatRelativeDay(getToday(new Date(at)), getToday(now));
+}
+
 export type DueTone = "overdue" | "today" | "upcoming";
 
 /** Describes a due date relative to today, with a tone for styling. */

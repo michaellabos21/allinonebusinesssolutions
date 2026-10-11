@@ -12,10 +12,13 @@ export type SessionUser = {
   dateFormat: "dmy" | "mdy";
   weekStartsOn: 0 | 1;
   notifications: {
-    invoiceOverdue: boolean;
-    paymentReceived: boolean;
-    taskDue: boolean;
+    taskAssigned: boolean;
     mentions: boolean;
+    taskComments: boolean;
+    taskDue: boolean;
+    paymentReceived: boolean;
+    invoiceOverdue: boolean;
+    newLeads: boolean;
     weeklySummary: boolean;
   };
 };

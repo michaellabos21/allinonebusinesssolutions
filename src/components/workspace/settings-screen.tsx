@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
   UserRound,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -50,12 +51,6 @@ const SECTIONS: { id: SectionId; label: string; icon: LucideIcon }[] = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "appearance", label: "Appearance", icon: Palette },
 ];
-
-/**
- * Saving a profile, workspace or preference change remounts the page so every
- * formatted value is re-read. This remembers which section was open across that.
- */
-let lastSection: SectionId = "profile";
 
 function Field({
   id,
@@ -468,7 +463,7 @@ function NotificationsSection() {
   return (
     <SectionCard
       title="Notifications"
-      description="Choose what you want to hear about. Your choices are saved, but nothing is sent yet: notifications arrive in a later phase."
+      description="Choose what appears under the bell in the top bar. Nothing is emailed yet."
     >
       <ul className="divide-y">
         {NOTIFICATION_OPTIONS.map((option) => (
@@ -576,8 +571,10 @@ const SECTION_COMPONENTS: Record<SectionId, () => React.ReactNode> = {
   appearance: AppearanceSection,
 };
 
+/** The open section is in the address, e.g. `/settings?section=notifications`, so links can open one. */
 export function SettingsScreen() {
-  const [section, setSection] = useState<SectionId>(lastSection);
+  const requested = useSearchParams().get("section");
+  const section = SECTIONS.find((item) => item.id === requested)?.id ?? "profile";
   const Section = SECTION_COMPONENTS[section];
 
   return (
@@ -597,10 +594,7 @@ export function SettingsScreen() {
                 <button
                   type="button"
                   aria-current={section === item.id ? "page" : undefined}
-                  onClick={() => {
-                    lastSection = item.id;
-                    setSection(item.id);
-                  }}
+                  onClick={() => window.history.replaceState(null, "", `?section=${item.id}`)}
                   className={cn(
                     "flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 whitespace-nowrap text-foreground/80 outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50",
                     section === item.id && "bg-muted font-medium text-foreground",

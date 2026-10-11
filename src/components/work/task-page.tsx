@@ -497,8 +497,7 @@ function Comments({ task, comments }: { task: Task; comments: TaskComment[] }) {
         }
       />
       <p className="mt-2 text-caption text-muted-foreground">
-        Mentions highlight the person in the comment. Notifications for mentions come in a later
-        update.
+        People you @mention, and everyone else on the task, are notified under the bell.
       </p>
 
       <ConfirmDialog

@@ -26,12 +26,13 @@ const REAL = [
   "Contacts, companies, notes, the catalog, projects, tasks and the activity feed.",
   "Leads, deals, pipeline stages and public lead forms.",
   "Estimates, invoices, payments you record, expenses with receipts, and reports.",
+  "Notifications in the app, under the bell: assignments, mentions, comments, tasks due, payments, overdue invoices and new leads.",
 ];
 
 const NOT_YET = [
   "Nothing is emailed: invitation links, invoices and estimates are shown for you to send yourself.",
   "Payments are recorded by hand. No money moves through this app.",
-  "Notifications are not built yet.",
+  "Notifications appear in the app only; none are emailed or pushed to your phone.",
   "Tax and invoice rules differ by country. Check yours before relying on the app for compliance.",
 ];
 
