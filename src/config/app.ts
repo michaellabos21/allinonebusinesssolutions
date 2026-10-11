@@ -2,12 +2,12 @@
  * Single source of truth for product-level settings.
  * Rename the product by changing PRODUCT_NAME — nothing else hardcodes it.
  */
-export const PRODUCT_NAME = "Workspace";
+export const PRODUCT_NAME = "Kasama";
 
 export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
 /** The name on the public landing page. */
-export const MARKETING_NAME = "All In One Business Solutions";
+export const MARKETING_NAME = PRODUCT_NAME;
 
 /**
  * The landing page's video: a YouTube video id (the part after `v=` in its

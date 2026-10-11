@@ -111,11 +111,11 @@ function SiteHeader() {
         <Link href="/" className="flex items-center gap-2.5 font-display font-semibold">
           <span
             aria-hidden
-            className="flex size-8 items-center justify-center rounded-lg bg-primary text-[11px] font-bold tracking-wide text-primary-foreground"
+            className="flex size-8 items-center justify-center rounded-lg bg-primary font-display text-[15px] font-bold text-primary-foreground"
           >
-            AIO
+            K
           </span>
-          <span className="hidden text-[15px] sm:inline">{MARKETING_NAME}</span>
+          <span className="text-[17px] tracking-[-0.01em]">{MARKETING_NAME}</span>
         </Link>
         <nav aria-label="Sections" className="ml-4 hidden items-center gap-1 md:flex">
           {[
@@ -778,7 +778,9 @@ function SiteFooter() {
   return (
     <footer className="border-t">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-caption text-muted-foreground sm:px-6">
-        <p>© {MARKETING_NAME}</p>
+        <p>
+          © {MARKETING_NAME}. <span lang="fil">Kasama</span> means “partner” in Filipino.
+        </p>
         <nav aria-label="Footer" className="flex gap-4">
           <Link href="/login" className="hover:text-foreground">
             Sign in
