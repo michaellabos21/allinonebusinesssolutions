@@ -1,0 +1,88 @@
+import {
+  linearTiming,
+  springTiming,
+  type TransitionPresentation,
+  type TransitionTiming,
+  TransitionSeries,
+} from "@remotion/transitions";
+import { clockWipe } from "@remotion/transitions/clock-wipe";
+import { fade } from "@remotion/transitions/fade";
+import { flip } from "@remotion/transitions/flip";
+import { iris } from "@remotion/transitions/iris";
+import { slide } from "@remotion/transitions/slide";
+import { wipe } from "@remotion/transitions/wipe";
+import { AbsoluteFill } from "remotion";
+
+import { C, HEIGHT, WIDTH } from "./brand";
+import { Crm } from "./scenes/Crm";
+import { Dashboard } from "./scenes/Dashboard";
+import { Hook } from "./scenes/Hook";
+import { Money } from "./scenes/Money";
+import { Outro } from "./scenes/Outro";
+import { Reports } from "./scenes/Reports";
+import { Reveal } from "./scenes/Reveal";
+import { Search } from "./scenes/Search";
+import { Wall } from "./scenes/Wall";
+import { Work } from "./scenes/Work";
+
+const SCENES = [
+  { C: Hook, d: 110 },
+  { C: Reveal, d: 105 },
+  { C: Dashboard, d: 175 },
+  { C: Crm, d: 150 },
+  { C: Work, d: 145 },
+  { C: Money, d: 180 },
+  { C: Reports, d: 130 },
+  { C: Search, d: 95 },
+  { C: Wall, d: 130 },
+  { C: Outro, d: 155 },
+];
+
+const T = 16;
+const TRANSITIONS: { p: TransitionPresentation<any>; t: TransitionTiming }[] = [
+  { p: fade(), t: linearTiming({ durationInFrames: 10 }) },
+  {
+    p: slide({ direction: "from-bottom" }),
+    t: springTiming({ durationInFrames: T, config: { damping: 200 } }),
+  },
+  { p: wipe({ direction: "from-right" }), t: linearTiming({ durationInFrames: T }) },
+  {
+    p: flip({ direction: "from-right" }),
+    t: springTiming({ durationInFrames: 20, config: { damping: 200 } }),
+  },
+  {
+    p: slide({ direction: "from-right" }),
+    t: springTiming({ durationInFrames: T, config: { damping: 200 } }),
+  },
+  { p: clockWipe({ width: WIDTH, height: HEIGHT }), t: linearTiming({ durationInFrames: 18 }) },
+  { p: wipe({ direction: "from-bottom-left" }), t: linearTiming({ durationInFrames: T }) },
+  {
+    p: slide({ direction: "from-bottom" }),
+    t: springTiming({ durationInFrames: T, config: { damping: 200 } }),
+  },
+  { p: iris({ width: WIDTH, height: HEIGHT }), t: linearTiming({ durationInFrames: 20 }) },
+];
+
+export const TOTAL_FRAMES =
+  SCENES.reduce((sum, s) => sum + s.d, 0) -
+  TRANSITIONS.reduce((sum, tr) => sum + tr.t.getDurationInFrames({ fps: 30 }), 0);
+
+export const LaunchVideo = () => (
+  <AbsoluteFill style={{ background: C.ink }}>
+    <TransitionSeries>
+      {SCENES.flatMap(({ C: Scene, d }, i) => {
+        const items = [
+          <TransitionSeries.Sequence key={`s${i}`} durationInFrames={d}>
+            <Scene />
+          </TransitionSeries.Sequence>,
+        ];
+        const tr = TRANSITIONS[i];
+        if (tr)
+          items.push(
+            <TransitionSeries.Transition key={`t${i}`} presentation={tr.p} timing={tr.t} />,
+          );
+        return items;
+      })}
+    </TransitionSeries>
+  </AbsoluteFill>
+);

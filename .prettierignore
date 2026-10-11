@@ -8,3 +8,7 @@ next-env.d.ts
 src/components/ui
 # Planning documents are edited by hand.
 *.md
+# The launch video's dependencies and renders.
+video/node_modules
+video/out
+video/package-lock.json
