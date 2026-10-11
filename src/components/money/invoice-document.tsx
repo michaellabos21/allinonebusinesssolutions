@@ -1,4 +1,5 @@
 import { formatDate, formatMoney } from "@/lib/format";
+import { splitLineText } from "@/lib/document-lines";
 import { formatQuantity, formatTaxRate } from "@/lib/money";
 import type { BillTo, InvoiceItem } from "@/mocks";
 
@@ -115,20 +116,30 @@ export function InvoiceDocument({
             </tr>
           </thead>
           <tbody>
-            {doc.items.map((item) => (
-              <tr key={item.id} className="border-b border-dashed last:border-solid">
-                <td className="py-3 pr-4 whitespace-pre-wrap">{item.description}</td>
-                <td className="tabular py-3 pr-4 text-right">
-                  {formatQuantity(item.quantityMilli)}
-                </td>
-                <td className="tabular py-3 pr-4 text-right whitespace-nowrap">
-                  {money(item.unitPriceMinor)}
-                </td>
-                <td className="tabular py-3 text-right whitespace-nowrap">
-                  {money(item.amountMinor)}
-                </td>
-              </tr>
-            ))}
+            {doc.items.map((item) => {
+              const { name, details } = splitLineText(item.description);
+              return (
+                <tr key={item.id} className="border-b border-dashed last:border-solid">
+                  <td className="py-3 pr-4 align-top">
+                    <span className="block">{name}</span>
+                    {details ? (
+                      <span className="mt-0.5 block max-w-[52ch] text-caption whitespace-pre-wrap text-muted-foreground">
+                        {details}
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="tabular py-3 pr-4 text-right align-top">
+                    {formatQuantity(item.quantityMilli)}
+                  </td>
+                  <td className="tabular py-3 pr-4 text-right align-top whitespace-nowrap">
+                    {money(item.unitPriceMinor)}
+                  </td>
+                  <td className="tabular py-3 text-right align-top whitespace-nowrap">
+                    {money(item.amountMinor)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

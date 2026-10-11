@@ -1,5 +1,6 @@
 import "server-only";
 
+import { splitLineText } from "@/lib/document-lines";
 import { createClient } from "@/lib/supabase/server";
 import type {
   ActivityEntry,
@@ -391,7 +392,8 @@ async function loadFinance(
         number: row.number,
         contactId: row.contact_id,
         billTo,
-        description: items[0]?.description ?? "",
+        // The list shows the first line's name, not its details.
+        description: splitLineText(items[0]?.description ?? "").name,
         items,
         discountMinor: Number(row.discount_minor),
         taxRateBps: row.tax_rate_bps,

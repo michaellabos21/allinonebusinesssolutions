@@ -30,13 +30,17 @@ import {
   lineTotalMinor,
   parseQuantityToMilli,
 } from "@/lib/money";
+import { LINE_TEXT_MAX, joinLineText, splitLineText } from "@/lib/document-lines";
 import { getRuntime, getToday } from "@/lib/runtime";
 import type { Estimate, Invoice } from "@/mocks";
 import { saveEstimateDraftAction, saveInvoiceDraftAction } from "@/server/actions/finance";
 
 type Row = {
   key: number;
+  /** The service or product name: the first line of the stored description. */
   description: string;
+  /** Optional detail shown under the name on the document. */
+  details: string;
   quantity: string;
   unitPrice: string;
   catalogItemId: string | null;
@@ -122,11 +126,14 @@ export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoic
   const [rows, setRows] = useState<Row[]>(
     doc?.items.map((item, index) => ({
       key: index,
-      description: item.description,
+      description: splitLineText(item.description).name,
+      details: splitLineText(item.description).details,
       quantity: formatQuantity(item.quantityMilli),
       unitPrice: formatAmountInput(item.unitPriceMinor),
       catalogItemId: item.catalogItemId,
-    })) ?? [{ key: 0, description: "", quantity: "1", unitPrice: "", catalogItemId: null }],
+    })) ?? [
+      { key: 0, description: "", details: "", quantity: "1", unitPrice: "", catalogItemId: null },
+    ],
   );
   const [discount, setDiscount] = useState(
     doc?.discountMinor ? formatAmountInput(doc.discountMinor) : "",
@@ -163,7 +170,13 @@ export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoic
     clearError("items");
   };
   const addRow = (
-    row: Omit<Row, "key"> = { description: "", quantity: "1", unitPrice: "", catalogItemId: null },
+    row: Omit<Row, "key"> = {
+      description: "",
+      details: "",
+      quantity: "1",
+      unitPrice: "",
+      catalogItemId: null,
+    },
   ) => {
     nextKey.current += 1;
     setRows((current) => [...current, { key: nextKey.current, ...row }]);
@@ -174,7 +187,8 @@ export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoic
     const item = catalog.find((entry) => entry.id === id);
     if (!item) return;
     const filled = {
-      description: item.description ? `${item.name}: ${item.description}` : item.name,
+      description: item.name,
+      details: item.description,
       quantity: "1",
       unitPrice: formatAmountInput(item.unitPriceMinor),
       catalogItemId: item.id,
@@ -200,6 +214,9 @@ export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoic
     rows.forEach((row, index) => {
       const numbers = parsed[index];
       if (!row.description.trim()) found[`row-${row.key}`] = "Describe this line.";
+      else if (joinLineText(row.description, row.details).length > LINE_TEXT_MAX)
+        found[`row-${row.key}`] =
+          `Keep the name and details under ${LINE_TEXT_MAX} characters together.`;
       else if (numbers.quantityMilli === null)
         found[`row-${row.key}`] = "Enter a quantity above zero, with up to three decimals.";
       else if (numbers.unitPriceMinor === null)
@@ -228,7 +245,7 @@ export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoic
       taxRateBps: Number(taxRateBps),
       notes: notes.trim(),
       items: rows.map((row, index) => ({
-        description: row.description.trim(),
+        description: joinLineText(row.description, row.details),
         quantityMilli: parsed[index].quantityMilli ?? 0,
         unitPriceMinor: parsed[index].unitPriceMinor ?? 0,
         catalogItemId: row.catalogItemId,
@@ -467,6 +484,23 @@ export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoic
                       >
                         <Trash2 aria-hidden />
                       </Button>
+                      <div className="col-span-3 grid gap-1.5 md:col-span-1">
+                        <Label
+                          htmlFor={`invoice-details-${row.key}`}
+                          className="font-normal text-muted-foreground"
+                        >
+                          Details (optional)
+                        </Label>
+                        <Textarea
+                          id={`invoice-details-${row.key}`}
+                          value={row.details}
+                          rows={2}
+                          className="min-h-14"
+                          placeholder="What’s included, like “30-second explainer, 2 rounds of revisions”"
+                          onChange={(event) => updateRow(row.key, { details: event.target.value })}
+                          aria-describedby={describedBy}
+                        />
+                      </div>
                     </fieldset>
                     {rowError ? (
                       <p
