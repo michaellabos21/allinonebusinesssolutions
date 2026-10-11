@@ -1,6 +1,6 @@
 # Security
 
-Status: backend Phase 1. Accounts, workspaces, membership and invitations are real and protected as described below. **The business screens (contacts, projects, invoices and the rest) still run on sample data in the browser and have no access control**, because they hold no real data yet. Each gets the same treatment in its own phase. The app is not ready for real customer data.
+Status: backend Phase 3. Accounts, workspaces, membership, invitations, the Phase 2 records and the Phase 3 sales records are real and protected as described below. **Invoices and expenses still run on sample data in the browser and have no access control**, because they hold no real data yet; they get the same treatment in Phase 4. The app is not ready for real customer data.
 
 ## Principles
 
@@ -44,7 +44,27 @@ Five roles exist: owner, admin, manager, member, client. What Phase 1 enforces, 
 
 Note: the database lets any active member read their workspace's membership rows, including a client. Restricting what clients see is Phase 5 work; no client-facing screens exist yet.
 
-The matrix below is the **draft for later phases**. Its business-record rows are not built:
+Business records, as enforced since Phases 2 and 3 (in `src/server/permissions.ts`, the database functions and row-level security, and tested in `tests/integration/records.test.ts` and `sales.test.ts`):
+
+| Action | Owner | Admin | Manager | Member | Client |
+| --- | --- | --- | --- | --- | --- |
+| See contacts, companies, leads, deals, projects, tasks, the catalog and the feed | Yes | Yes | Yes | Yes | No |
+| Add and edit contacts, companies, notes, leads and deals; convert leads | Yes | Yes | Yes | Yes | No |
+| Edit tasks | Any | Any | Any | Own and assigned | No |
+| Archive and restore records | Yes | Yes | Yes | No | No |
+| Manage projects, the catalog, pipeline stages and lead forms | Yes | Yes | Yes | No | No |
+
+Nothing is ever hard-deleted; there are no delete policies. Notes and activity entries cannot be rewritten.
+
+## Public lead forms
+
+- A form is reached only by a random 36-character token in its link. Visitors never send a workspace id; the database works it out from the token.
+- The public can call exactly two functions, `get_lead_form` (the form's own wording and the business name) and `submit_lead_form` (creates one unassigned lead). Neither returns anything about existing records. Every table stays closed to anonymous visitors.
+- Submissions are validated on the server and again in the database. Limits, enforced in the database: 3 per visitor per form in 10 minutes, and 100 per form per hour. The visitor key is a SHA-256 of the form token and the network address, so it identifies neither the person nor their other submissions.
+- A hidden field catches simple bots: when it is filled in, the visitor is thanked and nothing is saved.
+- Consent text is written by the business. The app does not supply legal wording or claim compliance with any privacy law.
+
+The matrix below is the **draft for later phases**. Its finance and client rows are not built:
 
 | Action | Owner | Admin | Manager | Member | Client |
 | --- | --- | --- | --- | --- | --- |

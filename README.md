@@ -2,9 +2,9 @@
 
 An original all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
 
-> **Where it stands.** Accounts, workspaces, teams and settings, and the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed), are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. **Deals, invoices and expenses still show fictional sample data** from `src/mocks/`, held in the browser and reset on reload. Nothing here is ready for real customer data yet.
+> **Where it stands.** Accounts, workspaces, teams and settings, the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed) and the Phase 3 sales records (leads, deals, pipeline stages and public lead forms) are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. **Invoices and expenses still show fictional sample data** from `src/mocks/`, held in the browser and reset on reload. Nothing here is ready for real customer data yet.
 
-Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0, 1 and 2 of `agiled_inspired_saas_mvp_plan.md`.
+Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0 to 3 of `agiled_inspired_saas_mvp_plan.md`.
 
 ## Setup
 
@@ -77,6 +77,7 @@ Signed-out pages:
 | `/invite/[token]` | Accept an invitation |
 | `/onboarding` | Create a workspace (needs a session) |
 | `/auth/callback` | Landing point for links in auth emails |
+| `/f/[token]` | A business's public lead form; anyone with the link can send an enquiry |
 
 The app itself, all behind sign-in:
 
@@ -87,7 +88,9 @@ The app itself, all behind sign-in:
 | `/crm/contacts/[id]` | Contact detail (built) |
 | `/crm/companies` | Companies list (built) |
 | `/crm/companies/[id]` | Company detail (built) |
-| `/crm/deals` | Leads & Deals board and table (built) |
+| `/crm/leads` | Leads list, conversion (built) |
+| `/crm/deals` | Deals board and table, stage editor (built) |
+| `/crm/forms` | Lead forms (built) |
 | `/work/projects` | Projects list (built) |
 | `/work/projects/[id]` | Project detail (built) |
 | `/work/tasks` | Tasks list and board (built) |
@@ -129,6 +132,21 @@ Every rule above is enforced three times: in the server action, in a database fu
 
 Not built in Phase 2: comments on tasks, and searching on the server for workspaces too large to load in full.
 
+### Leads, deals, pipeline and lead forms (real)
+
+- **Leads:** name, contact details, company, source, status (new, contacted, qualified, disqualified), owner and notes, with search, status, owner and source filters and CSV export
+- **Convert a lead** into a contact (and its company) and, optionally, a deal, in one database transaction. A contact with the same email is reused instead of duplicated, or you can pick any existing contact
+- **Deals:** amount in minor units with an ISO currency code, company, contact, owner, stage and expected close date. Entering a won or lost stage records the close date; a lost stage requires a reason
+- **Pipeline:** each workspace starts with Discovery, Qualified, Proposal, Negotiation, Won and Lost. Managers rename, reorder (with buttons, so it works from the keyboard), add and archive stages; there is always at least one open, one won and one lost stage, and a stage with live deals can't be archived
+- **Board:** drag a card to another stage, or use its move menu from the keyboard. The table view covers won, lost and archived deals and exports to CSV
+- **History:** each deal records its creation and every change of stage, value or owner with who did it, shown in the deal's panel
+- **Lead forms:** managers create public forms with an introduction, optional consent checkbox text written by the business, and a thank-you message, then share the link `/f/<token>`. Each submission becomes an unassigned lead and a feed entry. The link's random token is the only thing that identifies the form; visitors never send a workspace id. A hidden field catches simple bots, and the database allows 3 submissions per visitor per form in 10 minutes and 100 per form per hour
+- Members add and edit leads and deals; managers and above also archive them and manage stages and forms; clients see none of it
+
+`tests/integration/sales.test.ts` checks these rules against the database, including isolation between workspaces, conversion without duplicates, stage rules, the deal history and the public form's limits. `e2e/sales.spec.ts` converts a lead, moves and loses the deal, and sends a public form without signing in.
+
+Not built in Phase 3: saved views, more than one pipeline per workspace, and email notifications for new leads (Phase 6).
+
 Everything below this line still runs on sample data, apart from the screens listed above.
 
 ### Shell and overview
@@ -136,7 +154,7 @@ Everything below this line still runs on sample data, apart from the screens lis
 - Desktop sidebar that collapses to an icon rail, and a navigation drawer below 1024px
 - Topbar with breadcrumbs, search (`⌘K` / `Ctrl+K`) over pages and demo records, quick-create, notifications, help and profile menu
 - Workspace switcher (changes the label only; all demo workspaces share the same records)
-- Quick-create dialogs for contacts, projects, tasks and invoices, with validation; new records appear on the overview, in search and on their own screens
+- Quick-create dialogs for contacts, leads, deals, projects, tasks and invoices, with validation; new records appear on the overview, in search and on their own screens
 - Overview: open-invoice statement, summary figures, payments chart with a 3 or 6 month range, pipeline by stage, upcoming tasks you can complete and undo, recent activity
 - Demo data switch in the sidebar; switching it off shows the getting-started checklist
 
@@ -146,11 +164,10 @@ Everything below this line still runs on sample data, apart from the screens lis
 - **Contact detail:** notes you can add to, an activity timeline built from the contact's notes and invoices, and related deals, projects and invoices
 - **Companies:** search, relationship filter, sorting and pagination, with contact counts and deal and invoice totals rolled up from the records
 - **Company detail:** summary figures, people, deals, projects and invoices
-- **Leads & Deals:** a board of the four open stages and a table view, search and owner filter, a detail panel, and moving a deal between stages (including Won and Lost) with undo
+- **Leads and Deals:** described above
 - Create and edit dialogs for contacts, companies and deals, with validation, duplicate checks and confirmation toasts; archiving asks for confirmation first
 - Typing a new company name on a contact creates that company
 
-Deals move between stages through a menu or the detail panel. There is no drag and drop.
 
 ### Work
 

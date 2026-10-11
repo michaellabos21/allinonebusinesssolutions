@@ -7,6 +7,7 @@ import {
   Package,
   Wallet,
   Handshake,
+  Inbox,
   ListChecks,
   type LucideIcon,
   ReceiptText,
@@ -29,6 +30,7 @@ const KIND_ICON: Record<ActivityKind, LucideIcon> = {
   task: ListChecks,
   invoice: ReceiptText,
   deal: Handshake,
+  lead: Inbox,
 };
 
 const VISIBLE_ENTRIES = 7;

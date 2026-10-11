@@ -259,8 +259,8 @@ export function ContactDetail() {
               id: deal.id,
               primary: deal.name,
               secondary: formatMoney(deal.valueMinor),
-              meta: <DealStageBadge stage={deal.stage} />,
-              href: "/crm/deals",
+              meta: <DealStageBadge stage={store.stageOf(deal.stageId)} />,
+              href: `/crm/deals?deal=${deal.id}`,
             }))}
           />
           <RelatedList

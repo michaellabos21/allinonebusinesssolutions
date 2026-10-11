@@ -87,12 +87,13 @@ describe("business records", () => {
     }
   });
 
-  it("keeps archiving, projects, the catalog and other people's tasks for managers and above", () => {
+  it("keeps archiving, projects, the catalog, the pipeline and other people's tasks for managers and above", () => {
     for (const action of [
       "records.archive",
       "projects.manage",
       "catalog.manage",
       "tasks.edit_any",
+      "pipeline.manage",
     ] as const) {
       expect(ROLES.filter((role) => can(role, action))).toEqual(["owner", "admin", "manager"]);
     }

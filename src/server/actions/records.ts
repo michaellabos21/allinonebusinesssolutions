@@ -1,12 +1,8 @@
 "use server";
 
 import { refresh } from "next/cache";
-import type { z } from "zod";
 
-import { logger } from "@/lib/logger";
-import { createClient } from "@/lib/supabase/server";
-import { type Action, can } from "@/server/permissions";
-import { getSession } from "@/server/session";
+import { FORBIDDEN, context, explain, findOrCreateCompany, invalid } from "@/server/action-helpers";
 import type { ActionResult } from "@/server/types";
 import {
   IMPORT_ROW_LIMIT,
@@ -14,7 +10,6 @@ import {
   catalogItemSchema,
   companySchema,
   contactSchema,
-  fieldErrorsOf,
   idSchema,
   importRowSchema,
   noteSchema,
@@ -33,64 +28,6 @@ import {
 
 type Saved = { id: string; name: string };
 type Result<T = Saved> = ActionResult<T>;
-
-const SESSION_ENDED: ActionResult<never> = {
-  ok: false,
-  error: "Your session has ended. Sign in again.",
-};
-const FORBIDDEN: ActionResult<never> = {
-  ok: false,
-  error: "You don’t have permission to do that.",
-};
-const invalid = (error: z.ZodError): ActionResult<never> => ({
-  ok: false,
-  error: "Check the highlighted fields.",
-  fieldErrors: fieldErrorsOf(error),
-});
-
-/** The verified workspace and user for an action, or the reason there is none. */
-async function context(action: Action) {
-  const session = await getSession();
-  if (!session?.workspace) return { allowed: false as const, failure: SESSION_ENDED };
-  if (!can(session.workspace.role, action)) return { allowed: false as const, failure: FORBIDDEN };
-  return {
-    allowed: true as const,
-    workspace: session.workspace,
-    user: session.user,
-    supabase: await createClient(),
-  };
-}
-
-type DatabaseError = { code?: string; message: string } | null;
-
-/** Turns a database refusal into something a person can act on. */
-function explain(
-  error: DatabaseError,
-  event: string,
-  duplicate?: ActionResult<never>,
-): ActionResult<never> {
-  if (error?.code === "23505" && duplicate) return duplicate;
-  if (error?.code === "42501") return FORBIDDEN;
-  if (error?.message.includes("assignee_not_a_member")) {
-    return {
-      ok: false,
-      error: "Choose someone on the team.",
-      fieldErrors: { assigneeId: "This person isn’t a team member." },
-    };
-  }
-  if (error?.message.includes("owner_not_a_member")) {
-    return {
-      ok: false,
-      error: "Choose someone on the team.",
-      fieldErrors: { ownerId: "This person isn’t a team member." },
-    };
-  }
-  logger.error(event, {
-    code: error?.code ?? "no_rows",
-    message: error?.message ?? "no rows changed",
-  });
-  return { ok: false, error: "We couldn’t save that. Try again." };
-}
 
 // ---------------------------------------------------------------------------
 // Companies
@@ -152,31 +89,15 @@ export async function saveContactAction(input: unknown, id?: string): Promise<Re
 
   const { companyName, ...fields } = parsed.data;
 
-  // Find the company by name, or create it. A unique index on the lower-cased
-  // name makes this safe if two people add the same company at once.
   let companyId: string | null = null;
   if (companyName) {
-    const existing = await ctx.supabase
-      .from("companies")
-      .select("id")
-      .eq("workspace_id", ctx.workspace.id)
-      .ilike("name", companyName.replace(/[%_\\]/g, "\\$&"))
-      .maybeSingle();
-    if (existing.data) {
-      companyId = existing.data.id;
-    } else {
-      const created = await ctx.supabase
-        .from("companies")
-        .insert({
-          workspace_id: ctx.workspace.id,
-          name: companyName,
-          type: fields.status === "lead" ? "prospect" : "client",
-        })
-        .select("id")
-        .single();
-      if (created.error) return explain(created.error, "contact.company_create_failed");
-      companyId = created.data.id;
-    }
+    const company = await findOrCreateCompany(
+      ctx,
+      companyName,
+      fields.status === "lead" ? "prospect" : "client",
+    );
+    if ("error" in company) return explain(company.error, "contact.company_create_failed");
+    companyId = company.id;
   }
 
   const values = { ...fields, company_id: companyId };

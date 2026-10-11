@@ -2,8 +2,8 @@ import { DEMO_TODAY } from "@/config/app";
 import { addDays, daysBetween } from "@/lib/format";
 import { getToday } from "@/lib/runtime";
 import {
-  OPEN_DEAL_STAGES,
   type Deal,
+  type DealStage,
   type Invoice,
   type InvoiceDisplayStatus,
   type Project,
@@ -127,21 +127,24 @@ export type PipelineStage = {
   valueMinor: number;
 };
 
-/** Deals still in play: not archived and not closed as won or lost. */
+/** Deals still in play: not archived and not in a won or lost stage. */
 export function getOpenDeals(deals: Deal[]) {
-  const openStages = new Set(OPEN_DEAL_STAGES.map((stage) => stage.id));
-  return deals.filter((deal) => !deal.archived && openStages.has(deal.stage));
+  return deals.filter((deal) => !deal.archived && deal.stageKind === "open");
 }
 
-export function getPipeline(deals: Deal[]): PipelineStage[] {
+/** Open deal count and value for each live open stage, in pipeline order. */
+export function getPipeline(deals: Deal[], stages: DealStage[]): PipelineStage[] {
   const open = getOpenDeals(deals);
-  return OPEN_DEAL_STAGES.map((stage) => {
-    const inStage = open.filter((deal) => deal.stage === stage.id);
-    return {
-      id: stage.id,
-      label: stage.label,
-      dealCount: inStage.length,
-      valueMinor: inStage.reduce((total, deal) => total + deal.valueMinor, 0),
-    };
-  });
+  return stages
+    .filter((stage) => stage.kind === "open" && !stage.archived)
+    .sort((a, b) => a.position - b.position)
+    .map((stage) => {
+      const inStage = open.filter((deal) => deal.stageId === stage.id);
+      return {
+        id: stage.id,
+        label: stage.name,
+        dealCount: inStage.length,
+        valueMinor: inStage.reduce((total, deal) => total + deal.valueMinor, 0),
+      };
+    });
 }

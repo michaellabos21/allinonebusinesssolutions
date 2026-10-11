@@ -188,6 +188,83 @@ export const taskStatusSchema = z.object({
 
 export const archiveSchema = z.object({ id: z.uuid(), archived: z.boolean() });
 
+// ---------------------------------------------------------------------------
+// Sales pipeline
+// ---------------------------------------------------------------------------
+
+const money = z
+  .number("Enter an amount.")
+  .int()
+  .min(0, "Enter zero or more.")
+  .max(100_000_000_000, "That amount is too large.");
+
+/** Empty, or a valid email address. Leads may arrive without one. */
+const optionalEmail = z.union([z.literal(""), email]);
+
+export const leadSchema = z.object({
+  name: requiredText(120, "Enter the lead’s name."),
+  email: optionalEmail,
+  phone: text(40),
+  companyName: text(120),
+  source: text(80),
+  status: z.enum(["new", "contacted", "qualified", "disqualified"]),
+  notes: text(4000),
+  ownerId: optionalId,
+});
+
+export const dealSchema = z.object({
+  name: requiredText(160, "Give the deal a name."),
+  /** Matched to a company by name, or created when new. Empty for none. */
+  companyName: text(120),
+  contactId: optionalId,
+  ownerId: z.uuid("Choose an owner."),
+  stageId: z.uuid("Choose a stage."),
+  valueMinor: money,
+  expectedCloseOn: isoDate,
+  lostReason: text(300),
+});
+
+export const dealStageChangeSchema = z.object({
+  id: z.uuid(),
+  stageId: z.uuid(),
+  lostReason: text(300),
+});
+
+export const convertLeadSchema = z.object({
+  leadId: z.uuid(),
+  /** A contact the user picked; otherwise one is matched by email or created. */
+  contactId: optionalId,
+  createDeal: z.boolean(),
+  dealName: text(160),
+  valueMinor: money,
+  stageId: optionalId,
+  expectedCloseOn: z.union([isoDate, z.null()]),
+});
+
+export const stageSchema = z.object({
+  name: requiredText(40, "Name the stage."),
+});
+
+export const stageOrderSchema = z.array(z.uuid()).min(3).max(30);
+
+export const leadFormSchema = z.object({
+  name: requiredText(80, "Name the form."),
+  intro: text(500),
+  consentText: text(1000),
+  successMessage: requiredText(300, "Write the message people see after sending."),
+  active: z.boolean(),
+});
+
+/** What a visitor sends from a public form. Checked again by the database. */
+export const publicLeadSchema = z.object({
+  name: requiredText(120, "Enter your name."),
+  email,
+  phone: text(40),
+  company: text(120),
+  message: text(2000),
+  consent: z.boolean(),
+});
+
 /** One row of a contact import, after column mapping. */
 export const importRowSchema = z.object({
   name: requiredText(120, "Name is missing."),

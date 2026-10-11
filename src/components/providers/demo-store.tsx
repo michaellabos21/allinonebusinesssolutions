@@ -15,6 +15,8 @@ import type {
   Expense,
   Invoice,
   InvoiceItem,
+  Lead,
+  LeadForm,
   Note,
   Notification,
   Project,
@@ -34,26 +36,18 @@ import type { InvitationRow, SessionUser, SessionWorkspace, TeamMemberRow } from
  *     feed are real too. They arrive as `records`, loaded on the server, and
  *     change only through server actions (`src/server/actions/records.ts`),
  *     after which the server sends fresh lists.
- *   - Deals, invoices and expenses are still sample data from `src/mocks`,
- *     held in memory here and reset on reload. They move to the database in
- *     backend Phases 3 and 4.
+ *   - Leads, deals, pipeline stages and lead forms are real as well (Phase 3).
+ *   - Invoices and expenses are still sample data from `src/mocks`, held in
+ *     memory here and reset on reload. They move to the database in backend
+ *     Phase 4.
  */
 
 /** Record types with a create/edit form. */
 export type EditorKind =
-  "contact" | "company" | "deal" | "project" | "task" | "invoice" | "catalog" | "expense";
+  "contact" | "company" | "lead" | "deal" | "project" | "task" | "invoice" | "catalog" | "expense";
 /** The subset offered in the topbar's Create menu and the setup checklist. */
 export type QuickCreateKind = "contact" | "project" | "task" | "invoice";
 
-export type DealInput = {
-  name: string;
-  companyId: string;
-  contactId: string | null;
-  ownerId: string;
-  stage: DealStage;
-  valueMinor: number;
-  expectedCloseOn: string;
-};
 /** One-line draft from the quick-create dialog. */
 export type NewInvoice = {
   contactId: string;
@@ -83,7 +77,7 @@ export type Account = {
 };
 
 type DemoStore = {
-  /** Whether the sample deals, invoices and expenses are shown. */
+  /** Whether the sample invoices and expenses are shown. */
   demoEnabled: boolean;
   setDemoEnabled: (enabled: boolean) => void;
 
@@ -103,29 +97,34 @@ type DemoStore = {
   tasks: Task[];
   catalog: CatalogItem[];
   activity: ActivityEntry[];
+  /** Every stage, archived ones included, in pipeline order. */
+  stages: DealStage[];
+  /** Live stages only, in pipeline order: what boards and pickers show. */
+  liveStages: DealStage[];
+  deals: Deal[];
+  leads: Lead[];
+  /** Empty for roles that cannot manage forms. */
+  leadForms: LeadForm[];
   /** True when a list was cut off at the server's row cap. */
   recordsTruncated: boolean;
 
   /** Sample records. */
-  deals: Deal[];
   invoices: Invoice[];
   expenses: Expense[];
 
   /**
    * Display names by id. Real records are checked first; the fallback covers
-   * the fictional companies, contacts and projects that the sample deals,
-   * invoices and expenses still point at.
+   * the fictional companies, contacts and projects that the sample invoices
+   * and expenses still point at.
    */
   companyName: (companyId: string | null) => string;
   contactName: (contactId: string | null) => string;
   contactCompanyName: (contactId: string | null) => string;
   projectName: (projectId: string | null) => string;
+  stageOf: (stageId: string) => DealStage | undefined;
   /** False for an id that belongs to the sample data, which has no detail page. */
   isRealRecord: (id: string | null) => boolean;
 
-  saveDeal: (input: DealInput, id?: string) => Deal;
-  moveDeal: (id: string, stage: DealStage) => void;
-  setDealArchived: (id: string, archived: boolean) => void;
   addInvoice: (input: NewInvoice) => Invoice;
   /** Creates a draft, or updates one. Sent and paid invoices are not editable. */
   saveInvoice: (input: InvoiceInput, id?: string) => Invoice;
@@ -171,7 +170,6 @@ export function DemoStoreProvider({
     density: "comfortable",
   });
 
-  const [deals, setDeals] = useState<Deal[]>(seed.deals);
   const [invoices, setInvoices] = useState<Invoice[]>(seed.invoices);
   const [expenses, setExpenses] = useState<Expense[]>(seed.expenses);
   const [notifications, setNotifications] = useState<Notification[]>(seed.notifications);
@@ -183,28 +181,6 @@ export function DemoStoreProvider({
   const newId = useCallback((letter: string) => {
     counter.current += 1;
     return `new-${letter}${counter.current}`;
-  }, []);
-
-  const saveDeal = useCallback(
-    (input: DealInput, id?: string) => {
-      const existing = id ? deals.find((deal) => deal.id === id) : undefined;
-      const deal: Deal = existing
-        ? { ...existing, ...input }
-        : { id: newId("d"), archived: false, ...input };
-      setDeals((list) =>
-        existing ? list.map((item) => (item.id === deal.id ? deal : item)) : [deal, ...list],
-      );
-      return deal;
-    },
-    [deals, newId],
-  );
-
-  const moveDeal = useCallback((id: string, stage: DealStage) => {
-    setDeals((list) => list.map((item) => (item.id === id ? { ...item, stage } : item)));
-  }, []);
-
-  const setDealArchived = useCallback((id: string, archived: boolean) => {
-    setDeals((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
   }, []);
 
   const saveInvoice = useCallback(
@@ -333,6 +309,13 @@ export function DemoStoreProvider({
       setAppearance: (patch) => setAppearanceState((current) => ({ ...current, ...patch })),
 
       contacts: records.contacts,
+      stages: records.stages,
+      liveStages: records.stages
+        .filter((stage) => !stage.archived)
+        .sort((a, b) => a.position - b.position),
+      deals: records.deals,
+      leads: records.leads,
+      leadForms: records.leadForms,
       companies: records.companies,
       notes: records.notes,
       projects: records.projects,
@@ -341,7 +324,6 @@ export function DemoStoreProvider({
       activity: records.activity,
       recordsTruncated: records.truncated,
 
-      deals: sample(deals),
       invoices: sample(invoices),
       expenses: sample(expenses),
 
@@ -349,11 +331,9 @@ export function DemoStoreProvider({
       contactName: (id) => nameIn([records.contacts, seed.contacts], id),
       contactCompanyName,
       projectName: (id) => nameIn([records.projects, seed.projects], id),
+      stageOf: (id) => records.stages.find((stage) => stage.id === id),
       isRealRecord: (id) => Boolean(id && UUID_PATTERN.test(id)),
 
-      saveDeal,
-      moveDeal,
-      setDealArchived,
       addInvoice,
       saveInvoice,
       markInvoiceSent,
@@ -380,15 +360,11 @@ export function DemoStoreProvider({
     account,
     records,
     appearance,
-    deals,
     invoices,
     expenses,
     notifications,
     editor,
     searchOpen,
-    saveDeal,
-    moveDeal,
-    setDealArchived,
     addInvoice,
     saveInvoice,
     markInvoiceSent,

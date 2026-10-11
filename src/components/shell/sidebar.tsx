@@ -152,12 +152,12 @@ export function Sidebar({
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {demoEnabled
-              ? "Deals, invoices and expenses show sample records. Nothing there is saved yet."
+              ? "Invoices and expenses show sample records. Nothing there is saved yet."
               : "Sample records hidden. Anything you add there lasts until you reload."}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            {PRODUCT_NAME}: your account, team, contacts, companies, catalog, projects and tasks are
-            saved.
+            {PRODUCT_NAME}: your account, team, contacts, companies, leads, deals, catalog, projects
+            and tasks are saved.
           </p>
         </div>
       )}

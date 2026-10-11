@@ -1,6 +1,6 @@
 # Data model
 
-Status: the Phase 1 tables exist. Everything from Phase 2 down is still a plan: it maps the prototype's record shapes to the tables each phase will create.
+Status: the Phase 1, 2 and 3 tables exist. Everything from Phase 4 down is still a plan: it maps the prototype's record shapes to the tables each phase will create.
 
 ## Rules for every table
 
@@ -49,10 +49,17 @@ Roles are an enum: `owner`, `admin`, `manager`, `member`, `client`.
 
 | Table | Purpose | Prototype source | Differences to resolve |
 | --- | --- | --- | --- |
-| `pipelines`, `pipeline_stages` | Configurable stages with order and won/lost markers | `DEAL_STAGES`, a fixed list | Becomes data |
-| `deals` | Opportunities | `Deal` | Add currency, lost reason, close date |
-| `leads` | Unqualified enquiries | None | New |
-| `lead_forms`, `lead_form_submissions` | Public capture forms | None | New |
+Built in `supabase/migrations/20261011000003_sales_pipeline.sql`.
+
+| Table | Holds | Notes |
+| --- | --- | --- |
+| `pipeline_stages` | Name, position, kind (`open`, `won`, `lost`), archived time | One pipeline per workspace, seeded with six stages. A deferred trigger keeps at least one live stage of each kind |
+| `deals` | Name, company, contact, owner, stage, `amount_minor` and `currency`, expected close, close date, lost reason, source lead | The close date and lost reason follow the stage, set by a trigger |
+| `leads` | Name, email, phone, company name, source, status, notes, owner, form, conversion links and time | `converted` only through `convert_lead`; a converted lead's outcome can't change |
+| `lead_forms` | Name, unguessable token, introduction, consent text, thank-you message, active | The token can't be changed |
+| `lead_form_submissions` | Form, lead, hashed visitor key, time | For rate limits and provenance; never public |
+
+`activities` gains `lead` and `deal` kinds and a `deal_id`, which gives each deal its history. Functions: `set_stage_order`, `convert_lead` (both run as the caller), `get_lead_form` and `submit_lead_form` (the only two the public can call).
 
 ## Phase 4: finance
 

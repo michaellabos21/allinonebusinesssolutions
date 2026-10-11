@@ -6,6 +6,11 @@ import {
   setContactArchivedAction,
   setTaskStatusAction,
 } from "@/server/actions/records";
+import {
+  moveDealAction,
+  setDealArchivedAction,
+  setLeadArchivedAction,
+} from "@/server/actions/sales";
 import type { TaskStatus } from "@/mocks";
 
 /**
@@ -27,3 +32,12 @@ export const setTaskStatus = (id: string, status: TaskStatus) =>
 
 export const addNote = (contactId: string, body: string) =>
   runAction(addNoteAction({ contactId, body }));
+
+export const moveDeal = (id: string, stageId: string, lostReason = "") =>
+  runAction(moveDealAction({ id, stageId, lostReason }));
+
+export const setDealArchived = (id: string, archived: boolean) =>
+  runAction(setDealArchivedAction({ id, archived }));
+
+export const setLeadArchived = (id: string, archived: boolean) =>
+  runAction(setLeadArchivedAction({ id, archived }));

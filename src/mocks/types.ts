@@ -135,22 +135,73 @@ export type Expense = {
   projectId: string | null;
 };
 
-export type DealStage = "lead" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
+export type StageKind = "open" | "won" | "lost";
+
+/** A column of the workspace's pipeline. Won and lost stages close a deal. */
+export type DealStage = {
+  id: string;
+  name: string;
+  position: number;
+  kind: StageKind;
+  archived: boolean;
+};
 
 export type Deal = {
   id: string;
   name: string;
-  companyId: string;
+  companyId: string | null;
   contactId: string | null;
   ownerId: string;
-  stage: DealStage;
+  stageId: string;
+  /** Copied from the stage when loaded, so totals need no lookup. */
+  stageKind: StageKind;
   valueMinor: number;
+  /** ISO 4217 code; amounts are minor units of it. */
+  currency: string;
   expectedCloseOn: string;
+  /** Set when the deal enters a won or lost stage. */
+  closedOn: string | null;
+  lostReason: string;
+  /** The lead this deal was converted from, if any. */
+  leadId: string | null;
   archived: boolean;
 };
 
+export type LeadStatus = "new" | "contacted" | "qualified" | "disqualified" | "converted";
+
+/** An enquiry not yet qualified into a contact and deal. */
+export type Lead = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  companyName: string;
+  source: string;
+  status: LeadStatus;
+  notes: string;
+  /** Null for leads that arrived through a public form and are not yet assigned. */
+  ownerId: string | null;
+  formId: string | null;
+  convertedContactId: string | null;
+  convertedDealId: string | null;
+  createdOn: string;
+  archived: boolean;
+};
+
+/** A public enquiry form. Its token is the only thing in its link. */
+export type LeadForm = {
+  id: string;
+  name: string;
+  token: string;
+  intro: string;
+  consentText: string;
+  successMessage: string;
+  active: boolean;
+  createdOn: string;
+};
+
 export type ActivityKind =
-  "contact" | "company" | "project" | "task" | "invoice" | "deal" | "expense" | "catalog";
+  "contact" | "company" | "project" | "task" | "invoice" | "deal" | "lead" | "expense" | "catalog";
 
 export type ActivityEntry = {
   id: string;
@@ -164,6 +215,8 @@ export type ActivityEntry = {
   href: string;
   /** Set when the entry belongs to a project, so it shows on that project's page. */
   projectId?: string;
+  /** Set when the entry belongs to a deal, so it shows in that deal's history. */
+  dealId?: string;
 };
 
 export type Notification = {

@@ -171,8 +171,8 @@ export function CompanyDetail() {
             id: deal.id,
             primary: deal.name,
             secondary: `${formatMoney(deal.valueMinor)}, ${contactName(deal.contactId) || "no contact"}`,
-            meta: <DealStageBadge stage={deal.stage} />,
-            href: "/crm/deals",
+            meta: <DealStageBadge stage={store.stageOf(deal.stageId)} />,
+            href: `/crm/deals?deal=${deal.id}`,
           }))}
         />
         <RelatedList
