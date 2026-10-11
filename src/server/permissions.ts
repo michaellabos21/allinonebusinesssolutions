@@ -35,7 +35,9 @@ export type Action =
   /** Add and edit catalog items and prices. */
   | "catalog.manage"
   /** Edit any task, not only one's own. */
-  | "tasks.edit_any";
+  | "tasks.edit_any"
+  /** Add, rename, reorder and archive pipeline stages; create and change lead forms. */
+  | "pipeline.manage";
 
 const MATRIX: Record<Action, readonly Role[]> = {
   "workspace.update_settings": ["owner", "admin"],
@@ -50,6 +52,7 @@ const MATRIX: Record<Action, readonly Role[]> = {
   "records.archive": ["owner", "admin", "manager"],
   "projects.manage": ["owner", "admin", "manager"],
   "catalog.manage": ["owner", "admin", "manager"],
+  "pipeline.manage": ["owner", "admin", "manager"],
   "tasks.edit_any": ["owner", "admin", "manager"],
 };
 

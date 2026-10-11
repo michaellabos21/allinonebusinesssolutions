@@ -8,7 +8,7 @@ import {
   getSummary,
   invoiceDisplayStatus,
 } from "@/lib/metrics";
-import { deals, invoices, projects, tasks } from "@/mocks";
+import { DEAL_STAGES, deals, invoices, projects, tasks } from "@/mocks";
 
 /** The demo records double as fixtures: these are the figures the UI was reviewed against. */
 const TODAY = "2026-10-11";
@@ -86,12 +86,27 @@ describe("pipeline", () => {
   });
 
   it("totals value by stage", () => {
-    const stages = getPipeline(deals);
-    expect(stages.map((stage) => [stage.id, stage.dealCount, stage.valueMinor])).toEqual([
-      ["lead", 2, 6_400_000],
-      ["qualified", 2, 21_500_000],
-      ["proposal", 2, 32_400_000],
-      ["negotiation", 1, 24_000_000],
+    const stages = getPipeline(deals, DEAL_STAGES);
+    expect(stages.map((stage) => [stage.label, stage.dealCount, stage.valueMinor])).toEqual([
+      ["Discovery", 2, 6_400_000],
+      ["Qualified", 2, 21_500_000],
+      ["Proposal", 2, 32_400_000],
+      ["Negotiation", 1, 24_000_000],
+    ]);
+  });
+
+  it("follows the workspace's own stages: order, and archived stages left out", () => {
+    const reordered = DEAL_STAGES.map((stage) =>
+      stage.name === "Discovery"
+        ? { ...stage, position: 9 }
+        : stage.name === "Qualified"
+          ? { ...stage, archived: true }
+          : stage,
+    );
+    expect(getPipeline(deals, reordered).map((stage) => stage.label)).toEqual([
+      "Proposal",
+      "Negotiation",
+      "Discovery",
     ]);
   });
 });

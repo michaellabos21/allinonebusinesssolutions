@@ -487,11 +487,11 @@ describe("public lead form", () => {
       .from("activities")
       .select("actor_id, summary")
       .eq("workspace_id", workspaceA)
-      .like("summary", "New enquiry from Web Visitor%");
+      .like("summary", "sent an enquiry%Web Visitor");
     expect(feed).toEqual([
       {
         actor_id: null,
-        summary: "New enquiry from Web Visitor through the form “Website enquiry”",
+        summary: "sent an enquiry through the form “Website enquiry”: Web Visitor",
       },
     ]);
   });

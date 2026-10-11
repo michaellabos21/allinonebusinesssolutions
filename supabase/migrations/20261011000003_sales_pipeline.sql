@@ -789,7 +789,8 @@ begin
 
   insert into public.activities (workspace_id, actor_id, kind, summary, href)
   values (form.workspace_id, null, 'lead',
-    left('New enquiry from ' || lead_name || ' through the form “' || form.name || '”', 300),
+    -- No actor: the feed shows it as from a website visitor.
+    left('sent an enquiry through the form “' || form.name || '”: ' || lead_name, 300),
     '/crm/leads');
 
   return form.success_message;
