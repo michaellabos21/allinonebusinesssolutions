@@ -20,7 +20,11 @@ test("visitors see the landing page at the home address", async ({ page }) => {
   await expect(page.getByRole("img", { name: /invoices list/ })).toBeVisible();
 
   await page.getByRole("link", { name: "Watch the video" }).click();
-  await expect(page.locator('iframe[src*="youtube-nocookie.com/embed/ThFC4wwFB7M"]')).toBeVisible();
+  const video = page.locator("#video video");
+  await expect(video).toBeVisible();
+  // The file is served to visitors who aren't signed in.
+  const src = await video.locator("source").getAttribute("src");
+  expect((await page.request.get(src!)).headers()["content-type"]).toBe("video/mp4");
 
   await page.getByRole("link", { name: "Create your workspace" }).first().click();
   await expect(page).toHaveURL(/\/signup$/);
