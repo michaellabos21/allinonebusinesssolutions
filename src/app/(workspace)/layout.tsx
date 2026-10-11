@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 
+import { AccountProblemNotice } from "@/components/auth/account-problem";
 import { HardRedirect } from "@/components/auth/navigate";
 import { AppShell } from "@/components/shell/app-shell";
 import { getWorkspaceRecords } from "@/server/records";
-import { getOpenInvitations, getSession, getTeam } from "@/server/session";
+import { getAccountProblem, getOpenInvitations, getSession, getTeam } from "@/server/session";
 
 /**
  * Every workspace page sits behind this layout. It verifies the session on the
@@ -14,7 +15,10 @@ async function AuthedShell({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   // Not `redirect()`: the browser caches a streamed redirect with the page and
   // would replay it after the user signs in or creates a workspace.
-  if (!session) return <HardRedirect to="/login" />;
+  if (!session) {
+    const problem = await getAccountProblem();
+    return problem ? <AccountProblemNotice problem={problem} /> : <HardRedirect to="/login" />;
+  }
   if (!session.workspace) return <HardRedirect to="/onboarding" />;
 
   const [members, invitations, records] = await Promise.all([
