@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { getSiteUrl } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
+import { explainSignUpError } from "@/server/auth-errors";
 import { safeNext } from "@/server/safe-next";
 import type { NavigateResult } from "@/server/types";
 import {
@@ -79,12 +80,8 @@ export async function signUpAction(
         fieldErrors: { password: error.message },
       };
     }
-    logger.warn("auth.sign_up_failed", { code: error.code ?? "unknown" });
-    return {
-      ok: false,
-      values: typed(formData),
-      error: "We couldn’t create your account. Try again in a moment.",
-    };
+    logger.warn("auth.sign_up_failed", { code: error.code ?? "unknown", status: error.status });
+    return { ok: false, values: typed(formData), ...explainSignUpError(error) };
   }
 
   // With email confirmation switched on there is no session until the link is opened.

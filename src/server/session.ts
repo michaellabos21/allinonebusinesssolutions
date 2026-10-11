@@ -87,6 +87,32 @@ export const getSession = cache(async (): Promise<Session | null> => {
   };
 });
 
+/**
+ * Why a signed-in user has no session, if that is the case. Without this, the
+ * workspace pages would send them to /login, which sends signed-in users back,
+ * and the browser would loop. Both causes are set-up problems on a new
+ * database: the tables were never created, or the account was created before
+ * they were, so it has no profile row.
+ */
+export type AccountProblem = "database_not_set_up" | "profile_missing";
+
+export const getAccountProblem = cache(async (): Promise<AccountProblem | null> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+  // PGRST205: the API has no such table. 42P01: Postgres has no such table.
+  if (error?.code === "PGRST205" || error?.code === "42P01") return "database_not_set_up";
+  if (!error && !data) return "profile_missing";
+  return null;
+});
+
 /** Active members of a workspace. Row-level security returns nothing to non-members. */
 export async function getTeam(workspaceId: string): Promise<TeamMemberRow[]> {
   const supabase = await createClient();
