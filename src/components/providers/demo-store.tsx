@@ -17,6 +17,7 @@ import type {
   LeadForm,
   Note,
   Notification,
+  NotificationFeed,
   Payment,
   Project,
   Task,
@@ -95,8 +96,12 @@ type DemoStore = {
   projectName: (projectId: string | null) => string;
   stageOf: (stageId: string) => DealStage | undefined;
 
-  /** Notifications arrive in a later phase; until then the list is empty. */
+  /** The bell: the signed-in user's latest notifications, newest first. */
   notifications: Notification[];
+  unreadNotifications: number;
+  /** Shows a newer feed, e.g. from the bell's periodic check, if it is newer than the current one. */
+  receiveNotifications: (feed: NotificationFeed) => void;
+  /** Mark read in this tab straight away; the caller saves it on the server. */
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
 
@@ -113,15 +118,15 @@ type DemoStore = {
 
 const DemoStoreContext = createContext<DemoStore | null>(null);
 
-const NO_NOTIFICATIONS: Notification[] = [];
-
 export function DemoStoreProvider({
   account,
   records,
+  notifications,
   children,
 }: {
   account: Account;
   records: WorkspaceRecords;
+  notifications: NotificationFeed;
   children: React.ReactNode;
 }) {
   const [appearance, setAppearanceState] = useState<Appearance>({
@@ -130,6 +135,14 @@ export function DemoStoreProvider({
   });
   const [editor, setEditor] = useState<DemoStore["editor"]>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  // The server sends a fresh feed with every page load and refresh; the bell
+  // also fetches one now and then. Whichever was read last is shown.
+  const [fetchedFeed, setFetchedFeed] = useState<NotificationFeed | null>(null);
+  const feed =
+    fetchedFeed && fetchedFeed.loadedAt > notifications.loadedAt ? fetchedFeed : notifications;
+  // Marked read in this tab: applied to the feed that was showing then, until
+  // a later feed (which the bell fetches once the change is saved) replaces it.
+  const [readHere, setReadHere] = useState<ReadHere>({ ids: [], all: false, feedAt: -1 });
 
   const value = useMemo<DemoStore>(() => {
     const nameIn = (list: { id: string; name: string }[], id: string | null) =>
@@ -178,9 +191,18 @@ export function DemoStoreProvider({
       projectName: (id) => nameIn(records.projects, id),
       stageOf: (id) => records.stages.find((stage) => stage.id === id),
 
-      notifications: NO_NOTIFICATIONS,
-      markNotificationRead: () => {},
-      markAllNotificationsRead: () => {},
+      ...applyReadHere(feed, readHere),
+      receiveNotifications: (next) =>
+        setFetchedFeed((current) =>
+          current && current.loadedAt >= next.loadedAt ? current : next,
+        ),
+      markNotificationRead: (id) =>
+        setReadHere((current) =>
+          current.feedAt === feed.loadedAt
+            ? { ...current, ids: [...current.ids, id] }
+            : { ids: [id], all: false, feedAt: feed.loadedAt },
+        ),
+      markAllNotificationsRead: () => setReadHere({ ids: [], all: true, feedAt: feed.loadedAt }),
 
       editor,
       openQuickCreate: (kind, preset) => setEditor({ kind, preset }),
@@ -190,9 +212,31 @@ export function DemoStoreProvider({
       searchOpen,
       setSearchOpen,
     };
-  }, [account, records, appearance, editor, searchOpen]);
+  }, [account, records, feed, readHere, appearance, editor, searchOpen]);
 
   return <DemoStoreContext.Provider value={value}>{children}</DemoStoreContext.Provider>;
+}
+
+type ReadHere = { ids: string[]; all: boolean; feedAt: number };
+
+/** The feed with what was marked read in this tab while it was showing. */
+function applyReadHere(
+  feed: NotificationFeed,
+  readHere: ReadHere,
+): { notifications: Notification[]; unreadNotifications: number } {
+  if (feed.loadedAt !== readHere.feedAt) {
+    return { notifications: feed.items, unreadNotifications: feed.unread };
+  }
+  const notifications = feed.items.map((item) =>
+    item.read || !(readHere.all || readHere.ids.includes(item.id)) ? item : { ...item, read: true },
+  );
+  const newlyRead =
+    feed.items.filter((item) => !item.read).length -
+    notifications.filter((item) => !item.read).length;
+  return {
+    notifications,
+    unreadNotifications: readHere.all ? 0 : Math.max(0, feed.unread - newlyRead),
+  };
 }
 
 export function useDemoStore() {

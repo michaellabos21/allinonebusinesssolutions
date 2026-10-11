@@ -19,7 +19,7 @@ Defined in `supabase/migrations/20261011000001_platform_foundation.sql`.
 
 | Table | Holds | Notes |
 | --- | --- | --- |
-| `profiles` | One row per account: name, job title, timezone, date format, week start, five notification switches, and a copy of the sign-in email | Created by a trigger on sign-up. The email copy lets teammates be listed without exposing the auth schema |
+| `profiles` | One row per account: name, job title, timezone, date format, week start, eight notification switches, and a copy of the sign-in email | Created by a trigger on sign-up. The email copy lets teammates be listed without exposing the auth schema |
 | `workspaces` | Name, timezone, country, currency, default tax (basis points), payment terms | Created only through `create_workspace` |
 | `workspace_memberships` | User, workspace, role, status (`active` or `removed`) | A unique index allows exactly one active owner per workspace |
 | `workspace_invitations` | Email, role, SHA-256 of the token, inviter, expiry, accepted and revoked times | The token itself is never stored. One open invitation per email per workspace |
@@ -29,7 +29,7 @@ Roles are an enum: `owner`, `admin`, `manager`, `member`, `client`.
 
 **How writes work.** There are no insert, update or delete policies on memberships, invitations or the audit log. Those tables change only through security-definer functions that re-check the caller: `create_workspace`, `set_member_role`, `remove_member`, `create_invitation`, `revoke_invitation`, `accept_invitation`. The two direct writes allowed are a user's own profile and, for owners and admins, their workspace's settings, each limited to named columns.
 
-**Differences from the original sketch.** Preferences live on `profiles`, not a separate `user_preferences` table: they are one-to-one with the account and always read together. Notification choices are five boolean columns, not JSON.
+**Differences from the original sketch.** Preferences live on `profiles`, not a separate `user_preferences` table: they are one-to-one with the account and always read together. Notification choices are boolean columns (`notify_*`), not JSON.
 
 ## Phase 2: core operations
 
@@ -93,6 +93,17 @@ Built in `supabase/migrations/20261011000006_task_collaboration.sql`, which can 
 - **`public.save_task`** (runs as the caller) saves a task and its assignees in one step.
 - **`private.can_edit_task`** decides who may change a task: managers and above, its creator, or an assignee.
 - `tasks.assignee_id` is kept only so the previous app version kept working during the switch. A trigger copies it into `task_assignees`, and the current app never writes it; it can be dropped later.
+
+## Notifications
+
+Built in `supabase/migrations/20261011000008_notifications.sql`, which can be run again safely.
+
+- **`notifications`**: recipient (`user_id`), workspace, `actor_id` (null for visitors and reminders), `kind`, `title`, `body`, `href`, optional `task_id`, `invoice_id` or `lead_id` (the notification goes when its record does), `dedupe_key`, `read_at`, `created_at`.
+- Kinds: `task_assigned`, `task_mentioned`, `task_comment`, `task_due`, `invoice_paid`, `invoice_overdue`, `lead_new`.
+- Written only by triggers on `task_assignees`, `task_comments`, `payments` and `leads` (form submissions), and by `public.refresh_notifications(workspace)`, which adds the caller's "due today" and "overdue" reminders. `unique (user_id, dedupe_key)` keeps a reminder from repeating.
+- `private.notify` skips the person acting, anyone not an active member, and anyone who switched that kind off.
+- Users can read only their own rows in workspaces they still belong to, and can change only `read_at`.
+- `profiles` gains `notify_task_assigned`, `notify_task_comments` and `notify_new_leads`, on by default.
 
 ## Calculations
 

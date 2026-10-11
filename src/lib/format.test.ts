@@ -7,6 +7,7 @@ import {
   formatAmountInput,
   formatDate,
   formatMoney,
+  formatRelativeTime,
   initials,
   parseAmountToMinor,
 } from "@/lib/format";
@@ -86,5 +87,24 @@ describe("initials", () => {
     expect(initials("Dalisay & Co.")).toBe("DC");
     expect(initials("Tan & Uy Accounting")).toBe("TU");
     expect(initials("verde")).toBe("V");
+  });
+});
+
+describe("formatRelativeTime", () => {
+  const now = new Date("2026-10-11T06:00:00Z");
+  const ago = (minutes: number) => new Date(now.getTime() - minutes * 60_000).toISOString();
+
+  it("counts minutes, then hours, then days", () => {
+    expect(formatRelativeTime(ago(0), now)).toBe("Just now");
+    expect(formatRelativeTime(ago(5), now)).toBe("5m ago");
+    expect(formatRelativeTime(ago(59), now)).toBe("59m ago");
+    expect(formatRelativeTime(ago(60), now)).toBe("1h ago");
+    expect(formatRelativeTime(ago(11 * 60 + 59), now)).toBe("11h ago");
+    expect(formatRelativeTime(ago(24 * 60), now)).toBe("Yesterday");
+    expect(formatRelativeTime(ago(3 * 24 * 60), now)).toBe("3 days ago");
+  });
+
+  it("treats a clock a little ahead as just now", () => {
+    expect(formatRelativeTime(ago(-2), now)).toBe("Just now");
   });
 });

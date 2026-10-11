@@ -1,4 +1,4 @@
-import type { ActivityEntry, Notification } from "./types";
+import type { ActivityEntry } from "./types";
 
 /** Each entry mirrors a real change in the other demo files. Newest first. */
 export const activity: ActivityEntry[] = [
@@ -130,40 +130,5 @@ export const activity: ActivityEntry[] = [
     at: "2026-06-22T09:00:00",
     href: "/work/projects/p1",
     projectId: "p1",
-  },
-];
-
-export const notifications: Notification[] = [
-  {
-    id: "n1",
-    title: "Invoice INV-1037 is 11 days overdue",
-    body: "Isla Surf Hostel, due 30 Sep",
-    at: "2026-10-11T08:00:00",
-    href: "/money/invoices",
-    read: false,
-  },
-  {
-    id: "n2",
-    title: "Task due today",
-    body: "Review menu page copy with Bianca",
-    at: "2026-10-11T07:30:00",
-    href: "/work/tasks",
-    read: false,
-  },
-  {
-    id: "n3",
-    title: "Payment received",
-    body: "Verde Farm Co-op paid INV-1034",
-    at: "2026-10-09T10:05:00",
-    href: "/money/invoices",
-    read: false,
-  },
-  {
-    id: "n4",
-    title: "Paolo mentioned you",
-    body: "On the Ong Hardware e-commerce deal",
-    at: "2026-10-05T14:10:00",
-    href: "/crm/deals",
-    read: true,
   },
 ];

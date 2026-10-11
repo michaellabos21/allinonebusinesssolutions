@@ -2,7 +2,17 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 /** Pages a signed-out visitor may open. Everything else needs a session. */
-const PUBLIC_PREFIXES = ["/login", "/signup", "/forgot-password", "/auth/", "/invite/", "/f/"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/auth/",
+  "/invite/",
+  "/f/",
+  "/welcome",
+  // The landing page's video and other files in public/landing.
+  "/landing/",
+];
 /** Pages that make no sense once signed in. */
 const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"];
 
@@ -51,8 +61,17 @@ export async function proxy(request: NextRequest) {
     return redirect;
   };
 
+  // Signed-out visitors see the landing page at the home address; signed-in
+  // people get their workspace there as before.
+  if (!user && pathname === "/") {
+    const landing = request.nextUrl.clone();
+    landing.pathname = "/welcome";
+    const rewrite = NextResponse.rewrite(landing);
+    for (const cookie of response.cookies.getAll()) rewrite.cookies.set(cookie);
+    return rewrite;
+  }
   if (!user && !isPublic) {
-    return redirectTo("/login", pathname === "/" ? undefined : pathname + request.nextUrl.search);
+    return redirectTo("/login", pathname + request.nextUrl.search);
   }
   if (user && SIGNED_OUT_ONLY.some((prefix) => pathname.startsWith(prefix))) {
     return redirectTo("/");
@@ -63,6 +82,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Skip static assets and images; run on every page and route handler.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
   ],
 };

@@ -2,13 +2,26 @@
  * Single source of truth for product-level settings.
  * Rename the product by changing PRODUCT_NAME — nothing else hardcodes it.
  */
-export const PRODUCT_NAME = "Workspace";
+export const PRODUCT_NAME = "Kasama Space";
 
 export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
+/** The name on the public landing page. */
+export const MARKETING_NAME = PRODUCT_NAME;
+
+/**
+ * The landing page's video: a YouTube video id (the part after `v=` in its
+ * link), or a file in `public/` such as `{ src: "/landing/demo.mp4" }`. The page
+ * then shows a video section and a "Watch the video" button; null hides both.
+ */
+export const LANDING_VIDEO: { youtubeId: string } | { src: string; poster?: string } | null = {
+  src: "/landing/kasama-space-launch.mp4",
+  poster: "/landing/kasama-space-launch-poster.webp",
+};
+
 /** Shown anywhere the UI needs to explain that nothing is persisted. */
 export const PROTOTYPE_NOTICE =
-  "Everything you add is saved to your workspace. This is an early version: some areas, like notifications and the client portal, are not built yet.";
+  "Everything you add is saved to your workspace. This is an early version: some areas, like emails and the client portal, are not built yet.";
 
 /** Workspace-level formatting defaults (editable in a later settings phase). */
 export const WORKSPACE_DEFAULTS = {
@@ -36,28 +49,50 @@ export const ACCENTS = [
 ] as const;
 export type AccentId = (typeof ACCENTS)[number]["id"];
 
-/** Notification switches shown in settings. Nothing is sent in the prototype. */
+/**
+ * Notification switches shown in settings, each matching a `notify_*` column
+ * on profiles. All but the weekly summary appear in the bell in the top bar.
+ */
 export const NOTIFICATION_OPTIONS = [
   {
-    id: "invoiceOverdue",
-    label: "Invoice becomes overdue",
-    description: "When a sent invoice passes its due date.",
+    id: "taskAssigned",
+    label: "Assigned to a task",
+    description: "When a teammate assigns you a task.",
   },
   {
-    id: "paymentReceived",
-    label: "Payment recorded",
-    description: "When an invoice is marked as paid.",
+    id: "mentions",
+    label: "Mentions",
+    description: "When a teammate @mentions you in a task comment.",
+  },
+  {
+    id: "taskComments",
+    label: "Comments on your tasks",
+    description: "New comments on tasks you’re assigned to or created.",
   },
   {
     id: "taskDue",
     label: "Task due today",
-    description: "A morning reminder for tasks assigned to you.",
+    description: "A reminder for your open tasks on the day they’re due.",
   },
-  { id: "mentions", label: "Mentions", description: "When a teammate mentions you in a note." },
+  {
+    id: "paymentReceived",
+    label: "Payment recorded",
+    description: "When a payment is recorded on an invoice. Managers and above.",
+  },
+  {
+    id: "invoiceOverdue",
+    label: "Invoice becomes overdue",
+    description: "When an issued invoice passes its due date. Managers and above.",
+  },
+  {
+    id: "newLeads",
+    label: "New leads from forms",
+    description: "When someone sends an enquiry through one of your lead forms.",
+  },
   {
     id: "weeklySummary",
     label: "Weekly summary email",
-    description: "Revenue, open invoices and overdue tasks every Monday.",
+    description: "Revenue, open invoices and overdue tasks every Monday. Emails aren’t sent yet.",
   },
 ] as const;
 export type NotificationPrefId = (typeof NOTIFICATION_OPTIONS)[number]["id"];

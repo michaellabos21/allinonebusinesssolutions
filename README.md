@@ -1,6 +1,6 @@
-# Workspace — small-business management app
+# Kasama Space — small-business management app
 
-An original all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
+Kasama Space ("kasama" means partner in Filipino) is an all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
 
 > **Where it stands.** Accounts, workspaces, teams and settings, the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed), the Phase 3 sales records (leads, deals, pipeline stages and public lead forms) and the Phase 4 finance records (estimates, invoices, payments and expenses with receipts) are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. Nothing is emailed and no money moves through the app.
 
@@ -113,6 +113,16 @@ The app itself, all behind sign-in:
 
 ## What works so far
 
+### Landing page (public)
+
+Visitors who aren't signed in see the landing page at `/` (served from `/welcome` by `src/proxy.ts`); signed-in people get their workspace there as before. It lives in `src/components/landing/`:
+
+- **Screenshots** are real captures of the app with sample records, in `src/components/landing/shots/`.
+- **Motion** (`landing.css`, `landing-motion.tsx`): the headline rises word by word, the hero screenshot flattens from a 3D tilt as you scroll, floating cards follow the pointer, a line draws through the lead-to-paid steps, sections slide in, and the module strip scrolls. With "reduce motion" switched on, the page is still and nothing is hidden.
+- **Video:** the launch video is `public/landing/kasama-space-launch.mp4`, with its last frame as the cover (`kasama-space-launch-poster.webp`). `LANDING_VIDEO` in `src/config/app.ts` points to it; it can instead hold a YouTube video id, or null to hide the video section.
+
+`e2e/landing.spec.ts` checks visitors and signed-in people each get the right page.
+
 ### Accounts, workspaces and team (real)
 
 - Sign up, sign in, sign out, and reset a forgotten password by email
@@ -149,9 +159,29 @@ Not built in Phase 2: searching on the server for workspaces too large to load i
   - the task's history: created, status moves, people assigned or unassigned.
 - **Who can do what:** anyone on the team (not clients) can comment, and edit or delete their own comments; a deleted comment leaves "This comment was deleted". Managers and above, the task's creator and its assignees can change the task and its checklist.
 - **Projects** show the same grouped list or board for their own tasks.
-- Mentions don't send notifications yet (Phase 6).
+- People who are assigned, @mentioned or on a task that gets a comment are notified under the bell (see Notifications below).
 
 `tests/integration/tasks.test.ts` checks these rules against the database; `e2e/tasks.spec.ts` plans, assigns, comments on and moves a task with a second teammate.
+
+### Notifications (real, in the app)
+
+The bell in the top bar lists the signed-in person's notifications for the current workspace, newest first, with an unread count. Opening one marks it read and goes to the record; **Mark all read** clears the count. An open tab checks for new ones every minute and whenever it comes back into view.
+
+| What happens | Who is told | Switch in Settings → Notifications |
+| --- | --- | --- |
+| Someone assigns you a task | The person assigned | Assigned to a task |
+| Someone @mentions you in a task comment (or adds you to one when editing it) | The person mentioned | Mentions |
+| A new comment on a task | Its assignees and its creator, unless already mentioned | Comments on your tasks |
+| A task of yours is due today (in the workspace's time zone) | Its assignees, once per due date | Task due today |
+| A payment is recorded on an invoice | Owners, admins and managers | Payment recorded |
+| An issued invoice passes its due date | Owners, admins and managers, once per due date | Invoice becomes overdue |
+| A lead arrives through a lead form | Everyone on the team except clients | New leads from forms |
+
+- Nobody is told about their own action, and clients never receive team notifications.
+- "Due today" and "overdue" are created when the person next opens the app, not by a scheduled job.
+- Read notifications are removed after 90 days. Nothing is emailed or pushed to a phone.
+
+The database creates every notification (`supabase/migrations/20261011000008_notifications.sql`); the app can only read its own and mark them read. `tests/integration/notifications.test.ts` checks each rule, the switches and who can see what; `e2e/notifications.spec.ts` follows an assignment and a comment to a teammate's bell.
 
 ### Leads, deals, pipeline and lead forms (real)
 
@@ -166,7 +196,7 @@ Not built in Phase 2: searching on the server for workspaces too large to load i
 
 `tests/integration/sales.test.ts` checks these rules against the database, including isolation between workspaces, conversion without duplicates, stage rules, the deal history and the public form's limits. `e2e/sales.spec.ts` converts a lead, moves and loses the deal, and sends a public form without signing in.
 
-Not built in Phase 3: saved views, more than one pipeline per workspace, and email notifications for new leads (Phase 6).
+Not built in Phase 3: saved views and more than one pipeline per workspace. New leads from forms show under the bell (see Notifications below); nothing is emailed.
 
 ### Estimates, invoices, payments and expenses (real)
 
@@ -242,7 +272,7 @@ What settings change:
 - **Currency** changes how every amount is displayed. Amounts are relabelled, not converted.
 - **Default tax and payment terms** apply to new invoices only.
 - **Date format and week start** apply everywhere dates and the calendar appear.
-- **Notification switches** are saved, but nothing is sent yet.
+- **Notification switches** decide what appears under the bell. The weekly summary email isn't sent yet.
 - **Accent colour and density** apply in the current browser tab only and reset on reload.
 
 How invoice money is handled:

@@ -1,28 +1,6 @@
-import { type Browser, type Page, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-import { PASSWORD, mainNav, startWorkspace, uniqueEmail } from "./helpers";
-
-/** Invites a teammate and signs them up in their own browser; returns their page. */
-async function addTeammate(page: Page, browser: Browser, workspace: string, name: string) {
-  const email = uniqueEmail("teammate");
-  await page.goto("/team");
-  await page.getByRole("button", { name: "Invite member" }).first().click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Work email").fill(email);
-  await dialog.getByRole("button", { name: "Create invitation link" }).click();
-  const link = await dialog.getByLabel("Invitation link").inputValue();
-  await dialog.getByRole("button", { name: "Done" }).click();
-
-  const guest = await (await browser.newContext()).newPage();
-  await guest.goto(link);
-  await guest.getByRole("link", { name: "Create an account" }).click();
-  await guest.getByLabel("Full name").fill(name);
-  await guest.getByLabel("Password").fill(PASSWORD);
-  await guest.getByRole("button", { name: "Create account" }).click();
-  await guest.getByRole("button", { name: `Join ${workspace}` }).click();
-  await expect(guest.getByRole("heading", { level: 1, name: /welcome back/i })).toBeVisible();
-  return guest;
-}
+import { addTeammate, mainNav, startWorkspace } from "./helpers";
 
 /**
  * ClickUp-style tasks: quick add into a status group, a task page with
@@ -31,6 +9,8 @@ async function addTeammate(page: Page, browser: Browser, workspace: string, name
  * saved; a teammate's view proves comments and assignments are shared.
  */
 test("a task is planned, assigned, discussed and moved", async ({ page, browser }) => {
+  // Two browsers and many saved steps: close to the default 30s on a slow machine.
+  test.slow();
   const { workspace } = await startWorkspace(page, "tasks");
   const teammate = await addTeammate(page, browser, workspace, "Rhea Aguilar");
   const main = page.getByRole("main");
@@ -84,6 +64,8 @@ test("a task is planned, assigned, discussed and moved", async ({ page, browser 
   await page.getByRole("option", { name: "Rhea Aguilar" }).click();
   await box.pressSequentially("can you review?");
   await main.getByRole("button", { name: "Comment", exact: true }).click();
+  // The box clears once the comment is saved; its text alone also matches the box.
+  await expect(box).toHaveValue("");
   await expect(main.getByText("can you review?")).toBeVisible();
 
   await page.reload();
