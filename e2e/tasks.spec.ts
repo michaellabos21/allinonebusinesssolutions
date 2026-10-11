@@ -38,7 +38,7 @@ test("a task is planned, assigned, discussed and moved", async ({ page, browser 
   // Quick add straight into the In progress group.
   await page.goto("/work/tasks");
   await main.getByRole("button", { name: "New task" }).first().click();
-  let dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Task").fill("Pick brand fonts");
   await dialog.getByRole("button", { name: "Add task" }).click();
   await expect(dialog).toBeHidden();

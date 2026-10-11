@@ -36,8 +36,8 @@ async function saveTask(
   });
 }
 const assigneesOf = async (task: string) =>
-  (await admin.from("task_assignees").select("user_id").eq("task_id", task)).data!
-    .map((row) => row.user_id)
+  (await admin.from("task_assignees").select("user_id").eq("task_id", task))
+    .data!.map((row) => row.user_id)
     .sort();
 
 beforeAll(async () => {
@@ -287,9 +287,9 @@ describe("comments", () => {
         .from("task_comments")
         .insert({ workspace_id: workspaceA, task_id: task, body: "Hello" });
       expect(attempt.error).not.toBeNull();
-      expect((await user.client.from("task_comments").select("id").eq("task_id", task)).data).toEqual(
-        [],
-      );
+      expect(
+        (await user.client.from("task_comments").select("id").eq("task_id", task)).data,
+      ).toEqual([]);
     }
     const visitor = anonymous();
     expect((await visitor.from("task_comments").select("id")).data ?? []).toEqual([]);

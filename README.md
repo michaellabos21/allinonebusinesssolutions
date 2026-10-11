@@ -136,7 +136,22 @@ Every rule above is enforced three times: in the server action, in a database fu
 
 `npm run test:integration` checks these rules against the database, including that another workspace can't see or change any of these records. `npm run test:e2e` saves each kind of record through the browser, reloads the page to check it was really stored, and runs a CSV import.
 
-Not built in Phase 2: comments on tasks, and searching on the server for workspaces too large to load in full.
+Not built in Phase 2: searching on the server for workspaces too large to load in full.
+
+### Tasks, ClickUp style (real)
+
+- **Four statuses:** To do, In progress, In review and Done. Due dates are optional, and a task can be unassigned or have up to 10 assignees.
+- **List view:** grouped by status, with collapsible groups, a quick **Add task** in each group, and filters for assignee (including **Me** and **Unassigned**), priority and project. The **board** has a column per status; cards move by dragging or with a keyboard-friendly menu.
+- **Task page** (`/work/tasks/<id>`):
+  - name, description, status, assignees, due date, priority and project, all edited in place;
+  - a checklist with progress;
+  - a comment thread where typing @ suggests teammates, and mentions are highlighted;
+  - the task's history: created, status moves, people assigned or unassigned.
+- **Who can do what:** anyone on the team (not clients) can comment, and edit or delete their own comments; a deleted comment leaves "This comment was deleted". Managers and above, the task's creator and its assignees can change the task and its checklist.
+- **Projects** show the same grouped list or board for their own tasks.
+- Mentions don't send notifications yet (Phase 6).
+
+`tests/integration/tasks.test.ts` checks these rules against the database; `e2e/tasks.spec.ts` plans, assigns, comments on and moves a task with a second teammate.
 
 ### Leads, deals, pipeline and lead forms (real)
 

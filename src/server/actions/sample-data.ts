@@ -196,9 +196,9 @@ export async function loadSampleRecordsAction(): Promise<ActionResult> {
     .select("id");
   if (taskRows.error) return fail("tasks", taskRows.error.message);
   // Sample tasks are all yours, so there is something under "Me".
-  const assigned = await supabase.from("task_assignees").insert(
-    (taskRows.data ?? []).map((row) => ({ task_id: row.id, workspace_id, user_id: me })),
-  );
+  const assigned = await supabase
+    .from("task_assignees")
+    .insert((taskRows.data ?? []).map((row) => ({ task_id: row.id, workspace_id, user_id: me })));
   if (assigned.error) return fail("task assignees", assigned.error.message);
 
   // Sample deals sit in the workspace's own stages, matched by name.
