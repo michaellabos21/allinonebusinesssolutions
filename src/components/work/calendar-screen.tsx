@@ -18,7 +18,6 @@ import { EmptyState } from "@/components/common/states";
 import { MultiFilterMenu, SegmentedControl, TableToolbar } from "@/components/common/table-toolbar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
-import { TaskPanel } from "@/components/work/task-panel";
 import { formatDate } from "@/lib/format";
 import { getRuntime, getToday } from "@/lib/runtime";
 import {
@@ -54,13 +53,7 @@ const WEEKDAY_NAMES = [
 /** Chips per day cell before the rest collapse into "+n more". */
 const CELL_LIMIT = 2;
 
-function EventRow({
-  event,
-  onOpenTask,
-}: {
-  event: CalendarEvent;
-  onOpenTask: (id: string) => void;
-}) {
+function EventRow({ event }: { event: CalendarEvent }) {
   const Icon = KIND_ICON[event.kind];
   const body = (
     <>
@@ -89,12 +82,11 @@ function EventRow({
   const className =
     "flex w-full items-start gap-3 rounded-md px-3 py-2 text-left outline-none hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50";
 
-  return event.taskId ? (
-    <button type="button" className={className} onClick={() => onOpenTask(event.taskId!)}>
-      {body}
-    </button>
-  ) : (
-    <Link href={event.href ?? "#"} className={className}>
+  return (
+    <Link
+      href={event.taskId ? `/work/tasks/${event.taskId}` : (event.href ?? "#")}
+      className={className}
+    >
       {body}
     </Link>
   );
@@ -107,7 +99,6 @@ export function CalendarScreen() {
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);
   const [kinds, setKinds] = useState<string[]>([]);
-  const [taskId, setTaskId] = useState<string | null>(null);
 
   const events = useMemo(
     () =>
@@ -303,7 +294,7 @@ export function CalendarScreen() {
                 <ul>
                   {selectedEvents.map((event) => (
                     <li key={event.id}>
-                      <EventRow event={event} onOpenTask={setTaskId} />
+                      <EventRow event={event} />
                     </li>
                   ))}
                 </ul>
@@ -349,7 +340,7 @@ export function CalendarScreen() {
                   <ul>
                     {(byDate.get(date) ?? []).map((event) => (
                       <li key={event.id}>
-                        <EventRow event={event} onOpenTask={setTaskId} />
+                        <EventRow event={event} />
                       </li>
                     ))}
                   </ul>
@@ -359,8 +350,6 @@ export function CalendarScreen() {
           )}
         </section>
       )}
-
-      <TaskPanel taskId={taskId} onClose={() => setTaskId(null)} />
     </div>
   );
 }

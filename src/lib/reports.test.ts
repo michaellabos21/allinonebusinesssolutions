@@ -6,8 +6,9 @@ import {
   getInvoiceStatusBreakdown,
   getMoneyFlow,
   getRange,
+  getTaskLoad,
 } from "@/lib/reports";
-import { expenses, invoices, payments } from "@/mocks";
+import { expenses, invoices, payments, tasks } from "@/mocks";
 import type { Invoice } from "@/mocks";
 
 const TODAY = "2026-10-11";
@@ -136,5 +137,25 @@ describe("part payments, voids and archived expenses", () => {
 
   it("reconciles: invoiced = collected on these invoices + still owed", () => {
     expect(headline.invoicedMinor).toBe(headline.collectedMinor + headline.outstandingMinor);
+  });
+});
+
+describe("getTaskLoad with several assignees", () => {
+  it("counts a shared task for each assignee and skips unassigned or undated ones", () => {
+    const range = getRange("this-month", "2026-10-11");
+    const base = tasks[0];
+    const load = getTaskLoad(
+      [
+        { ...base, id: "a", dueOn: "2026-10-05", status: "done", assigneeIds: ["mia", "leo"] },
+        { ...base, id: "b", dueOn: "2026-10-09", status: "todo", assigneeIds: ["mia"] },
+        { ...base, id: "c", dueOn: "2026-10-09", status: "todo", assigneeIds: [] },
+        { ...base, id: "d", dueOn: null, status: "todo", assigneeIds: ["leo"] },
+      ],
+      range,
+    );
+    const byId = Object.fromEntries(load.map((row) => [row.id, row]));
+    expect(byId.mia).toMatchObject({ done: 1, open: 1, overdue: 1 });
+    expect(byId.leo).toMatchObject({ done: 1, open: 0, overdue: 0 });
+    expect(load).toHaveLength(2);
   });
 });

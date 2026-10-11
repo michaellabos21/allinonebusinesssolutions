@@ -135,20 +135,26 @@ export function getInvoiceStatusBreakdown(invoices: Invoice[], range: DateRange)
   });
 }
 
-/** Tasks due in the range per person, split into done and still open. */
+/**
+ * Tasks due in the range per person, split into done and still open. A task
+ * with several assignees counts for each of them; unassigned and undated
+ * tasks are left out.
+ */
 export function getTaskLoad(tasks: Task[], range: DateRange) {
   const due = tasks.filter((task) => inRange(task.dueOn, range));
-  const ids = [...new Set(due.map((task) => task.assigneeId))];
+  const ids = [...new Set(due.flatMap((task) => task.assigneeIds))];
   return ids
     .map((id) => {
-      const own = due.filter((task) => task.assigneeId === id);
+      const own = due.filter((task) => task.assigneeIds.includes(id));
       const done = own.filter((task) => task.status === "done").length;
       return {
         id,
         name: memberName(id),
         done,
         open: own.length - done,
-        overdue: own.filter((task) => task.status !== "done" && task.dueOn < range.to).length,
+        overdue: own.filter(
+          (task) => task.status !== "done" && task.dueOn !== null && task.dueOn < range.to,
+        ).length,
       };
     })
     .sort((a, b) => b.done + b.open - (a.done + a.open));

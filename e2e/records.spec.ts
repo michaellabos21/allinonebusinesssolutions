@@ -97,13 +97,13 @@ test("companies, contacts, notes, catalog, projects and tasks persist", async ({
   await mainNav(page).getByRole("link", { name: "Tasks" }).click();
   await page.waitForURL((url) => url.pathname === "/work/tasks");
   await expect(
-    main.getByRole("button", { name: "Draft three logo options", exact: true }),
+    main.getByRole("link", { name: "Draft three logo options", exact: true }),
   ).toBeVisible();
   await main.getByRole("checkbox", { name: /draft three logo options/i }).click();
   await expect(page.getByText("Task completed")).toBeVisible();
   await page.reload();
-  // Done tasks drop out of the default "Open" view; the count proves it was saved.
-  await expect(main.getByText(/^0 open, \d+ overdue/)).toBeVisible();
+  // Done tasks move into the collapsed Done group; its count proves it was saved.
+  await expect(main.getByRole("button", { name: /^Done\s*1$/ })).toBeVisible();
 
   // Activity feed on the overview names the real actor
   await mainNav(page).getByRole("link", { name: "Overview" }).click();

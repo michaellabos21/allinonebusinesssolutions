@@ -11,7 +11,7 @@ export function getProjectProgress(projectId: string, tasks: Task[], today: stri
     total: own.length,
     done,
     open,
-    overdue: own.filter((task) => task.status !== "done" && task.dueOn < today).length,
+    overdue: own.filter((task) => isTaskOverdue(task, today)).length,
     percent: own.length === 0 ? 0 : Math.round((done / own.length) * 100),
   };
 }
@@ -19,27 +19,36 @@ export function getProjectProgress(projectId: string, tasks: Task[], today: stri
 /** The owner plus everyone assigned a task on the project, with their open task count. */
 export function getProjectTeam(project: Project, tasks: Task[]) {
   const own = tasks.filter((task) => task.projectId === project.id);
-  const ids = [...new Set([project.ownerId, ...own.map((task) => task.assigneeId)])];
+  const ids = [...new Set([project.ownerId, ...own.flatMap((task) => task.assigneeIds)])];
   return ids
     .map((id) => getRuntime().team.find((member) => member.id === id))
     .filter((member): member is TeamMember => Boolean(member))
     .map((member) => ({
       member,
       isOwner: member.id === project.ownerId,
-      openTasks: own.filter((task) => task.assigneeId === member.id && task.status !== "done")
-        .length,
+      openTasks: own.filter(
+        (task) => task.assigneeIds.includes(member.id) && task.status !== "done",
+      ).length,
     }));
 }
 
 export { memberName };
 
-/** Open tasks first by due date, then finished ones, most recent first. */
+/** An unfinished task past its due date. A task with no due date is never overdue. */
+export const isTaskOverdue = (task: Task, today: string = getToday()) =>
+  task.status !== "done" && task.dueOn !== null && task.dueOn < today;
+
+/** Compares due dates with undated tasks last. */
+export const compareDue = (a: string | null, b: string | null) =>
+  a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b);
+
+/** Open tasks first by due date (undated last), then finished ones, most recent first. */
 export function sortTasksForList(tasks: Task[]) {
   return [...tasks].sort((a, b) => {
     const aDone = a.status === "done";
     const bDone = b.status === "done";
     if (aDone !== bDone) return aDone ? 1 : -1;
-    return aDone ? b.dueOn.localeCompare(a.dueOn) : a.dueOn.localeCompare(b.dueOn);
+    return aDone ? compareDue(b.dueOn, a.dueOn) : compareDue(a.dueOn, b.dueOn);
   });
 }
 
@@ -77,16 +86,18 @@ export function getCalendarEvents(
 ): CalendarEvent[] {
   const projectName = (id: string | null) => projects.find((project) => project.id === id)?.name;
   return [
-    ...tasks.map((task): CalendarEvent => ({
-      id: `task-${task.id}`,
-      date: task.dueOn,
-      kind: "task",
-      title: task.title,
-      detail: projectName(task.projectId) ?? "No project",
-      done: task.status === "done",
-      late: task.status !== "done" && task.dueOn < today,
-      taskId: task.id,
-    })),
+    ...tasks
+      .filter((task): task is Task & { dueOn: string } => task.dueOn !== null)
+      .map((task): CalendarEvent => ({
+        id: `task-${task.id}`,
+        date: task.dueOn,
+        kind: "task",
+        title: task.title,
+        detail: projectName(task.projectId) ?? "No project",
+        done: task.status === "done",
+        late: isTaskOverdue(task, today),
+        taskId: task.id,
+      })),
     ...projects.map((project): CalendarEvent => ({
       id: `project-${project.id}`,
       date: project.dueOn,

@@ -153,6 +153,7 @@ export function LeadStatusBadge({ status, archived }: { status: LeadStatus; arch
 const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {
   todo: "neutral",
   in_progress: "primary",
+  in_review: "warning",
   done: "success",
 };
 

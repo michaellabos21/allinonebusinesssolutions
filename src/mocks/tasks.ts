@@ -3,6 +3,7 @@ import type { Task, TaskStatus } from "./types";
 export const TASK_STATUSES: { id: TaskStatus; label: string }[] = [
   { id: "todo", label: "To do" },
   { id: "in_progress", label: "In progress" },
+  { id: "in_review", label: "In review" },
   { id: "done", label: "Done" },
 ];
 
@@ -19,12 +20,14 @@ const task = (
   id,
   title,
   projectId,
-  assigneeId,
+  assigneeIds: [assigneeId],
   status,
   priority,
   dueOn,
   description,
   createdBy: null,
+  checklist: { done: 0, total: 0 },
+  commentCount: 0,
 });
 
 export const tasks: Task[] = [

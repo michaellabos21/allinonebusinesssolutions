@@ -81,6 +81,19 @@ Expense categories stay a fixed list in code (`EXPENSE_CATEGORIES`) with free te
 
 Built in `supabase/migrations/20261011000005_photos.sql`, written so it can be run again safely. `profiles.avatar_path` and `contacts.photo_path` hold the storage path of the current photo, or null for initials. Check constraints keep each path inside its owner's folder (`users/<the profile's id>/…`, `<the contact's workspace>/contacts/<the contact's id>/…`). Files live in the private `avatars` bucket; see `docs/SECURITY.md`.
 
+## Task collaboration
+
+Built in `supabase/migrations/20261011000006_task_collaboration.sql`, which can be run again safely.
+
+- `task_status` gains `in_review`, and `tasks.due_on` becomes optional.
+- **`task_assignees`** holds who is assigned to each task (any number, up to 10 through `save_task`).
+- **`task_checklist_items`** holds a task's steps.
+- **`task_comments`** holds comments, with `mentions` (user ids, kept to active non-client members), `edited_at`, and `deleted_at`. Deleting a comment keeps it in place with its text removed.
+- **`activities.task_id`** links history entries to their task.
+- **`public.save_task`** (runs as the caller) saves a task and its assignees in one step.
+- **`private.can_edit_task`** decides who may change a task: managers and above, its creator, or an assignee.
+- `tasks.assignee_id` is kept only so the previous app version kept working during the switch. A trigger copies it into `task_assignees`, and the current app never writes it; it can be dropped later.
+
 ## Calculations
 
 `src/lib/money.ts` and the database functions use the same rules: each line rounded once, half up; discount clamped to the subtotal; tax on what remains, rounded once, half up. `tests/integration/finance.test.ts` checks that both give the same totals.
