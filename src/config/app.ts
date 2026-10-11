@@ -15,7 +15,8 @@ export const MARKETING_NAME = PRODUCT_NAME;
  * then shows a video section and a "Watch the video" button; null hides both.
  */
 export const LANDING_VIDEO: { youtubeId: string } | { src: string; poster?: string } | null = {
-  youtubeId: "ThFC4wwFB7M",
+  src: "/landing/kasama-space-launch.mp4",
+  poster: "/landing/kasama-space-launch-poster.webp",
 };
 
 /** Shown anywhere the UI needs to explain that nothing is persisted. */

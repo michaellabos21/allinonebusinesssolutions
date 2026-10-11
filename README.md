@@ -119,7 +119,7 @@ Visitors who aren't signed in see the landing page at `/` (served from `/welcome
 
 - **Screenshots** are real captures of the app with sample records, in `src/components/landing/shots/`.
 - **Motion** (`landing.css`, `landing-motion.tsx`): the headline rises word by word, the hero screenshot flattens from a 3D tilt as you scroll, floating cards follow the pointer, a line draws through the lead-to-paid steps, sections slide in, and the module strip scrolls. With "reduce motion" switched on, the page is still and nothing is hidden.
-- **Video:** `LANDING_VIDEO` in `src/config/app.ts` holds the YouTube video id (embedded with YouTube's privacy-enhanced player), or a file in `public/` such as `{ src: "/landing/demo.mp4" }`. Setting it to null hides the video section and the "Watch the video" button.
+- **Video:** the launch video is `public/landing/kasama-space-launch.mp4`, with its last frame as the cover (`kasama-space-launch-poster.webp`). `LANDING_VIDEO` in `src/config/app.ts` points to it; it can instead hold a YouTube video id, or null to hide the video section.
 
 `e2e/landing.spec.ts` checks visitors and signed-in people each get the right page.
 
