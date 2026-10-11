@@ -139,7 +139,7 @@ export function CatalogScreen() {
           <EmptyState
             icon={Package}
             title="Your catalog is empty"
-            description="Add the services and products you bill for, or turn demo data on in the sidebar."
+            description="Add the services and products you bill for, with their usual rates."
             action={
               <Button variant="outline" onClick={() => openQuickCreate("catalog")}>
                 New item

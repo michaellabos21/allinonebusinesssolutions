@@ -51,7 +51,9 @@ export type FormSpec = {
   warning?: string;
   /** Cross-field or uniqueness checks, run after the built-in ones. */
   check?: (values: FormValues) => Record<string, string | undefined>;
-  /** Saves to session state and returns the confirmation to show. */
+  /** Shown beside the buttons, e.g. that a sample record is not saved. */
+  footnote?: string;
+  /** Saves the record and returns the confirmation to show. */
   /** May be asynchronous: real records are saved by a server action. */
   submit: (values: FormValues) => FormOutcome | Promise<FormOutcome>;
 };
@@ -250,7 +252,7 @@ export function RecordForm({
       </div>
 
       <DialogFooter className="items-center sm:justify-between">
-        <p className="text-xs text-muted-foreground">Prototype: saved for this session only.</p>
+        <p className="text-xs text-muted-foreground">{spec.footnote}</p>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel

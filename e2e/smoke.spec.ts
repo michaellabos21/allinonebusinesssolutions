@@ -3,9 +3,8 @@ import { expect, test } from "@playwright/test";
 import { mainNav, startWorkspace } from "./helpers";
 
 /**
- * The business screens still run on demo data. This checks that they work for
- * a signed-in user: navigation, and a record created through the UI showing up
- * in its list.
+ * Checks the business screens work for a signed-in user: navigation, and a
+ * record created through the UI showing up in its list.
  */
 test("create a contact and find it in the list", async ({ page }) => {
   await startWorkspace(page, "smoke");
@@ -13,7 +12,7 @@ test("create a contact and find it in the list", async ({ page }) => {
   await mainNav(page).getByRole("link", { name: "Contacts" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Contacts" })).toBeVisible();
 
-  await page.getByRole("main").getByRole("button", { name: "New contact" }).click();
+  await page.getByRole("main").getByRole("button", { name: "New contact" }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Full name").fill("Playwright Tester");
   await dialog.getByLabel("Email").fill("tester@smoke.example");
