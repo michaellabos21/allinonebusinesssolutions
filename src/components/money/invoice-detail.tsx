@@ -53,7 +53,7 @@ export function InvoiceDetail() {
     <div className="page-container space-y-6">
       <BackLink href="/money/invoices" label="Invoices" />
 
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h1 className="tabular font-display text-title">{invoice.number ?? "Draft invoice"}</h1>
@@ -103,7 +103,7 @@ export function InvoiceDetail() {
         </div>
       </header>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_300px] print:block">
         <InvoiceDocument
           workspaceName={store.account.workspace.name}
           billTo={billTo}
@@ -125,7 +125,7 @@ export function InvoiceDetail() {
           }}
         />
 
-        <div className="space-y-6">
+        <div className="space-y-6 print:hidden">
           <Panel title="Status">
             <p className={cn(display === "overdue" && "font-medium text-danger")}>
               {invoice.status === "draft"

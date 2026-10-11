@@ -56,6 +56,16 @@ Business records, as enforced since Phases 2 and 3 (in `src/server/permissions.t
 
 Nothing is ever hard-deleted; there are no delete policies. Notes and activity entries cannot be rewritten.
 
+Finance, as enforced since Phase 4 (`finance.manage` in `src/server/permissions.ts`, `private.can_manage_finance` in the database, tested in `tests/integration/finance.test.ts`):
+
+| Action | Owner | Admin | Manager | Member | Client |
+| --- | --- | --- | --- | --- | --- |
+| See estimates, invoices, payments, expenses and money reports | Yes | Yes | Yes | No | No |
+| Draft, issue, void, record payments, convert estimates | Yes | Yes | Yes | No | No |
+| Add, edit and archive expenses; attach and view receipts | Yes | Yes | Yes | No | No |
+
+Invoices, estimates, their lines and payments cannot be written directly by any user, only through the database functions listed in `docs/DATA_MODEL.md`. A draft invoice can be deleted; an issued one can only be voided, and only while it has no payments.
+
 ## Public lead forms
 
 - A form is reached only by a random 36-character token in its link. Visitors never send a workspace id; the database works it out from the token.
@@ -64,7 +74,7 @@ Nothing is ever hard-deleted; there are no delete policies. Notes and activity e
 - A hidden field catches simple bots: when it is filled in, the visitor is thanked and nothing is saved.
 - Consent text is written by the business. The app does not supply legal wording or claim compliance with any privacy law.
 
-The matrix below is the **draft for later phases**. Its finance and client rows are not built:
+The matrix below is the **draft for later phases**. Its client row is not built:
 
 | Action | Owner | Admin | Manager | Member | Client |
 | --- | --- | --- | --- | --- | --- |
@@ -88,21 +98,21 @@ Rules that hold whatever the matrix says: nobody can raise their own role, a wor
 ## Input and output
 
 - All input is validated on the server with a schema, including input from public forms.
-- Totals are computed on the server from stored lines. A total sent by the client is discarded.
+- Totals are computed in the database from stored lines. Line amounts, subtotals and totals sent by the client are never read.
 - Errors shown to users never include stack traces, SQL or internal ids they do not own.
 
 ## Logging and audit
 
 - Application logs go through `src/lib/logger.ts`: an event name and structured fields, never passwords, tokens, secrets or request bodies.
-- The `audit_logs` table records workspace creation, invitations created, revoked and accepted, role changes and member removal. Invoice issue, void and payment are added in Phase 4. There is no screen for reading the log yet.
+- The `audit_logs` table records workspace creation, invitations created, revoked and accepted, role changes and member removal. Since Phase 4 it also records invoice issue, void and every payment, with the amounts. These go to the audit log rather than the activity feed so that members never see amounts. There is no screen for reading the log yet.
 
-## Files (from Phase 4)
+## Files
 
-Private buckets only. Uploads are checked for size and type, stored under random keys, and served through short-lived signed URLs created after an authorisation check.
+Receipts are in the private `receipts` bucket. The server checks the type (JPEG, PNG, WebP, HEIC, PDF) and size (5 MB) before upload, and stores the file at `<workspace>/<expense>/<random>.<ext>`. Storage policies allow reading and writing only under a workspace where the user manages finance. A receipt is viewed through a signed link valid for 60 seconds, created after that check.
 
 ## Not claimed
 
-This product makes no claim of tax, privacy, e-signature or other legal compliance in any country. The invoice tax options are demo rates. Local requirements must be reviewed by qualified professionals before production use.
+This product makes no claim of tax, privacy, e-signature or other legal compliance in any country. The invoice tax options are a starting point, not advice. Invoice numbering, tax and record-keeping rules (for example the BIR's in the Philippines) have not been checked, and must be reviewed by qualified professionals before production use.
 
 ## Before real users
 

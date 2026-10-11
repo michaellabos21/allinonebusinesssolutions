@@ -2,9 +2,11 @@
 
 An original all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
 
-> **Where it stands.** Accounts, workspaces, teams and settings, the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed) and the Phase 3 sales records (leads, deals, pipeline stages and public lead forms) are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. **Invoices and expenses still show fictional sample data** from `src/mocks/`, held in the browser and reset on reload. Nothing here is ready for real customer data yet.
+> **Where it stands.** Accounts, workspaces, teams and settings, the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed), the Phase 3 sales records (leads, deals, pipeline stages and public lead forms) and the Phase 4 finance records (estimates, invoices, payments and expenses with receipts) are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. Nothing is emailed and no money moves through the app.
 
-Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0 to 3 of `agiled_inspired_saas_mvp_plan.md`.
+> **Compliance.** Invoice numbering, tax and record-keeping rules differ by country (in the Philippines, for example, the BIR has its own rules for official receipts and invoices). This app has not been checked against any of them. **Validate your local tax and statutory requirements with an accountant before using it for real invoicing.**
+
+Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0 to 4 of `agiled_inspired_saas_mvp_plan.md`.
 
 ## Setup
 
@@ -95,9 +97,13 @@ The app itself, all behind sign-in:
 | `/work/projects/[id]` | Project detail (built) |
 | `/work/tasks` | Tasks list and board (built) |
 | `/work/calendar` | Month and agenda calendar (built) |
+| `/money/estimates` | Estimates list (built) |
+| `/money/estimates/new` | Estimate editor (built) |
+| `/money/estimates/[id]` | Estimate detail, print (built) |
+| `/money/estimates/[id]/edit` | Edit a draft (built) |
 | `/money/invoices` | Invoices list (built) |
 | `/money/invoices/new` | Invoice editor (built) |
-| `/money/invoices/[id]` | Invoice detail and preview (built) |
+| `/money/invoices/[id]` | Invoice detail, payments, print (built) |
 | `/money/invoices/[id]/edit` | Edit a draft (built) |
 | `/money/expenses` | Expenses (built) |
 | `/catalog` | Products & Services (built) |
@@ -147,7 +153,23 @@ Not built in Phase 2: comments on tasks, and searching on the server for workspa
 
 Not built in Phase 3: saved views, more than one pipeline per workspace, and email notifications for new leads (Phase 6).
 
-Everything below this line still runs on sample data, apart from the screens listed above.
+### Estimates, invoices, payments and expenses (real)
+
+- **Who sees money:** owners, admins and managers. Members and clients don't see the finance pages, the money figures on the overview, or the finance lists at all; the server never loads them for those roles
+- **Estimates:** draft → sent → accepted or declined. "Expired" is shown when a sent estimate passes its valid-until date. An accepted estimate becomes one draft invoice with the same lines, discount and tax, once
+- **Invoices:** draft → issued → part paid → paid, or void. Drafts can be edited or deleted; once issued, lines and totals are locked. An issued invoice with no payments can be voided with a reason and keeps its number. "Overdue" is shown, never stored
+- **Line items:** quantities with up to three decimals (1.5 hours), unit prices, and optional links to catalog items. The database works out every line, the subtotal, discount, tax and total; anything the browser sends for those is ignored. The editor previews the same arithmetic (`src/lib/money.ts`), and a test checks the two agree
+- **Numbers:** given when an invoice is issued or an estimate is sent, from a per-workspace counter that is locked while it's taken, so two people issuing at once never get the same number and drafts never use one up. The prefix (default `INV-` and `EST-`) is set in Settings → Workspace
+- **Bill-to snapshot:** issuing an invoice copies the client's name, email and company onto it, so later edits to the contact don't change an issued invoice
+- **Payments:** recorded by hand with date, method, reference and note. Part payments are allowed; a payment larger than what's owed is refused. Payments can't be edited or deleted
+- **Expenses:** date, vendor, category, amount, payment method, notes and an optional project, with archive instead of delete. A receipt (JPEG, PNG, WebP, HEIC or PDF, up to 5 MB) is stored in a private bucket, and viewing one makes a link that expires after 60 seconds, after checking the viewer's role
+- **Print or save as PDF:** issued invoices and sent estimates print on their own, without the app around them, from the browser's print dialog. The printout shows the stored figures only
+- **Audit log:** issuing, payments and voids are written to the audit log with the actor and amounts, not to the activity feed that members can read
+- **Reports:** invoiced, collected, outstanding and expenses, each defined in `src/lib/reports.ts`. They are cash figures for running the business, not accounts; "collected minus expenses" is not profit
+
+`tests/integration/finance.test.ts` checks the totals against the TypeScript code, that client-sent amounts are ignored, 12 issues at once getting 12 different numbers, part and over payments, voids, every role's access, isolation between workspaces, the estimate flow and the receipt path rules. `e2e/finance.spec.ts` takes an estimate through to a paid invoice, voids another, and archives an expense.
+
+Not built in Phase 4: credit notes and refunds, recurring invoices, multiple tax lines, emailing documents, online payment, and a downloadable PDF made on the server (the browser's "Save as PDF" is used instead). Receipt upload works against Supabase Storage but wasn't tested end to end locally, because local storage was switched off in this environment.
 
 ### Shell and overview
 
@@ -181,17 +203,17 @@ Completing or moving a task updates the counts on the tasks page, its project an
 
 ### Money
 
-- **Invoices:** totals for awaiting payment, overdue, paid this month and drafts; status filter with counts, search, sorting and pagination
-- **Invoice editor:** client, dates, line items (typed or picked from the catalog), an optional flat discount, a tax choice and notes, with live totals
-- **Invoice detail:** the invoice as the client would read it, a status timeline, and the actions for its status
-- **Expenses:** search, period and category filters, a by-category breakdown of the rows shown, and add, edit and delete
+- **Invoices:** totals for still owed, overdue, received this month and drafts; status filter with counts, search, sorting and pagination
+- **Invoice and estimate editor:** client, dates, line items (typed or picked from the catalog), an optional flat discount, a tax choice and notes, with live totals
+- **Invoice detail:** the invoice as the client would read it, its balance and payments, and the actions for its status
+- **Expenses:** search, period, category and archived filters, a by-category breakdown of the rows shown, receipts, and add, edit and archive
 - **Products & Services:** search and type filter, with add, edit, archive and restore
 
 ### Reports, team and settings
 
 - **Reports:** a date range (this month, last 3 or 6 months, year to date) drives every panel: headline figures, money in and out by month with a table beside the chart, invoice status, expenses by category, tasks by person, and project progress and spend
 - **Team:** real members, roles and invitations (see the first section)
-- **Settings:** profile, workspace (name, currency, default tax, payment terms), preferences (date format, first day of the week), notification switches, and appearance (accent colour, density)
+- **Settings:** profile, workspace (name, currency, default tax, payment terms, invoice and estimate number prefixes), preferences (date format, first day of the week), notification switches, and appearance (accent colour, density)
 
 What settings change:
 
@@ -204,20 +226,19 @@ What settings change:
 
 How invoice money is handled:
 
-- Amounts are integer centavos throughout. Line total is quantity times unit price, the discount comes off the subtotal, and tax is applied after the discount and rounded once to the nearest centavo (`src/lib/money.ts`).
-- An invoice's stored total is always written by that calculation, never typed, so lists, the detail page and the overview agree.
-- **Mark as sent** and **Record payment** are simulated. They change the invoice's status only: nothing is emailed and no money moves. Recording a payment marks the whole invoice paid on the demo date.
-- Only drafts can be edited. Sent and paid invoices are locked.
-- Tax options are demo rates ("No tax" and "VAT 12%") defined in `src/config/app.ts`. They are placeholders, not tax advice.
+- Amounts are integer minor units (centavos) with an ISO currency code. Quantities are stored in thousandths. Each line is quantity times unit price, rounded once, half up; the discount comes off the subtotal and never below zero; tax is applied after the discount and rounded once, half up. The database does this (`supabase/migrations/20261011000004_finance.sql`); `src/lib/money.ts` is the same arithmetic for the editor's preview.
+- **Issue** and **Mark as sent** give the document its number. Nothing is emailed: print it or save it as a PDF and send it yourself.
+- **Record payment** records money you have received elsewhere. No money moves through the app.
+- Tax options ("No tax" and "VAT 12%") are defined in `src/config/app.ts`. They are a starting point, not tax advice.
 
 ## Core journeys
 
-Each of these can be completed from start to finish without a backend:
+Each of these can be completed from start to finish:
 
 1. **Overview → Create → New contact.** The contact appears in the Contacts list and in recent activity on the overview.
 2. **Contacts → search or filter → open a contact.** The detail page shows notes, activity and related deals, projects and invoices.
 3. **Projects → open a project → Add task → tick it done.** Progress and open-task counts update on the project, the Tasks page and the overview.
-4. **Invoices → New invoice → add lines → Save draft.** The detail page shows the same totals; marking it sent and recording payment (both simulated) updates the list and the overview.
+4. **Estimates → New estimate → Mark as sent → Accepted → Create invoice → Issue invoice → Record payment.** The invoice gets the next number, the payment shows on the invoice, and Reports count it as collected.
 5. **Settings → Workspace → change the name or currency.** The sidebar, overview, invoices and every amount reflect it.
 
 ## Quality pass
@@ -229,7 +250,7 @@ What was checked in the final phase, and how:
 - **Keyboard:** the skip link is the first tab stop and moves focus to the content. Dialogs take focus, keep it inside while open, close on Esc, and return focus to the control that opened them, including when they were opened from a menu.
 - **Contrast:** text and status colours were measured against their backgrounds; all are 4.5:1 or better. Form control outlines and the chart tint were darkened to reach 3:1.
 - **Target size:** task tick boxes and the search clear button were enlarged to a 24px or larger hit area.
-- **Empty states:** every screen was loaded with demo data switched off.
+- **Empty states:** every screen was loaded with an empty workspace.
 - **Console:** no errors were logged while navigating all routes.
 
 Not covered: screen reader testing with real assistive technology, and browsers other than Chromium. Automated tests were added afterwards, in backend Phase 0: unit tests for the money, formatting, metrics, report and calendar calculations, and one end-to-end smoke test.
@@ -240,7 +261,7 @@ There are no screenshots in this README; the preview tooling available during th
 
 | Path | Purpose |
 | --- | --- |
-| `src/config/app.ts` | **Product name** (`PRODUCT_NAME`), default currency and locale, the fixed demo date, and the currency, tax, accent and notification options |
+| `src/config/app.ts` | **Product name** (`PRODUCT_NAME`), default currency and locale, and the currency, tax, accent and notification options |
 | `src/config/navigation.ts` | Sidebar structure; also drives breadcrumbs, search and placeholder pages |
 | `src/app/globals.css` | Theme tokens: colours, type scale, radius, shadow, focus ring |
 | `src/mocks/` | All demo records and their types |
@@ -257,7 +278,7 @@ There are no screenshots in this README; the preview tooling available during th
 | `src/components/common/` | Page header, panel, data table, toolbar and filters, record form, confirm dialog, states, badges |
 | `src/components/crm/` | Contacts, companies and deals screens |
 | `src/components/work/` | Projects, tasks and calendar screens, and the task panel |
-| `src/components/money/` | Invoices, the invoice editor and document, expenses and catalog |
+| `src/components/money/` | Estimates, invoices, the shared editor and printable document, payments, expenses, receipts and catalog |
 | `src/components/workspace/` | Reports, team and settings screens |
 | `src/components/shell/` | Sidebar, topbar, search, quick-create, the create/edit dialog, menus |
 | `src/components/overview/` | Dashboard sections |
@@ -271,23 +292,19 @@ Accounts and workspaces:
 - Invitation emails are not sent. The link is shown once to the inviter.
 - The owner role cannot be transferred, and a workspace cannot be deleted from the app.
 - The sign-in email cannot be changed. There are no profile photos.
-- The workspace time zone is stored but not yet used: the sample data is pinned to one date (below).
 - Manager and client roles exist but have no extra screens or restrictions of their own yet.
 - There is no screen for reading the audit log.
 - Rate limiting is whatever Supabase Auth provides; the app adds none of its own.
 - Nothing is deployed. Email confirmation, production auth limits and a hosted database are all still to set up.
 
-Sample-data screens:
+Money:
 
-- Business records are not saved. Reloading resets them, and they are the same in every workspace.
-- The people on sample tasks, projects and deals (Mara, Paolo, Jenna, Tomas) are fictional, not your team.
-- The sample data is pinned to 11 October 2026 (`DEMO_TODAY`) so due dates and month-to-date totals stay consistent.
-- Marking an invoice as sent or paid only changes its status. Nothing is emailed and no money moves.
+- Nothing is emailed and no money moves. Invoices and estimates are printed or saved as PDF from the browser.
+- Local tax and invoicing rules have not been checked. See the compliance note at the top.
 - Money is stored as integer minor units. Changing the currency relabels amounts; it does not convert them.
 - Expenses appear in Reports but not on the overview.
 - Reports use preset date ranges only; there is no custom range and no export.
-- Invoice quantities are whole numbers. There are no partial payments, credit notes, PDFs or printing.
-- A detail URL for a record created before a reload shows a "not available" state.
+- There are no credit notes, refunds, recurring invoices or multiple tax lines. A payment can't be edited or removed once recorded.
 - Archiving is the only removal for contacts, companies, deals and catalog items. Tasks and projects cannot be deleted.
 - A project's team is derived from its owner and task assignees.
 - The calendar has month and agenda views only.
