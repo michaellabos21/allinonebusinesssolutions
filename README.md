@@ -169,6 +169,12 @@ Not built in Phase 3: saved views, more than one pipeline per workspace, and ema
 
 `tests/integration/finance.test.ts` checks the totals against the TypeScript code, that client-sent amounts are ignored, 12 issues at once getting 12 different numbers, part and over payments, voids, every role's access, isolation between workspaces, the estimate flow and the receipt path rules. `e2e/finance.spec.ts` takes an estimate through to a paid invoice, voids another, and archives an expense.
 
+### Profile and contact photos (real)
+
+- Upload your own photo in **Settings → Profile**, and a contact's photo from the camera button on their page. Photos replace initials in lists, the top bar, the team page, and on deals, projects and tasks.
+- The browser crops each photo to a square and shrinks it to 256 pixels before upload, so any picture it can open works, including iPhone HEIC. The server accepts JPEG, PNG or WebP up to 2 MB.
+- Photos are private: they are served at `/photos/...` with the viewer's own session. Your photo is visible to people who share a workspace with you; a contact's photo to that workspace's team, not its clients. `tests/integration/photos.test.ts` and `e2e/photos.spec.ts` check this.
+
 Not built in Phase 4: credit notes and refunds, recurring invoices, multiple tax lines, emailing documents, online payment, and a downloadable PDF made on the server (the browser's "Save as PDF" is used instead). Receipt upload works against Supabase Storage but wasn't tested end to end locally, because local storage was switched off in this environment.
 
 ### Shell and overview
@@ -291,7 +297,7 @@ Accounts and workspaces:
 
 - Invitation emails are not sent. The link is shown once to the inviter.
 - The owner role cannot be transferred, and a workspace cannot be deleted from the app.
-- The sign-in email cannot be changed. There are no profile photos.
+- The sign-in email cannot be changed.
 - Manager and client roles exist but have no extra screens or restrictions of their own yet.
 - There is no screen for reading the audit log.
 - Rate limiting is whatever Supabase Auth provides; the app adds none of its own.

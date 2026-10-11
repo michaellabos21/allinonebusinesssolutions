@@ -6,6 +6,8 @@ export type TeamMember = {
   name: string;
   email: string;
   title: string;
+  /** Profile photo, served at /photos/<path>; absent or null shows initials. */
+  photoPath?: string | null;
   role: "Owner" | "Admin" | "Member";
 };
 
@@ -37,6 +39,8 @@ export type Contact = {
   companyId: string | null;
   status: ContactStatus;
   tags: string[];
+  /** Stored photo, served at /photos/<path>; null shows initials. */
+  photoPath: string | null;
   createdOn: string;
   archived: boolean;
 };

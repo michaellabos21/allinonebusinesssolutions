@@ -68,7 +68,7 @@ import { downloadCsv, toCsv } from "@/lib/csv-export";
 import { formatDate, formatMoney, formatRelativeDay } from "@/lib/format";
 import { getOpenDeals } from "@/lib/metrics";
 import { moveDeal, setDealArchived } from "@/lib/record-actions";
-import { getToday, memberName } from "@/lib/runtime";
+import { getToday, memberName, memberPhoto } from "@/lib/runtime";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import type { Deal, DealStage } from "@/mocks";
 import { type DealHistoryEntry, getDealHistoryAction } from "@/server/actions/sales";
@@ -236,7 +236,11 @@ export function DealsScreen() {
         className: "hidden md:table-cell",
         cell: (deal) => (
           <span className="flex items-center gap-2 whitespace-nowrap">
-            <UserAvatar name={memberName(deal.ownerId)} className="size-6" />
+            <UserAvatar
+              name={memberName(deal.ownerId)}
+              photoPath={memberPhoto(deal.ownerId)}
+              className="size-6"
+            />
             {memberName(deal.ownerId)}
           </span>
         ),
@@ -493,6 +497,7 @@ export function DealsScreen() {
                                   </span>
                                   <UserAvatar
                                     name={memberName(deal.ownerId)}
+                                    photoPath={memberPhoto(deal.ownerId)}
                                     className="size-5 [&_[data-slot=avatar-fallback]]:text-[10px]"
                                   />
                                   <span className="sr-only">Owner: {memberName(deal.ownerId)}</span>

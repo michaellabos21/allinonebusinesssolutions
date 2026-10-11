@@ -7,6 +7,7 @@ export type SessionUser = {
   email: string;
   fullName: string;
   jobTitle: string;
+  avatarPath: string | null;
   timezone: string;
   dateFormat: "dmy" | "mdy";
   weekStartsOn: 0 | 1;
@@ -40,6 +41,7 @@ export type TeamMemberRow = {
   fullName: string;
   email: string;
   jobTitle: string;
+  avatarPath: string | null;
   role: Role;
 };
 

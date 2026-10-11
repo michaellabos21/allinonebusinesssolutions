@@ -27,6 +27,7 @@ import {
 import { describeDue, formatDate } from "@/lib/format";
 import { setTaskStatus } from "@/lib/record-actions";
 import { useFocusReturn } from "@/lib/use-focus-return";
+import { memberPhoto } from "@/lib/runtime";
 import { memberName } from "@/lib/work";
 import { TASK_STATUSES, type TaskStatus } from "@/mocks";
 
@@ -92,7 +93,11 @@ export function TaskPanel({ taskId, onClose }: { taskId: string | null; onClose:
                 <div>
                   <dt className="text-caption text-muted-foreground">Assignee</dt>
                   <dd className="mt-0.5 flex items-center gap-2">
-                    <UserAvatar name={memberName(task.assigneeId)} className="size-6" />
+                    <UserAvatar
+                      name={memberName(task.assigneeId)}
+                      photoPath={memberPhoto(task.assigneeId)}
+                      className="size-6"
+                    />
                     {memberName(task.assigneeId)}
                   </dd>
                 </div>

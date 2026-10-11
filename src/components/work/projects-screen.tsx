@@ -12,7 +12,7 @@ import { ProjectStatusBadge } from "@/components/common/status-badge";
 import { FilterMenu, SearchInput, TableToolbar } from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
-import { getToday } from "@/lib/runtime";
+import { getToday, memberPhoto } from "@/lib/runtime";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/work/progress-bar";
 import { formatDate } from "@/lib/format";
@@ -86,7 +86,11 @@ export function ProjectsScreen() {
         className: "hidden lg:table-cell",
         cell: (project) => (
           <span className="flex items-center gap-2 whitespace-nowrap">
-            <UserAvatar name={memberName(project.ownerId)} className="size-6" />
+            <UserAvatar
+              name={memberName(project.ownerId)}
+              photoPath={memberPhoto(project.ownerId)}
+              className="size-6"
+            />
             {memberName(project.ownerId)}
           </span>
         ),

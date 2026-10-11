@@ -77,6 +77,10 @@ Built in `supabase/migrations/20261011000004_finance.sql`. Money is `bigint` min
 
 Expense categories stay a fixed list in code (`EXPENSE_CATEGORIES`) with free text allowed; a separate table was not needed.
 
+## Photos
+
+Built in `supabase/migrations/20261011000005_photos.sql`, written so it can be run again safely. `profiles.avatar_path` and `contacts.photo_path` hold the storage path of the current photo, or null for initials. Check constraints keep each path inside its owner's folder (`users/<the profile's id>/…`, `<the contact's workspace>/contacts/<the contact's id>/…`). Files live in the private `avatars` bucket; see `docs/SECURITY.md`.
+
 ## Calculations
 
 `src/lib/money.ts` and the database functions use the same rules: each line rounded once, half up; discount clamped to the subtotal; tax on what remains, rounded once, half up. `tests/integration/finance.test.ts` checks that both give the same totals.

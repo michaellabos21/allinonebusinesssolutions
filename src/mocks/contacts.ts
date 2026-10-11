@@ -21,6 +21,7 @@ const contact = (
   companyId,
   status,
   tags,
+  photoPath: null,
   createdOn,
   archived: false,
 });

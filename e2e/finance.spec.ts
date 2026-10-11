@@ -184,3 +184,34 @@ test("an issued invoice can be voided, and expenses are archived, not deleted", 
   await page.getByRole("menuitemradio", { name: "Archived" }).click();
   await expect(main.getByText("Panay Print House")).toBeVisible();
 });
+
+test("a receipt is attached to an expense and stored privately", async ({ page }) => {
+  await startWorkspace(page, "receipt");
+  const main = page.getByRole("main");
+  await mainNav(page).getByRole("link", { name: "Expenses" }).click();
+  await page.waitForURL((url) => url.pathname === "/money/expenses");
+  await main.getByRole("button", { name: "New expense" }).first().click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Paid to").fill("Lightbox Studio Rentals");
+  await dialog.getByLabel(/^Amount/).fill("2500");
+  await dialog.getByRole("combobox", { name: "Category" }).click();
+  await page.getByRole("option").first().click();
+  await dialog.getByLabel("What it was for").fill("Backdrop and lights");
+  await dialog.getByRole("button", { name: "Add expense" }).click();
+  await expect(dialog).toBeHidden();
+
+  await main
+    .getByRole("button", { name: "Actions for the Lightbox Studio Rentals expense" })
+    .click();
+  await page.getByRole("menuitem", { name: "Attach receipt" }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Photo or PDF, up to 5 MB").setInputFiles({
+    name: "receipt.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n"),
+  });
+  await dialog.getByRole("button", { name: "Attach receipt" }).click();
+  await expect(page.getByText("Receipt attached", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(main.getByLabel("Receipt attached")).toBeVisible();
+});

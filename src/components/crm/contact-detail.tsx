@@ -24,6 +24,7 @@ import {
   Pill,
   ProjectStatusBadge,
 } from "@/components/common/status-badge";
+import { PhotoPicker } from "@/components/common/photo-picker";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { BackLink, MissingRecord, RelatedList } from "@/components/crm/shared";
 import { useDemoStore } from "@/components/providers/demo-store";
@@ -32,8 +33,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { type TimelineEvent, getContactTimeline } from "@/lib/crm";
 import { formatDate, formatMoney, formatRelativeDay } from "@/lib/format";
 import { invoiceDisplayStatus } from "@/lib/metrics";
-import { memberName } from "@/lib/runtime";
 import { setContactArchived, addNote } from "@/lib/record-actions";
+import { memberName, memberPhoto } from "@/lib/runtime";
+import { removeContactPhotoAction, uploadContactPhotoAction } from "@/server/actions/photos";
+import { can } from "@/server/permissions";
 
 const TIMELINE_ICON: Record<TimelineEvent["kind"], typeof UserRound> = {
   created: UserRoundPlus,
@@ -63,6 +66,7 @@ export function ContactDetail() {
   }
 
   const company = store.companyName(contact.companyId);
+  const canEdit = can(store.account.workspace.role, "records.edit");
   const notes = store.notes.filter((note) => note.contactId === contact.id);
   const invoices = store.invoices.filter((invoice) => invoice.contactId === contact.id);
   const projects = store.projects.filter((project) => project.contactId === contact.id);
@@ -88,10 +92,25 @@ export function ContactDetail() {
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
-          <UserAvatar
-            name={contact.name}
-            className="size-14 [&_[data-slot=avatar-fallback]]:text-lg"
-          />
+          {canEdit ? (
+            <PhotoPicker
+              layout="overlay"
+              name={contact.name}
+              photoPath={contact.photoPath}
+              onUpload={(form) => {
+                form.set("contactId", contact.id);
+                return uploadContactPhotoAction(form);
+              }}
+              onRemove={() => removeContactPhotoAction(contact.id)}
+              avatarClassName="size-14 [&_[data-slot=avatar-fallback]]:text-lg"
+            />
+          ) : (
+            <UserAvatar
+              name={contact.name}
+              photoPath={contact.photoPath}
+              className="size-14 [&_[data-slot=avatar-fallback]]:text-lg"
+            />
+          )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="font-display text-title">{contact.name}</h1>
@@ -178,7 +197,11 @@ export function ContactDetail() {
                   const author = memberName(note.authorId);
                   return (
                     <li key={note.id} className="flex gap-3">
-                      <UserAvatar name={author} className="mt-0.5" />
+                      <UserAvatar
+                        name={author}
+                        photoPath={memberPhoto(note.authorId)}
+                        className="mt-0.5"
+                      />
                       <div className="min-w-0">
                         <p className="text-caption text-muted-foreground">
                           <span className="mr-2 font-medium text-foreground">{author}</span>

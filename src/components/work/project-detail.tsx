@@ -292,7 +292,7 @@ export function ProjectDetail() {
             <ul className="space-y-3">
               {team.map(({ member, isOwner, openTasks }) => (
                 <li key={member.id} className="flex items-center gap-3">
-                  <UserAvatar name={member.name} />
+                  <UserAvatar name={member.name} photoPath={member.photoPath} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{member.name}</p>
                     <p className="text-caption text-muted-foreground">

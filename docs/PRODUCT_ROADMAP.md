@@ -5,7 +5,7 @@ The phases come from `agiled_inspired_saas_mvp_plan.md`. One phase is built and 
 | Phase | Goal | Status | UI today | Not yet designed |
 | --- | --- | --- | --- | --- |
 | 0 | Repository foundation | **Done** | n/a | n/a |
-| 1 | Auth, workspaces, members, settings | **Done** | Sign-up, sign-in, password reset, workspace creation and switching, team, roles, invitations, settings: all real | Email delivery for invitations, owner transfer, sign-in email change, profile photos |
+| 1 | Auth, workspaces, members, settings | **Done** | Sign-up, sign-in, password reset, workspace creation and switching, team, roles, invitations, settings: all real | Email delivery for invitations, owner transfer, sign-in email change |
 | 2 | Contacts, companies, catalog, projects, tasks, activity | **Done** | All screens on real records, plus CSV contact import with column mapping and preview | Task comments; server-side search and paging past 2,000 rows |
 | 3 | Leads, deals, pipeline stages, lead forms | **Done** | Leads with conversion, deals board and table with drag and drop, stage editor, per-deal history, lead forms and public form page, CSV export | Saved views, several pipelines per workspace, alerts for new leads |
 | 4 | Estimates, invoices, payments, expenses | **Done** | Estimates and invoices with a shared editor, issue with safe numbering, part payments, void, print or save as PDF, expenses with private receipts, reports on recorded payments | Credit notes, recurring invoices, emailing documents, online payment, server-made PDFs |
