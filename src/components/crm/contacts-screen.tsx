@@ -1,6 +1,15 @@
 "use client";
 
-import { Archive, ArchiveRestore, Eye, Pencil, Plus, SearchX, UserRound } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Eye,
+  FileUp,
+  Pencil,
+  Plus,
+  SearchX,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -18,11 +27,13 @@ import {
   TableToolbar,
 } from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
+import { ImportContactsDialog } from "@/components/crm/import-contacts-dialog";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import { setContactArchived } from "@/lib/record-actions";
 import { CONTACT_TAGS, type Contact } from "@/mocks";
+import { can } from "@/server/permissions";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All" },
@@ -33,7 +44,9 @@ const STATUS_OPTIONS = [
 ];
 
 export function ContactsScreen() {
-  const { contacts, companyName, openQuickCreate, openEditor } = useDemoStore();
+  const { account, contacts, companyName, openQuickCreate, openEditor } = useDemoStore();
+  const canImport = can(account.workspace.role, "records.edit");
+  const [importOpen, setImportOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [tags, setTags] = useState<string[]>([]);
@@ -174,10 +187,18 @@ export function ContactsScreen() {
         title="Contacts"
         description="Everyone you work with or are talking to, across clients and leads."
         actions={
-          <Button className="hover:bg-primary-hover" onClick={() => openQuickCreate("contact")}>
-            <Plus data-icon="inline-start" aria-hidden />
-            New contact
-          </Button>
+          <>
+            {canImport ? (
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <FileUp data-icon="inline-start" aria-hidden />
+                Import CSV
+              </Button>
+            ) : null}
+            <Button className="hover:bg-primary-hover" onClick={() => openQuickCreate("contact")}>
+              <Plus data-icon="inline-start" aria-hidden />
+              New contact
+            </Button>
+          </>
         }
       />
 
@@ -186,7 +207,7 @@ export function ContactsScreen() {
           <EmptyState
             icon={UserRound}
             title="No contacts yet"
-            description="Add the first person you work with, or turn demo data on in the sidebar."
+            description="Add the first person you work with, or import a CSV file of contacts."
             action={
               <Button variant="outline" onClick={() => openQuickCreate("contact")}>
                 New contact
@@ -242,6 +263,8 @@ export function ContactsScreen() {
           </section>
         </>
       )}
+
+      <ImportContactsDialog open={importOpen} onOpenChange={setImportOpen} />
 
       <ConfirmDialog
         open={archiveTarget !== null}

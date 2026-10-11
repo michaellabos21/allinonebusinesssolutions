@@ -525,9 +525,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
               <Link href={backHref}>Cancel</Link>
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Prototype: saved for this session only.
-          </p>
+          <p className="mt-3 text-xs text-muted-foreground">Sample data: kept until you reload.</p>
         </aside>
       </div>
     </form>

@@ -170,7 +170,7 @@ export function ProjectsScreen() {
           <EmptyState
             icon={FolderKanban}
             title="No projects yet"
-            description="Create your first project, or turn demo data on in the sidebar."
+            description="Create your first project to group tasks for a client."
             action={
               <Button variant="outline" onClick={() => openQuickCreate("project")}>
                 New project

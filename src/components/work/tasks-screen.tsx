@@ -204,7 +204,7 @@ export function TasksScreen() {
         ),
       },
     ],
-    [projectName, openEditor],
+    [projectName, openEditor, setTaskId],
   );
 
   const table = useTableState(listTasks, columns, {
@@ -241,7 +241,7 @@ export function TasksScreen() {
           <EmptyState
             icon={ListChecks}
             title="No tasks yet"
-            description="Add the next thing that is due, or turn demo data on in the sidebar."
+            description="Add the next thing that is due."
             action={
               <Button variant="outline" onClick={() => openQuickCreate("task")}>
                 New task

@@ -834,15 +834,21 @@ function EditorForm({
   const router = useRouter();
   const spec = useFormSpec(kind, id);
   if (!spec) return null;
+  // Deals, invoices and expenses are still sample data held in this tab.
+  const sample = kind === "deal" || kind === "invoice" || kind === "expense";
 
   return (
     <RecordForm
-      spec={{ ...spec, initial: { ...spec.initial, ...preset } }}
+      spec={{
+        ...spec,
+        initial: { ...spec.initial, ...preset },
+        footnote: sample ? "Sample data: kept until you reload." : undefined,
+      }}
       onCancel={onDone}
       onSaved={(result) => {
         const href = result.href;
         toast.success(result.message, {
-          description: "Kept for this session only.",
+          description: sample ? "Sample data: kept until you reload." : undefined,
           action:
             href && result.viewLabel
               ? { label: result.viewLabel, onClick: () => router.push(href) }

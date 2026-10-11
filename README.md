@@ -2,9 +2,9 @@
 
 An original all-in-one workspace for freelancers, agencies and small businesses: clients, work and money in one place.
 
-> **Where it stands.** Accounts, workspaces, teams and settings are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. **The business screens (contacts, deals, projects, tasks, invoices, expenses, catalog, reports) still show fictional sample data** from `src/mocks/`, held in the browser and reset on reload. Nothing here is ready for real customer data.
+> **Where it stands.** Accounts, workspaces, teams and settings, and the Phase 2 records (contacts, companies, notes, the catalog, projects, tasks and the activity feed), are real: they are saved in a PostgreSQL database and protected by server-side checks and row-level security. **Deals, invoices and expenses still show fictional sample data** from `src/mocks/`, held in the browser and reset on reload. Nothing here is ready for real customer data yet.
 
-Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0 and 1 of `agiled_inspired_saas_mvp_plan.md`.
+Built from two plans in this folder: every UI phase of `agiled_inspired_saas_ui_first_plan.md`, then backend Phases 0, 1 and 2 of `agiled_inspired_saas_mvp_plan.md`.
 
 ## Setup
 
@@ -115,7 +115,21 @@ The app itself, all behind sign-in:
 
 Every rule above is enforced three times: in the server action, in a database function, and by row-level security. `npm run test:integration` proves it with 25 tests.
 
-Everything below this line still runs on sample data.
+### Contacts, companies, catalog, projects and tasks (real)
+
+- Add, edit, archive and restore contacts and companies; link contacts to companies (typing a new company name creates it); notes on contacts, which cannot be edited or deleted afterwards
+- Duplicate emails and company names are refused within a workspace
+- **Import contacts from a CSV file** (Contacts → Import CSV): match the file's columns to contact fields, preview the rows, and see each problem row by line number before anything is saved. Up to 500 rows per file; existing emails are skipped; companies are reused or created; the whole import is one transaction
+- Products & services catalog with unit and price; projects with client, owner, status and due date; tasks with project, assignee, priority, status and due date, in a list or board
+- An activity feed, written by the database with the real actor, for record creation, project changes and completed tasks
+- Members can add and edit contacts, companies and tasks (only tasks they created or are assigned); managers and above also archive records and manage projects and the catalog; clients see none of it
+- Search, filters, sorting and paging run in the browser over up to 2,000 rows per list; a larger workspace is told its view is partial
+
+`npm run test:integration` checks these rules against the database, including that another workspace can't see or change any of these records. `npm run test:e2e` saves each kind of record through the browser, reloads the page to check it was really stored, and runs a CSV import.
+
+Not built in Phase 2: comments on tasks, and searching on the server for workspaces too large to load in full.
+
+Everything below this line still runs on sample data, apart from the screens listed above.
 
 ### Shell and overview
 
