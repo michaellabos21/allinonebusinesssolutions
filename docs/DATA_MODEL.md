@@ -69,7 +69,7 @@ Built in `supabase/migrations/20261011000004_finance.sql`. Money is `bigint` min
 | --- | --- | --- |
 | `document_counters` | Next invoice and estimate number per workspace | Taken under a row lock by `private.take_document_number`, so concurrent issues never share a number |
 | `estimates`, `estimate_items` | Client, dates, discount, tax rate, notes, stored totals, status (`draft`, `sent`, `accepted`, `declined`), converted invoice | Number set when sent. "Expired" is derived from `valid_until` |
-| `invoices`, `invoice_items` | Client, `bill_to` snapshot, dates, discount, tax rate, notes, stored totals, `paid_minor`, status (`draft`, `sent`, `partially_paid`, `paid`, `void`), void reason, source estimate | A draft has no number and an issued invoice always has one (check constraint). "Overdue" is derived. Lines may link to a catalog item in the same workspace |
+| `invoices`, `invoice_items` | Client, `bill_to` snapshot, dates, discount, tax rate, notes, stored totals, `paid_minor`, status (`draft`, `sent`, `partially_paid`, `paid`, `void`), void reason, source estimate | A draft has no number and an issued invoice always has one (check constraint). "Overdue" is derived. Lines may link to a catalog item in the same workspace. A line's `description` holds its name on the first line and any details after it (`src/lib/document-lines.ts`) |
 | `payments` | Invoice, amount, date, method, reference, note, who recorded it | Never more than the balance; no update or delete |
 | `expenses` | Date, vendor, category, description, amount, currency, payment method, notes, project, receipt path, archived time | Receipt path must start with the workspace and expense ids |
 

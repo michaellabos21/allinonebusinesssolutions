@@ -33,6 +33,10 @@ test("an accepted estimate becomes an invoice that is issued and paid", async ({
   await main.getByRole("combobox", { name: "Client" }).click();
   await page.getByRole("option", { name: /Lea Santos/ }).click();
   await main.getByLabel("Description").first().fill("Design hours");
+  await main
+    .getByLabel("Details (optional)")
+    .first()
+    .fill("Logo concepts\nTwo rounds of revisions");
   await main.getByLabel("Qty").first().fill("1.5");
   await main.getByLabel("Unit price").first().fill("2500");
   await main.getByRole("button", { name: "Add line" }).click();
@@ -61,6 +65,8 @@ test("an accepted estimate becomes an invoice that is issued and paid", async ({
   await expect(main.getByRole("heading", { name: "Draft invoice" })).toBeVisible();
   const document = main.getByRole("article");
   await expect(document).toContainText("Design hours");
+  // Details travel from the estimate to the invoice and print under the name.
+  await expect(document.getByText("Two rounds of revisions")).toBeVisible();
   await expect(document).toContainText("1.5");
   await expect(document).toContainText("₱6,440");
 
