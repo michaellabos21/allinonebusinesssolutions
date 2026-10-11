@@ -112,12 +112,24 @@ export function explain(
     const [, { error: message, field }] = rule;
     return { ok: false, error: message, fieldErrors: field ? { [field]: message } : undefined };
   }
-  logger.error(event, {
-    code: error?.code ?? "no_rows",
-    message: error?.message ?? "no rows changed",
-  });
-  return { ok: false, error: "We couldn’t save that. Try again." };
+  const code = error?.code ?? "no_rows";
+  logger.error(event, { code, message: error?.message ?? "no rows changed" });
+  if (SCHEMA_MISSING.has(code)) {
+    return {
+      ok: false,
+      error: `The database is missing part of the latest update (code ${code}). Run the newest SQL file from supabase/migrations in the Supabase SQL Editor.`,
+    };
+  }
+  // The code is safe to show and lets a person report exactly what failed.
+  return { ok: false, error: `We couldn’t save that. Try again. (Code ${code})` };
 }
+
+/**
+ * Errors meaning a table, column or function the app expects isn't in the
+ * database: Postgres 42P01 (table), 42703 (column), 42883 (function), and
+ * PostgREST's schema-cache equivalents.
+ */
+const SCHEMA_MISSING = new Set(["42P01", "42703", "42883", "PGRST202", "PGRST204", "PGRST205"]);
 
 /**
  * Finds a company by name in the workspace, or creates it. A unique index on
