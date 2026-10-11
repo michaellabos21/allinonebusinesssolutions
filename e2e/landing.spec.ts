@@ -19,6 +19,9 @@ test("visitors see the landing page at the home address", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Know who owes you/ })).toBeVisible();
   await expect(page.getByRole("img", { name: /invoices list/ })).toBeVisible();
 
+  await page.getByRole("link", { name: "Watch the video" }).click();
+  await expect(page.locator('iframe[src*="youtube-nocookie.com/embed/ThFC4wwFB7M"]')).toBeVisible();
+
   await page.getByRole("link", { name: "Create your workspace" }).first().click();
   await expect(page).toHaveURL(/\/signup$/);
 });

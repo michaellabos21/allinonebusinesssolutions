@@ -10,11 +10,13 @@ export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 export const MARKETING_NAME = "All In One Business Solutions";
 
 /**
- * The landing page's video. Put the file in `public/` (e.g. `public/landing/demo.mp4`)
- * and set `src` to its path; the page then shows a video section and a
- * "Watch the video" button. Null hides both.
+ * The landing page's video: a YouTube video id (the part after `v=` in its
+ * link), or a file in `public/` such as `{ src: "/landing/demo.mp4" }`. The page
+ * then shows a video section and a "Watch the video" button; null hides both.
  */
-export const LANDING_VIDEO: { src: string; poster?: string } | null = null;
+export const LANDING_VIDEO: { youtubeId: string } | { src: string; poster?: string } | null = {
+  youtubeId: "ThFC4wwFB7M",
+};
 
 /** Shown anywhere the UI needs to explain that nothing is persisted. */
 export const PROTOTYPE_NOTICE =

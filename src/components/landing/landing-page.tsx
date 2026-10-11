@@ -400,16 +400,29 @@ function VideoSection() {
           data-reveal="zoom"
           className="mt-10 overflow-hidden rounded-2xl border bg-foreground shadow-[0_40px_100px_-30px_rgb(28_36_52/0.5)]"
         >
-          <video
-            controls
-            playsInline
-            preload="metadata"
-            poster={LANDING_VIDEO.poster}
-            className="aspect-video w-full"
-          >
-            <source src={LANDING_VIDEO.src} type="video/mp4" />
-            Your browser can’t play this video.
-          </video>
+          {"youtubeId" in LANDING_VIDEO ? (
+            // YouTube's privacy-enhanced player sets no cookies until the video is played.
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${LANDING_VIDEO.youtubeId}?rel=0`}
+              title={`${MARKETING_NAME} video`}
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="aspect-video w-full border-0"
+            />
+          ) : (
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              poster={LANDING_VIDEO.poster}
+              className="aspect-video w-full"
+            >
+              <source src={LANDING_VIDEO.src} type="video/mp4" />
+              Your browser can’t play this video.
+            </video>
+          )}
         </div>
       </div>
     </section>
