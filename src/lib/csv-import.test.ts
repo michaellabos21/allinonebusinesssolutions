@@ -66,6 +66,11 @@ describe("buildPreview", () => {
     expect(preview.errors[4].messages).toEqual(["A contact with this email already exists."]);
   });
 
+  it("gives one message per field, even when a blank email breaks two rules", () => {
+    const preview = buildPreview([["No Email", ""]], guessMapping(["Name", "Email"]), []);
+    expect(preview.errors[0].messages).toEqual(["Enter an email address."]);
+  });
+
   it("defaults the status to active when no column is mapped", () => {
     const preview = buildPreview([["Solo", "solo@x.test"]], guessMapping(["Name", "Email"]), []);
     expect(preview.ready[0].data.status).toBe("active");

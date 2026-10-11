@@ -1,4 +1,4 @@
-import { type ImportRow, importRowSchema } from "@/server/validation";
+import { type ImportRow, fieldErrorsOf, importRowSchema } from "@/server/validation";
 
 /**
  * Contact CSV import, browser side: parse the file, map its columns to contact
@@ -146,7 +146,8 @@ export function buildPreview(
     if (!parsed.success) {
       errors.push({
         line,
-        messages: [...new Set(parsed.error.issues.map((issue) => issue.message))],
+        // One message per field: an empty email would otherwise fail two rules.
+        messages: Object.values(fieldErrorsOf(parsed.error)),
       });
       return;
     }
