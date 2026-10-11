@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/sheet";
 import { ACCENTS, CURRENCY_OPTIONS, WORKSPACE_DEFAULTS } from "@/config/app";
 import { applyRuntime } from "@/lib/runtime";
+import { teamMembers as sampleTeam } from "@/mocks";
+import type { WorkspaceRecords } from "@/server/records";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { cn } from "@/lib/utils";
 
@@ -24,10 +26,18 @@ import { cn } from "@/lib/utils";
  * Workspace frame: a sidebar on the canvas and a white working surface that
  * holds the topbar and page. Below `lg` the sidebar moves into a drawer.
  */
-export function AppShell({ account, children }: { account: Account; children: React.ReactNode }) {
+export function AppShell({
+  account,
+  records,
+  children,
+}: {
+  account: Account;
+  records: WorkspaceRecords;
+  children: React.ReactNode;
+}) {
   return (
-    // Keyed on the workspace: switching workspace starts the demo records afresh.
-    <DemoStoreProvider key={account.workspace.id} account={account}>
+    // Keyed on the workspace: switching workspace starts the sample records afresh.
+    <DemoStoreProvider key={account.workspace.id} account={account} records={records}>
       <ShellFrame>{children}</ShellFrame>
     </DemoStoreProvider>
   );
@@ -36,7 +46,7 @@ export function AppShell({ account, children }: { account: Account; children: Re
 function ShellFrame({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { appearance, account } = useDemoStore();
+  const { appearance, account, team } = useDemoStore();
   const returnFocus = useFocusReturn(mobileNavOpen);
 
   // Formatting helpers are plain functions, so the workspace's currency and the
@@ -51,6 +61,8 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
     workspace.paymentTermDays,
     user.dateFormat,
     user.weekStartsOn,
+    workspace.timezone,
+    team.map((member) => `${member.id}:${member.name}`).join(","),
   ].join("|");
   const [appliedKey, setAppliedKey] = useState<string | null>(null);
   useLayoutEffect(() => {
@@ -63,11 +75,14 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
       paymentTermDays: workspace.paymentTermDays,
       dateLocale: user.dateFormat === "mdy" ? "en-US" : "en-GB",
       weekStartsOn: user.weekStartsOn,
+      timezone: workspace.timezone,
+      // Real members first; the fictional people on sample deals follow, for their names only.
+      team: [...team, ...sampleTeam],
     });
     // Syncing React with the module-level runtime is the point of this effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAppliedKey(runtimeKey);
-  }, [runtimeKey, workspace, user]);
+  }, [runtimeKey, workspace, user, team]);
 
   // Appearance settings are applied to the document root so that menus and
   // dialogs, which render outside this tree, pick them up too.

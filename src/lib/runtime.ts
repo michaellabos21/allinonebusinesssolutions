@@ -21,6 +21,9 @@ export type Runtime = {
   weekStartsOn: 0 | 1;
   taxRateBps: number;
   paymentTermDays: number;
+  /** IANA time zone of the workspace; decides what "today" is. */
+  timezone: string;
+  /** Everyone whose name may need showing: real members, plus the fictional people on sample records. */
   team: TeamMember[];
 };
 
@@ -31,6 +34,7 @@ const runtime: Runtime = {
   weekStartsOn: 0,
   taxRateBps: WORKSPACE_DEFAULTS.taxRateBps,
   paymentTermDays: WORKSPACE_DEFAULTS.paymentTermDays,
+  timezone: "Asia/Manila",
   team: teamMembers,
 };
 
@@ -42,3 +46,17 @@ export function applyRuntime(patch: Partial<Runtime>) {
 
 export const memberName = (id: string) =>
   runtime.team.find((member) => member.id === id)?.name ?? "Unassigned";
+
+/**
+ * Today's date (`YYYY-MM-DD`) in the workspace's time zone. Real records use
+ * this for "overdue", "due today" and defaults. The sample deals, invoices and
+ * expenses use the fixed `DEMO_TODAY` instead, so their figures stay stable.
+ */
+export function getToday(now: Date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: runtime.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}

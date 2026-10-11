@@ -23,7 +23,19 @@ export type Action =
   | "members.change_role"
   | "members.remove"
   | "members.manage_admins"
-  | "audit.view";
+  | "audit.view"
+  /** See contacts, companies, the catalog, projects, tasks and the activity feed. */
+  | "records.view"
+  /** Add and edit contacts, companies, notes and tasks. */
+  | "records.edit"
+  /** Archive and restore contacts, companies and catalog items. */
+  | "records.archive"
+  /** Create and edit projects. */
+  | "projects.manage"
+  /** Add and edit catalog items and prices. */
+  | "catalog.manage"
+  /** Edit any task, not only one's own. */
+  | "tasks.edit_any";
 
 const MATRIX: Record<Action, readonly Role[]> = {
   "workspace.update_settings": ["owner", "admin"],
@@ -33,6 +45,12 @@ const MATRIX: Record<Action, readonly Role[]> = {
   "members.remove": ["owner", "admin"],
   "members.manage_admins": ["owner"],
   "audit.view": ["owner", "admin"],
+  "records.view": ["owner", "admin", "manager", "member"],
+  "records.edit": ["owner", "admin", "manager", "member"],
+  "records.archive": ["owner", "admin", "manager"],
+  "projects.manage": ["owner", "admin", "manager"],
+  "catalog.manage": ["owner", "admin", "manager"],
+  "tasks.edit_any": ["owner", "admin", "manager"],
 };
 
 /** False for an unknown or missing role: when in doubt, deny. */
@@ -67,4 +85,19 @@ export function canManageMember(
   if (isSelf || target === "owner") return false;
   if (!can(actor, "members.change_role")) return false;
   return target !== "admin" || can(actor, "members.manage_admins");
+}
+
+/** Whether work can be assigned to someone with this role. Clients are outside the team. */
+export function isAssignable(role: Role): boolean {
+  return role !== "client";
+}
+
+/** A member may edit a task they created or are assigned; managers and above edit any. */
+export function canEditTask(
+  role: Role | null | undefined,
+  task: { createdBy: string | null; assigneeId: string },
+  userId: string,
+): boolean {
+  if (can(role, "tasks.edit_any")) return true;
+  return can(role, "records.edit") && (task.createdBy === userId || task.assigneeId === userId);
 }

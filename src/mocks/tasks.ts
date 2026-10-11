@@ -15,7 +15,17 @@ const task = (
   priority: Task["priority"],
   dueOn: string,
   description = "",
-): Task => ({ id, title, projectId, assigneeId, status, priority, dueOn, description });
+): Task => ({
+  id,
+  title,
+  projectId,
+  assigneeId,
+  status,
+  priority,
+  dueOn,
+  description,
+  createdBy: null,
+});
 
 export const tasks: Task[] = [
   task(

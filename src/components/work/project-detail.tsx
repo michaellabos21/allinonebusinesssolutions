@@ -15,11 +15,11 @@ import {
 import { UserAvatar } from "@/components/common/user-avatar";
 import { BackLink, MissingRecord } from "@/components/crm/shared";
 import { useDemoStore } from "@/components/providers/demo-store";
+import { getToday } from "@/lib/runtime";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/work/progress-bar";
 import { TaskCheck } from "@/components/work/task-check";
 import { TaskPanel } from "@/components/work/task-panel";
-import { DEMO_TODAY } from "@/config/app";
 import { daysBetween, describeDue, formatDate, formatRelativeDay } from "@/lib/format";
 import { getProjectProgress, getProjectTeam, memberName, sortTasksForList } from "@/lib/work";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const store = useDemoStore();
+  const today = getToday();
   const [taskId, setTaskId] = useState<string | null>(null);
 
   const project = store.projects.find((item) => item.id === id);
@@ -47,7 +48,7 @@ export function ProjectDetail() {
   const activity = store.activity.filter((entry) => entry.projectId === project.id);
   const contact = store.contacts.find((item) => item.id === project.contactId);
   const client = store.contactCompanyName(project.contactId);
-  const daysLeft = daysBetween(DEMO_TODAY, project.dueOn);
+  const daysLeft = daysBetween(today, project.dueOn);
 
   const figures = [
     {

@@ -25,22 +25,23 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { describeDue, formatDate } from "@/lib/format";
+import { setTaskStatus } from "@/lib/record-actions";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { memberName } from "@/lib/work";
 import { TASK_STATUSES, type TaskStatus } from "@/mocks";
 
 /** Side panel with one task's details. Used by the tasks, project and calendar screens. */
 export function TaskPanel({ taskId, onClose }: { taskId: string | null; onClose: () => void }) {
-  const { tasks, projects, setTaskStatus, openEditor } = useDemoStore();
+  const { tasks, projects, openEditor } = useDemoStore();
   const statusId = useId();
   const task = tasks.find((item) => item.id === taskId) ?? null;
   const project = projects.find((item) => item.id === task?.projectId);
   const due = task ? describeDue(task.dueOn) : null;
   const returnFocus = useFocusReturn(task !== null);
 
-  function changeStatus(status: TaskStatus) {
+  async function changeStatus(status: TaskStatus) {
     if (!task || task.status === status) return;
-    setTaskStatus(task.id, status);
+    if (!(await setTaskStatus(task.id, status))) return;
     const label = TASK_STATUSES.find((item) => item.id === status)?.label;
     toast.success(status === "done" ? "Task completed" : `Task moved to ${label}`, {
       description: task.title,

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { HardRedirect } from "@/components/auth/navigate";
 import { AppShell } from "@/components/shell/app-shell";
+import { getWorkspaceRecords } from "@/server/records";
 import { getOpenInvitations, getSession, getTeam } from "@/server/session";
 
 /**
@@ -16,9 +17,10 @@ async function AuthedShell({ children }: { children: React.ReactNode }) {
   if (!session) return <HardRedirect to="/login" />;
   if (!session.workspace) return <HardRedirect to="/onboarding" />;
 
-  const [members, invitations] = await Promise.all([
+  const [members, invitations, records] = await Promise.all([
     getTeam(session.workspace.id),
     getOpenInvitations(session.workspace.id, session.workspace.role),
+    getWorkspaceRecords(session.workspace.id, session.workspace.role),
   ]);
 
   return (
@@ -30,6 +32,7 @@ async function AuthedShell({ children }: { children: React.ReactNode }) {
         members,
         invitations,
       }}
+      records={records}
     >
       {children}
     </AppShell>

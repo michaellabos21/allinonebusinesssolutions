@@ -19,9 +19,8 @@ import { MultiFilterMenu, SegmentedControl, TableToolbar } from "@/components/co
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { TaskPanel } from "@/components/work/task-panel";
-import { DEMO_TODAY } from "@/config/app";
 import { formatDate } from "@/lib/format";
-import { getRuntime } from "@/lib/runtime";
+import { getRuntime, getToday } from "@/lib/runtime";
 import {
   type CalendarEvent,
   type CalendarEventKind,
@@ -103,9 +102,10 @@ function EventRow({
 
 export function CalendarScreen() {
   const { tasks, projects, invoices, contactCompanyName, openQuickCreate } = useDemoStore();
+  const today = getToday();
   const [view, setView] = useState<View>("month");
-  const [month, setMonth] = useState(DEMO_TODAY.slice(0, 7));
-  const [selected, setSelected] = useState(DEMO_TODAY);
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const [selected, setSelected] = useState(today);
   const [kinds, setKinds] = useState<string[]>([]);
   const [taskId, setTaskId] = useState<string | null>(null);
 
@@ -132,7 +132,7 @@ export function CalendarScreen() {
   function goToMonth(next: string) {
     setMonth(next);
     // Keep a day selected inside the visible month so the day list is never stale.
-    setSelected(next === DEMO_TODAY.slice(0, 7) ? DEMO_TODAY : `${next}-01`);
+    setSelected(next === today.slice(0, 7) ? today : `${next}-01`);
   }
 
   return (
@@ -175,8 +175,8 @@ export function CalendarScreen() {
         </h2>
         <Button
           variant="outline"
-          disabled={month === DEMO_TODAY.slice(0, 7) && selected === DEMO_TODAY}
-          onClick={() => goToMonth(DEMO_TODAY.slice(0, 7))}
+          disabled={month === today.slice(0, 7) && selected === today}
+          onClick={() => goToMonth(today.slice(0, 7))}
         >
           Today
         </Button>
@@ -217,7 +217,7 @@ export function CalendarScreen() {
             <div className="grid grid-cols-7">
               {grid.map((cell) => {
                 const dayEvents = byDate.get(cell.iso) ?? [];
-                const isToday = cell.iso === DEMO_TODAY;
+                const isToday = cell.iso === today;
                 const isSelected = cell.iso === selected;
                 return (
                   <button
@@ -339,13 +339,10 @@ export function CalendarScreen() {
                   className="grid gap-x-4 px-3 py-3 sm:grid-cols-[150px_minmax(0,1fr)]"
                 >
                   <h3
-                    className={cn(
-                      "px-2 pt-2 pb-1 font-medium",
-                      date === DEMO_TODAY && "text-primary",
-                    )}
+                    className={cn("px-2 pt-2 pb-1 font-medium", date === today && "text-primary")}
                   >
                     <span className="tabular">{formatDate(date, "weekdayShort")}</span>
-                    {date === DEMO_TODAY ? (
+                    {date === today ? (
                       <span className="block text-caption font-normal">Today</span>
                     ) : null}
                   </h3>

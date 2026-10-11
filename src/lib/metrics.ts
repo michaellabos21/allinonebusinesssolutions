@@ -1,5 +1,6 @@
 import { DEMO_TODAY } from "@/config/app";
 import { addDays, daysBetween } from "@/lib/format";
+import { getToday } from "@/lib/runtime";
 import {
   OPEN_DEAL_STAGES,
   type Deal,
@@ -89,13 +90,15 @@ export function getUpcomingTasks(tasks: Task[]) {
 export function getSummary(
   { invoices, projects, tasks }: { invoices: Invoice[]; projects: Project[]; tasks: Task[] },
   today: string = DEMO_TODAY,
+  /** "Today" for real projects and tasks; the invoices above are sample data on the demo date. */
+  workToday: string = getToday(),
 ) {
   const [previousMonth, currentMonth] = getRevenueByMonth(invoices, 2, today);
   const open = getOpenInvoices(invoices);
   const overdue = open.filter((invoice) => invoiceDisplayStatus(invoice, today) === "overdue");
   const active = projects.filter((project) => project.status === "active");
   const openTasks = getUpcomingTasks(tasks);
-  const weekEnd = addDays(today, 6);
+  const weekEnd = addDays(workToday, 6);
 
   return {
     collectedThisMonthMinor: currentMonth.totalMinor,
@@ -108,12 +111,12 @@ export function getSummary(
     overdueInvoiceCount: overdue.length,
     activeProjectCount: active.length,
     projectsDueSoonCount: active.filter((project) => {
-      const days = daysBetween(today, project.dueOn);
+      const days = daysBetween(workToday, project.dueOn);
       return days >= 0 && days <= 30;
     }).length,
     tasksDueThisWeekCount: openTasks.filter((task) => task.dueOn >= today && task.dueOn <= weekEnd)
       .length,
-    overdueTaskCount: openTasks.filter((task) => task.dueOn < today).length,
+    overdueTaskCount: openTasks.filter((task) => task.dueOn < workToday).length,
   };
 }
 

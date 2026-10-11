@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 
 import { useDemoStore } from "@/components/providers/demo-store";
+import { DEMO_TODAY } from "@/config/app";
 import { Button } from "@/components/ui/button";
 import { describeDue, formatMoney } from "@/lib/format";
 import { getOpenInvoices, invoiceDisplayStatus } from "@/lib/metrics";
@@ -125,7 +126,7 @@ export function ReceivablesStatement() {
                             late ? "font-medium text-danger" : "text-muted-foreground",
                           )}
                         >
-                          {describeDue(invoice.dueOn).label}
+                          {describeDue(invoice.dueOn, DEMO_TODAY).label}
                         </span>
                       </span>
                     </Link>

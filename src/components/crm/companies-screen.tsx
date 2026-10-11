@@ -16,6 +16,7 @@ import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { getCompanyRollup } from "@/lib/crm";
 import { formatMoney } from "@/lib/format";
+import { setCompanyArchived } from "@/lib/record-actions";
 import type { Company } from "@/mocks";
 
 const TYPE_OPTIONS = [
@@ -28,8 +29,7 @@ const TYPE_OPTIONS = [
 type CompanyRow = Company & { peopleCount: number; openDealMinor: number; billedMinor: number };
 
 export function CompaniesScreen() {
-  const { companies, contacts, deals, invoices, openQuickCreate, openEditor, setCompanyArchived } =
-    useDemoStore();
+  const { companies, contacts, deals, invoices, openQuickCreate, openEditor } = useDemoStore();
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [archiveTarget, setArchiveTarget] = useState<Company | null>(null);
@@ -131,8 +131,8 @@ export function CompaniesScreen() {
                 ? {
                     label: "Restore",
                     icon: ArchiveRestore,
-                    onSelect: () => {
-                      setCompanyArchived(company.id, false);
+                    onSelect: async () => {
+                      if (!(await setCompanyArchived(company.id, false))) return;
                       toast.success(`${company.name} restored`);
                     },
                   }
@@ -147,7 +147,7 @@ export function CompaniesScreen() {
         ),
       },
     ],
-    [openEditor, setCompanyArchived],
+    [openEditor],
   );
 
   const table = useTableState(rows, columns, { initialSort: { id: "name", direction: "asc" } });
@@ -227,9 +227,9 @@ export function CompaniesScreen() {
         title={`Archive ${archiveTarget?.name ?? "company"}?`}
         description="The company moves out of your lists and pickers. Its contacts, deals and invoices are kept, and you can restore it from the Archived filter."
         confirmLabel="Archive company"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!archiveTarget) return;
-          setCompanyArchived(archiveTarget.id, true);
+          if (!(await setCompanyArchived(archiveTarget.id, true))) return;
           toast.success(`${archiveTarget.name} archived`, {
             action: { label: "Undo", onClick: () => setCompanyArchived(archiveTarget.id, false) },
           });

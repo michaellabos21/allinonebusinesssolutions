@@ -21,6 +21,7 @@ import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
+import { setContactArchived } from "@/lib/record-actions";
 import { CONTACT_TAGS, type Contact } from "@/mocks";
 
 const STATUS_OPTIONS = [
@@ -32,7 +33,7 @@ const STATUS_OPTIONS = [
 ];
 
 export function ContactsScreen() {
-  const { contacts, companyName, openQuickCreate, openEditor, setContactArchived } = useDemoStore();
+  const { contacts, companyName, openQuickCreate, openEditor } = useDemoStore();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [tags, setTags] = useState<string[]>([]);
@@ -145,8 +146,8 @@ export function ContactsScreen() {
                 ? {
                     label: "Restore",
                     icon: ArchiveRestore,
-                    onSelect: () => {
-                      setContactArchived(contact.id, false);
+                    onSelect: async () => {
+                      if (!(await setContactArchived(contact.id, false))) return;
                       toast.success(`${contact.name} restored`);
                     },
                   }
@@ -161,7 +162,7 @@ export function ContactsScreen() {
         ),
       },
     ],
-    [companyName, openEditor, setContactArchived],
+    [companyName, openEditor],
   );
 
   const table = useTableState(filtered, columns, { initialSort: { id: "name", direction: "asc" } });
@@ -248,9 +249,9 @@ export function ContactsScreen() {
         title={`Archive ${archiveTarget?.name ?? "contact"}?`}
         description="They move out of your lists and pickers. Their invoices, projects and notes are kept, and you can restore them from the Archived filter."
         confirmLabel="Archive contact"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!archiveTarget) return;
-          setContactArchived(archiveTarget.id, true);
+          if (!(await setContactArchived(archiveTarget.id, true))) return;
           toast.success(`${archiveTarget.name} archived`, {
             action: { label: "Undo", onClick: () => setContactArchived(archiveTarget.id, false) },
           });

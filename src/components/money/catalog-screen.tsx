@@ -14,6 +14,7 @@ import { FilterMenu, SearchInput, TableToolbar } from "@/components/common/table
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
+import { setCatalogItemArchived } from "@/lib/record-actions";
 import type { CatalogItem } from "@/mocks";
 
 const TYPE_OPTIONS = [
@@ -24,7 +25,7 @@ const TYPE_OPTIONS = [
 ];
 
 export function CatalogScreen() {
-  const { catalog, openQuickCreate, openEditor, setCatalogItemArchived } = useDemoStore();
+  const { catalog, openQuickCreate, openEditor } = useDemoStore();
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [archiveTarget, setArchiveTarget] = useState<CatalogItem | null>(null);
@@ -95,8 +96,8 @@ export function CatalogScreen() {
                 ? {
                     label: "Restore",
                     icon: ArchiveRestore,
-                    onSelect: () => {
-                      setCatalogItemArchived(item.id, false);
+                    onSelect: async () => {
+                      if (!(await setCatalogItemArchived(item.id, false))) return;
                       toast.success(`“${item.name}” restored`);
                     },
                   }
@@ -111,7 +112,7 @@ export function CatalogScreen() {
         ),
       },
     ],
-    [openEditor, setCatalogItemArchived],
+    [openEditor],
   );
 
   const table = useTableState(rows, columns, {
@@ -194,9 +195,9 @@ export function CatalogScreen() {
         title={`Archive “${archiveTarget?.name ?? "item"}”?`}
         description="It will no longer be offered when adding invoice lines. Invoices that already use it are not changed, and you can restore it from the Archived filter."
         confirmLabel="Archive item"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!archiveTarget) return;
-          setCatalogItemArchived(archiveTarget.id, true);
+          if (!(await setCatalogItemArchived(archiveTarget.id, true))) return;
           toast.success(`“${archiveTarget.name}” archived`, {
             action: {
               label: "Undo",

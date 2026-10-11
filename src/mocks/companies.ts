@@ -8,7 +8,19 @@ const company = (
   website: string,
   type: Company["type"],
   createdOn: string,
-): Company => ({ id, name, industry, city, website, type, createdOn, archived: false });
+): Company => ({
+  id,
+  name,
+  industry,
+  city,
+  website,
+  phone: "",
+  address: "",
+  notes: "",
+  type,
+  createdOn,
+  archived: false,
+});
 
 export const companies: Company[] = [
   company(

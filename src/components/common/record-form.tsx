@@ -37,6 +37,9 @@ export type FormField = {
 };
 
 export type FormResult = { message: string; viewLabel?: string; href?: string };
+/** A save the server refused: a summary, and messages for individual fields. */
+export type FormFailure = { error: string; fieldErrors?: Record<string, string> };
+type FormOutcome = FormResult | FormFailure;
 
 export type FormSpec = {
   title: string;
@@ -49,7 +52,8 @@ export type FormSpec = {
   /** Cross-field or uniqueness checks, run after the built-in ones. */
   check?: (values: FormValues) => Record<string, string | undefined>;
   /** Saves to session state and returns the confirmation to show. */
-  submit: (values: FormValues) => FormResult;
+  /** May be asynchronous: real records are saved by a server action. */
+  submit: (values: FormValues) => FormOutcome | Promise<FormOutcome>;
 };
 
 /** Value used by optional selects for "nothing chosen"; Radix selects cannot hold an empty string. */
@@ -96,22 +100,45 @@ export function RecordForm({
 }) {
   const [values, setValues] = useState<FormValues>(spec.initial);
   const [errors, setErrors] = useState<FormValues>({});
+  const [formError, setFormError] = useState("");
+  const [pending, setPending] = useState(false);
 
   const setValue = (name: string, value: string) => {
     setValues((current) => ({ ...current, [name]: value }));
     if (errors[name]) setErrors((current) => ({ ...current, [name]: "" }));
   };
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     const found = validate(spec, values);
     setErrors(found);
+    setFormError("");
     const firstInvalid = spec.fields.find((field) => found[field.name]);
     if (firstInvalid) {
       document.getElementById(`field-${firstInvalid.name}`)?.focus();
       return;
     }
-    onSaved(spec.submit(values));
+
+    setPending(true);
+    let outcome: FormOutcome;
+    try {
+      outcome = await spec.submit(values);
+    } catch {
+      outcome = { error: "We couldn’t reach the server. Check your connection and try again." };
+    }
+    setPending(false);
+
+    if ("error" in outcome) {
+      const fieldErrors = outcome.fieldErrors ?? {};
+      setErrors(fieldErrors);
+      const named = spec.fields.find((field) => fieldErrors[field.name]);
+      // Show the summary only when no field carries the explanation.
+      setFormError(named ? "" : outcome.error);
+      if (named) document.getElementById(`field-${named.name}`)?.focus();
+      return;
+    }
+    onSaved(outcome);
   }
 
   return (
@@ -122,6 +149,11 @@ export function RecordForm({
       </DialogHeader>
 
       <div className="grid gap-4 py-5 sm:grid-cols-2">
+        {formError ? (
+          <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-danger sm:col-span-2">
+            {formError}
+          </p>
+        ) : null}
         {spec.warning ? (
           <p className="rounded-md bg-warning-soft px-3 py-2 text-caption text-warning sm:col-span-2">
             {spec.warning}
@@ -223,8 +255,8 @@ export function RecordForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" className="hover:bg-primary-hover">
-            {spec.submitLabel}
+          <Button type="submit" disabled={pending} className="hover:bg-primary-hover">
+            {pending ? "Saving" : spec.submitLabel}
           </Button>
         </div>
       </DialogFooter>

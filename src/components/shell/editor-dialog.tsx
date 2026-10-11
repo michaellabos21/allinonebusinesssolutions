@@ -3,26 +3,55 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { type FormOption, type FormSpec, NONE, RecordForm } from "@/components/common/record-form";
+import {
+  type FormFailure,
+  type FormOption,
+  type FormResult,
+  type FormSpec,
+  NONE,
+  RecordForm,
+} from "@/components/common/record-form";
 import { type EditorKind, useDemoStore } from "@/components/providers/demo-store";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DEMO_TODAY } from "@/config/app";
 import { addDays, formatAmountInput, parseAmountToMinor } from "@/lib/format";
-import { getRuntime } from "@/lib/runtime";
+import { getRuntime, getToday } from "@/lib/runtime";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import {
+  saveCatalogItemAction,
+  saveCompanyAction,
+  saveContactAction,
+  saveProjectAction,
+  saveTaskAction,
+} from "@/server/actions/records";
+import type { ActionResult } from "@/server/types";
+import {
   CONTACT_TAGS,
-  type CatalogItemType,
-  type CompanyType,
-  type ContactStatus,
   DEAL_STAGES,
   type DealStage,
   EXPENSE_CATEGORIES,
-  type ProjectStatus,
   TASK_STATUSES,
-  type TaskPriority,
-  type TaskStatus,
 } from "@/mocks";
+
+/**
+ * Turns a server action's result into what the form expects. `rename` maps
+ * the action's field names to the form's where they differ.
+ */
+function outcome(
+  result: ActionResult<{ id: string; name: string }>,
+  onSaved: (saved: { id: string; name: string }) => FormResult,
+  rename: Record<string, string> = {},
+): FormResult | FormFailure {
+  if (result.ok && result.data) return onSaved(result.data);
+  if (result.ok) return { error: "The server didn’t confirm the save. Reload and check." };
+  const fieldErrors = Object.fromEntries(
+    Object.entries(result.fieldErrors ?? {}).map(([name, message]) => [
+      rename[name] ?? name,
+      message,
+    ]),
+  );
+  return { error: result.error, fieldErrors };
+}
 
 const optional = (options: FormOption[], label: string) => [{ value: NONE, label }, ...options];
 const orNull = (value: string) => (value === NONE || !value ? null : value);
@@ -74,6 +103,13 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           },
           { name: "phone", label: "Phone", type: "tel", placeholder: "0917 555 0100", half: true },
           {
+            name: "title",
+            label: "Job title",
+            type: "text",
+            placeholder: "Operations manager",
+            half: true,
+          },
+          {
             name: "companyName",
             label: "Company",
             type: "combo",
@@ -108,6 +144,7 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           name: contact?.name ?? "",
           email: contact?.email ?? "",
           phone: contact?.phone ?? "",
+          title: contact?.title ?? "",
           companyName: store.companyName(contact?.companyId ?? null),
           status: contact?.status ?? "active",
           tags: contact?.tags.join(", ") ?? "",
@@ -119,24 +156,28 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           );
           return clash ? { email: `${clash.name} already uses this email.` } : {};
         },
-        submit: (v) => {
-          const saved = store.saveContact(
-            {
-              name: v.name.trim(),
-              email: v.email.trim(),
-              phone: v.phone.trim(),
-              companyName: v.companyName.trim(),
-              status: v.status as ContactStatus,
-              tags: parseTags(v.tags),
-            },
-            id,
-          );
-          return {
-            message: contact ? `Changes to ${saved.name} saved` : `${saved.name} added to contacts`,
-            viewLabel: "View contact",
-            href: `/crm/contacts/${saved.id}`,
-          };
-        },
+        submit: async (v) =>
+          outcome(
+            await saveContactAction(
+              {
+                name: v.name,
+                email: v.email,
+                phone: v.phone,
+                title: v.title,
+                companyName: v.companyName,
+                status: v.status,
+                tags: parseTags(v.tags),
+              },
+              id,
+            ),
+            (saved) => ({
+              message: contact
+                ? `Changes to ${saved.name} saved`
+                : `${saved.name} added to contacts`,
+              viewLabel: "View contact",
+              href: `/crm/contacts/${saved.id}`,
+            }),
+          ),
       };
     }
     case "company": {
@@ -177,6 +218,14 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             placeholder: "company.com",
             half: true,
           },
+          { name: "phone", label: "Phone", type: "tel", placeholder: "033 555 0100", half: true },
+          { name: "address", label: "Address", type: "text", placeholder: "Street, city" },
+          {
+            name: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Anything worth remembering about this company.",
+          },
         ],
         initial: {
           name: company?.name ?? "",
@@ -184,6 +233,9 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           industry: company?.industry ?? "",
           city: company?.city ?? "",
           website: company?.website ?? "",
+          phone: company?.phone ?? "",
+          address: company?.address ?? "",
+          notes: company?.notes ?? "",
         },
         check: (v) => {
           const name = v.name.trim().toLowerCase();
@@ -192,25 +244,29 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           );
           return clash ? { name: "A company with this name already exists." } : {};
         },
-        submit: (v) => {
-          const saved = store.saveCompany(
-            {
-              name: v.name.trim(),
-              type: v.type as CompanyType,
-              industry: v.industry.trim(),
-              city: v.city.trim(),
-              website: v.website.trim(),
-            },
-            id,
-          );
-          return {
-            message: company
-              ? `Changes to ${saved.name} saved`
-              : `${saved.name} added to companies`,
-            viewLabel: "View company",
-            href: `/crm/companies/${saved.id}`,
-          };
-        },
+        submit: async (v) =>
+          outcome(
+            await saveCompanyAction(
+              {
+                name: v.name,
+                type: v.type,
+                industry: v.industry,
+                city: v.city,
+                website: v.website,
+                phone: v.phone,
+                address: v.address,
+                notes: v.notes,
+              },
+              id,
+            ),
+            (saved) => ({
+              message: company
+                ? `Changes to ${saved.name} saved`
+                : `${saved.name} added to companies`,
+              viewLabel: "View company",
+              href: `/crm/companies/${saved.id}`,
+            }),
+          ),
       };
     }
     case "deal": {
@@ -297,7 +353,7 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           contactId: deal?.contactId ?? NONE,
           value: deal ? formatAmountInput(deal.valueMinor) : "",
           stage: deal?.stage ?? "lead",
-          ownerId: deal?.ownerId ?? store.demoUser.id,
+          ownerId: deal?.ownerId ?? store.account.user.id,
           expectedCloseOn: deal?.expectedCloseOn ?? addDays(DEMO_TODAY, 30),
         },
         check: (v) => {
@@ -389,31 +445,32 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         initial: {
           name: project?.name ?? "",
           contactId: project?.contactId ?? NONE,
-          ownerId: project?.ownerId ?? store.demoUser.id,
+          ownerId: project?.ownerId ?? store.account.user.id,
           status: project?.status ?? "active",
-          dueOn: project?.dueOn ?? addDays(DEMO_TODAY, 30),
+          dueOn: project?.dueOn ?? addDays(getToday(), 30),
           description: project?.description ?? "",
         },
-        submit: (v) => {
-          const saved = store.saveProject(
-            {
-              name: v.name.trim(),
-              description: v.description.trim(),
-              contactId: orNull(v.contactId),
-              ownerId: v.ownerId,
-              status: v.status as ProjectStatus,
-              dueOn: v.dueOn,
-            },
-            id,
-          );
-          return {
-            message: project
-              ? `Changes to “${saved.name}” saved`
-              : `Project “${saved.name}” created`,
-            viewLabel: "View project",
-            href: `/work/projects/${saved.id}`,
-          };
-        },
+        submit: async (v) =>
+          outcome(
+            await saveProjectAction(
+              {
+                name: v.name,
+                description: v.description,
+                contactId: orNull(v.contactId),
+                ownerId: v.ownerId,
+                status: v.status,
+                dueOn: v.dueOn,
+              },
+              id,
+            ),
+            (saved) => ({
+              message: project
+                ? `Changes to “${saved.name}” saved`
+                : `Project “${saved.name}” created`,
+              viewLabel: "View project",
+              href: `/work/projects/${saved.id}`,
+            }),
+          ),
       };
     }
     case "task": {
@@ -493,31 +550,32 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
         initial: {
           title: task?.title ?? "",
           projectId: task?.projectId ?? NONE,
-          assigneeId: task?.assigneeId ?? store.demoUser.id,
+          assigneeId: task?.assigneeId ?? store.account.user.id,
           status: task?.status ?? "todo",
-          dueOn: task?.dueOn ?? addDays(DEMO_TODAY, 2),
+          dueOn: task?.dueOn ?? addDays(getToday(), 2),
           priority: task?.priority ?? "medium",
           description: task?.description ?? "",
         },
-        submit: (v) => {
-          const saved = store.saveTask(
-            {
-              title: v.title.trim(),
-              description: v.description.trim(),
-              projectId: orNull(v.projectId),
-              assigneeId: v.assigneeId,
-              status: v.status as TaskStatus,
-              priority: v.priority as TaskPriority,
-              dueOn: v.dueOn,
-            },
-            id,
-          );
-          return {
-            message: task ? `Changes to “${saved.title}” saved` : `Task “${saved.title}” added`,
-            viewLabel: "View tasks",
-            href: "/work/tasks",
-          };
-        },
+        submit: async (v) =>
+          outcome(
+            await saveTaskAction(
+              {
+                title: v.title,
+                description: v.description,
+                projectId: orNull(v.projectId),
+                assigneeId: v.assigneeId,
+                status: v.status,
+                priority: v.priority,
+                dueOn: v.dueOn,
+              },
+              id,
+            ),
+            (saved) => ({
+              message: task ? `Changes to “${saved.name}” saved` : `Task “${saved.name}” added`,
+              viewLabel: "View tasks",
+              href: "/work/tasks",
+            }),
+          ),
       };
     }
     case "invoice":
@@ -647,23 +705,25 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           );
           return clash ? { name: "An item with this name already exists." } : {};
         },
-        submit: (v) => {
-          const saved = store.saveCatalogItem(
-            {
-              name: v.name.trim(),
-              type: v.type as CatalogItemType,
-              unit: v.unit.trim().toLowerCase(),
-              unitPriceMinor: parseAmountToMinor(v.price) ?? 0,
-              description: v.description.trim(),
-            },
-            id,
-          );
-          return {
-            message: item
-              ? `Changes to “${saved.name}” saved`
-              : `“${saved.name}” added to the catalog`,
-          };
-        },
+        submit: async (v) =>
+          outcome(
+            await saveCatalogItemAction(
+              {
+                name: v.name,
+                type: v.type,
+                unit: v.unit,
+                unitPriceMinor: parseAmountToMinor(v.price) ?? 0,
+                description: v.description,
+              },
+              id,
+            ),
+            (saved) => ({
+              message: item
+                ? `Changes to “${saved.name}” saved`
+                : `“${saved.name}” added to the catalog`,
+            }),
+            { unitPriceMinor: "price" },
+          ),
       };
     }
     case "expense": {

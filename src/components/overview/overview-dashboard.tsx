@@ -1,7 +1,6 @@
 "use client";
 
 import { PageHeader } from "@/components/common/page-header";
-import { Pill } from "@/components/common/status-badge";
 import { GettingStarted } from "@/components/overview/getting-started";
 import { PipelineSummary } from "@/components/overview/pipeline-summary";
 import { ReceivablesStatement } from "@/components/overview/receivables-statement";
@@ -10,46 +9,49 @@ import { RevenueChart } from "@/components/overview/revenue-chart";
 import { SummaryStrip } from "@/components/overview/summary-strip";
 import { UpcomingTasks } from "@/components/overview/upcoming-tasks";
 import { useDemoStore } from "@/components/providers/demo-store";
-import { DEMO_TODAY } from "@/config/app";
 import { formatDate } from "@/lib/format";
+import { getToday } from "@/lib/runtime";
+import { can } from "@/server/permissions";
 
-export function OverviewDashboard() {
-  const { demoEnabled, created, account } = useDemoStore();
+export function OverviewDashboard({ sampleDataAvailable }: { sampleDataAvailable: boolean }) {
+  const { account, contacts, projects, tasks } = useDemoStore();
   const { workspace } = account;
-  const hasOwnRecords = Object.values(created).some((count) => count > 0);
-  const showDashboard = demoEnabled || hasOwnRecords;
   const firstName = account.user.fullName.split(" ")[0];
+  const setUp = contacts.length > 0 && projects.length > 0 && tasks.length > 0;
+
+  if (!can(workspace.role, "records.view")) {
+    return (
+      <div className="page-container space-y-6">
+        <PageHeader title={`Welcome, ${firstName}`} description={workspace.name} />
+        <p className="max-w-[60ch] rounded-lg border bg-card px-5 py-4 text-muted-foreground">
+          You have client access to this workspace. There is nothing to show yet: the client portal,
+          where shared projects and invoices will appear, has not been built.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container space-y-6">
       <PageHeader
         title={`Welcome back, ${firstName}`}
-        description={
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            {workspace.name}, {formatDate(DEMO_TODAY, "weekday")}
-            {demoEnabled ? <Pill>Demo data</Pill> : null}
-          </span>
-        }
+        description={`${workspace.name}, ${formatDate(getToday(), "weekday")}`}
       />
 
-      {demoEnabled ? null : <GettingStarted />}
+      {setUp ? null : <GettingStarted sampleDataAvailable={sampleDataAvailable} />}
 
-      {showDashboard ? (
-        <>
-          <ReceivablesStatement />
-          <SummaryStrip />
-          <div className="grid gap-6 xl:grid-cols-3">
-            <div className="xl:col-span-2">
-              <RevenueChart />
-            </div>
-            <PipelineSummary />
-          </div>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <UpcomingTasks />
-            <RecentActivity />
-          </div>
-        </>
-      ) : null}
+      <ReceivablesStatement />
+      <SummaryStrip />
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <RevenueChart />
+        </div>
+        <PipelineSummary />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <UpcomingTasks />
+        <RecentActivity />
+      </div>
     </div>
   );
 }

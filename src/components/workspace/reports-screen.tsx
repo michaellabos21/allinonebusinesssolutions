@@ -25,6 +25,7 @@ import {
   getRange,
   getTaskLoad,
 } from "@/lib/reports";
+import { getToday } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 import type { InvoiceDisplayStatus } from "@/mocks";
 
@@ -76,7 +77,8 @@ export function ReportsScreen() {
   const statuses = getInvoiceStatusBreakdown(invoices, range);
   const issuedCount = statuses.reduce((total, row) => total + row.count, 0);
   const issuedMinor = statuses.reduce((total, row) => total + row.amountMinor, 0);
-  const taskLoad = getTaskLoad(tasks, range);
+  // Tasks and projects are real, so their panels count back from the real date.
+  const taskLoad = getTaskLoad(tasks, getRange(rangeId, getToday()));
   const busiest = Math.max(...taskLoad.map((row) => row.done + row.open), 1);
   const projectRows = getProjectReport(projects, tasks, expenses, range);
   const categories = getExpenseCategories(expenses, range);

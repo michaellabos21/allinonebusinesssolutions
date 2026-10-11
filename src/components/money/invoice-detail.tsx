@@ -10,6 +10,7 @@ import { BackLink, MissingRecord } from "@/components/crm/shared";
 import { PaymentDialog, useInvoiceActions } from "@/components/money/invoice-actions";
 import { InvoiceDocument } from "@/components/money/invoice-document";
 import { useDemoStore } from "@/components/providers/demo-store";
+import { DEMO_TODAY } from "@/config/app";
 import { Button } from "@/components/ui/button";
 import { describeDue, formatDate } from "@/lib/format";
 import { invoiceDisplayStatus } from "@/lib/metrics";
@@ -35,7 +36,7 @@ export function InvoiceDetail() {
   const display = invoiceDisplayStatus(invoice);
   const contact = store.contacts.find((item) => item.id === invoice.contactId);
   const company = store.contactCompanyName(invoice.contactId);
-  const due = describeDue(invoice.dueOn);
+  const due = describeDue(invoice.dueOn, DEMO_TODAY);
 
   const steps = [
     {

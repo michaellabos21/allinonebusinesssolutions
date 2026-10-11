@@ -12,9 +12,9 @@ import { ProjectStatusBadge } from "@/components/common/status-badge";
 import { FilterMenu, SearchInput, TableToolbar } from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
+import { getToday } from "@/lib/runtime";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/work/progress-bar";
-import { DEMO_TODAY } from "@/config/app";
 import { formatDate } from "@/lib/format";
 import { getProjectProgress, memberName } from "@/lib/work";
 import type { Project } from "@/mocks";
@@ -30,6 +30,7 @@ type ProjectRow = Project & { client: string; done: number; total: number; perce
 
 export function ProjectsScreen() {
   const { projects, tasks, team, contactCompanyName, openQuickCreate, openEditor } = useDemoStore();
+  const today = getToday();
   const ownerOptions = [
     { value: "all", label: "Anyone" },
     ...team.map((member) => ({ value: member.id, label: member.name })),
@@ -104,7 +105,7 @@ export function ProjectsScreen() {
         header: "Due",
         sortValue: (project) => project.dueOn,
         cell: (project) => {
-          const late = project.status === "active" && project.dueOn < DEMO_TODAY;
+          const late = project.status === "active" && project.dueOn < today;
           return (
             <span
               className={
@@ -140,7 +141,7 @@ export function ProjectsScreen() {
         ),
       },
     ],
-    [openEditor, openQuickCreate],
+    [openEditor, openQuickCreate, today],
   );
 
   const table = useTableState(rows, columns, { initialSort: { id: "due", direction: "asc" } });

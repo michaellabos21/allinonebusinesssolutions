@@ -27,14 +27,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import {
-  ACCENTS,
-  CURRENCY_OPTIONS,
-  DEMO_TODAY,
-  NOTIFICATION_OPTIONS,
-  TAX_OPTIONS,
-} from "@/config/app";
+import { ACCENTS, CURRENCY_OPTIONS, NOTIFICATION_OPTIONS, TAX_OPTIONS } from "@/config/app";
 import { formatMoney } from "@/lib/format";
+import { getToday } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 import {
   setNotificationPrefAction,
@@ -360,7 +355,7 @@ function PreferencesSection() {
       month: "short",
       year: "numeric",
       timeZone: "UTC",
-    }).format(new Date(`${DEMO_TODAY}T00:00:00Z`));
+    }).format(new Date(`${getToday()}T00:00:00Z`));
 
   return (
     <SectionCard

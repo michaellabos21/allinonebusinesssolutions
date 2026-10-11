@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { ROLES, assignableRolesFor, can, canManageMember } from "@/server/permissions";
+import {
+  ROLES,
+  assignableRolesFor,
+  can,
+  canEditTask,
+  canManageMember,
+  isAssignable,
+} from "@/server/permissions";
 
 describe("can", () => {
   it("denies when there is no role", () => {
@@ -65,5 +72,43 @@ describe("canManageMember", () => {
     for (const role of ["manager", "member", "client"] as const) {
       expect(canManageMember(role, "member", false)).toBe(false);
     }
+  });
+});
+
+describe("business records", () => {
+  it("lets everyone but clients see and edit records", () => {
+    for (const action of ["records.view", "records.edit"] as const) {
+      expect(ROLES.filter((role) => can(role, action))).toEqual([
+        "owner",
+        "admin",
+        "manager",
+        "member",
+      ]);
+    }
+  });
+
+  it("keeps archiving, projects, the catalog and other people's tasks for managers and above", () => {
+    for (const action of [
+      "records.archive",
+      "projects.manage",
+      "catalog.manage",
+      "tasks.edit_any",
+    ] as const) {
+      expect(ROLES.filter((role) => can(role, action))).toEqual(["owner", "admin", "manager"]);
+    }
+  });
+
+  it("lets a member edit only tasks they created or are assigned", () => {
+    const task = { createdBy: "someone", assigneeId: "someone-else" };
+    expect(canEditTask("member", task, "me")).toBe(false);
+    expect(canEditTask("member", { ...task, createdBy: "me" }, "me")).toBe(true);
+    expect(canEditTask("member", { ...task, assigneeId: "me" }, "me")).toBe(true);
+    expect(canEditTask("manager", task, "me")).toBe(true);
+    expect(canEditTask("client", { ...task, assigneeId: "me" }, "me")).toBe(false);
+    expect(canEditTask(null, { ...task, assigneeId: "me" }, "me")).toBe(false);
+  });
+
+  it("never assigns work to a client", () => {
+    expect(ROLES.filter(isAssignable)).toEqual(["owner", "admin", "manager", "member"]);
   });
 });

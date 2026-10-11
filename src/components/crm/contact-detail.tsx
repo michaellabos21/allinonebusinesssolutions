@@ -33,6 +33,7 @@ import { type TimelineEvent, getContactTimeline } from "@/lib/crm";
 import { formatDate, formatMoney, formatRelativeDay } from "@/lib/format";
 import { invoiceDisplayStatus } from "@/lib/metrics";
 import { memberName } from "@/lib/runtime";
+import { setContactArchived, addNote } from "@/lib/record-actions";
 
 const TIMELINE_ICON: Record<TimelineEvent["kind"], typeof UserRound> = {
   created: UserRoundPlus,
@@ -68,7 +69,7 @@ export function ContactDetail() {
   const deals = store.deals.filter((deal) => deal.contactId === contact.id && !deal.archived);
   const timeline = getContactTimeline(contact, { notes: store.notes, invoices: store.invoices });
 
-  function saveNote(event: React.FormEvent) {
+  async function saveNote(event: React.FormEvent) {
     event.preventDefault();
     const body = draft.trim();
     if (!body) {
@@ -76,9 +77,9 @@ export function ContactDetail() {
       document.getElementById(noteId)?.focus();
       return;
     }
-    store.addNote(contact!.id, body);
+    if (!(await addNote(contact!.id, body))) return;
     setDraft("");
-    toast.success("Note added", { description: "Kept for this session only." });
+    toast.success("Note added");
   }
 
   return (
@@ -118,8 +119,8 @@ export function ContactDetail() {
           {contact.archived ? (
             <Button
               variant="outline"
-              onClick={() => {
-                store.setContactArchived(contact.id, false);
+              onClick={async () => {
+                if (!(await setContactArchived(contact.id, false))) return;
                 toast.success(`${contact.name} restored`);
               }}
             >
@@ -293,8 +294,8 @@ export function ContactDetail() {
         title={`Archive ${contact.name}?`}
         description="They move out of your lists and pickers. Their invoices, projects and notes are kept, and you can restore them at any time."
         confirmLabel="Archive contact"
-        onConfirm={() => {
-          store.setContactArchived(contact.id, true);
+        onConfirm={async () => {
+          if (!(await setContactArchived(contact.id, true))) return;
           toast.success(`${contact.name} archived`);
           setConfirmArchive(false);
         }}

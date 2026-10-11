@@ -1,10 +1,9 @@
-import { DEMO_TODAY } from "@/config/app";
 import { invoiceDisplayStatus } from "@/lib/metrics";
-import { getRuntime, memberName } from "@/lib/runtime";
+import { getRuntime, getToday, memberName } from "@/lib/runtime";
 import type { Invoice, Project, Task, TeamMember } from "@/mocks";
 
 /** Task counts for one project. Progress is done tasks over all tasks. */
-export function getProjectProgress(projectId: string, tasks: Task[], today: string = DEMO_TODAY) {
+export function getProjectProgress(projectId: string, tasks: Task[], today: string = getToday()) {
   const own = tasks.filter((task) => task.projectId === projectId);
   const done = own.filter((task) => task.status === "done").length;
   const open = own.length - done;
@@ -74,7 +73,7 @@ export function getCalendarEvents(
     invoices: Invoice[];
     clientName: (contactId: string | null) => string;
   },
-  today: string = DEMO_TODAY,
+  today: string = getToday(),
 ): CalendarEvent[] {
   const projectName = (id: string | null) => projects.find((project) => project.id === id)?.name;
   return [
@@ -107,7 +106,8 @@ export function getCalendarEvents(
         title: `${invoice.number} payment due`,
         detail: clientName(invoice.contactId) || "Unknown client",
         done: false,
-        late: invoiceDisplayStatus(invoice, today) === "overdue",
+        // Sample invoices are judged against the fixed demo date, like everywhere else.
+        late: invoiceDisplayStatus(invoice) === "overdue",
         href: `/money/invoices/${invoice.id}`,
       })),
   ].sort((a, b) => a.date.localeCompare(b.date));

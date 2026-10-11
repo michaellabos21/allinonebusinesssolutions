@@ -12,7 +12,18 @@ const contact = (
   status: Contact["status"],
   tags: string[],
   createdOn: string,
-): Contact => ({ id, name, email, phone, companyId, status, tags, createdOn, archived: false });
+): Contact => ({
+  id,
+  name,
+  email,
+  phone,
+  title: "",
+  companyId,
+  status,
+  tags,
+  createdOn,
+  archived: false,
+});
 
 export const contacts: Contact[] = [
   contact(

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { getCompanyRollup } from "@/lib/crm";
 import { formatDate, formatMoney, initials } from "@/lib/format";
 import { invoiceDisplayStatus } from "@/lib/metrics";
+import { setCompanyArchived } from "@/lib/record-actions";
 
 export function CompanyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -94,8 +95,8 @@ export function CompanyDetail() {
           {company.archived ? (
             <Button
               variant="outline"
-              onClick={() => {
-                store.setCompanyArchived(company.id, false);
+              onClick={async () => {
+                if (!(await setCompanyArchived(company.id, false))) return;
                 toast.success(`${company.name} restored`);
               }}
             >
@@ -204,8 +205,8 @@ export function CompanyDetail() {
         title={`Archive ${company.name}?`}
         description="The company moves out of your lists and pickers. Its contacts, deals and invoices are kept, and you can restore it at any time."
         confirmLabel="Archive company"
-        onConfirm={() => {
-          store.setCompanyArchived(company.id, true);
+        onConfirm={async () => {
+          if (!(await setCompanyArchived(company.id, true))) return;
           toast.success(`${company.name} archived`);
           setConfirmArchive(false);
         }}

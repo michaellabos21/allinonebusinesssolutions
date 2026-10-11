@@ -18,6 +18,8 @@ import {
 } from "@/components/common/table-toolbar";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { useDemoStore } from "@/components/providers/demo-store";
+import { setTaskStatus } from "@/lib/record-actions";
+import { getToday } from "@/lib/runtime";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -29,7 +31,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TaskCheck } from "@/components/work/task-check";
 import { TaskPanel } from "@/components/work/task-panel";
-import { DEMO_TODAY } from "@/config/app";
 import { addDays, describeDue, formatDate } from "@/lib/format";
 import { memberName, sortTasksForList } from "@/lib/work";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,8 @@ const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 const DONE_COLUMN_LIMIT = 6;
 
 export function TasksScreen() {
-  const { tasks, projects, team, openQuickCreate, openEditor, setTaskStatus } = useDemoStore();
+  const { tasks, projects, team, openQuickCreate, openEditor } = useDemoStore();
+  const today = getToday();
   const assigneeOptions = [
     { value: "all", label: "Anyone" },
     ...team.map((member) => ({ value: member.id, label: member.name })),
@@ -97,10 +99,10 @@ export function TasksScreen() {
     [matching, status],
   );
 
-  function move(task: Task, next: TaskStatus) {
+  async function move(task: Task, next: TaskStatus) {
     if (task.status === next) return;
     const previous = task.status;
-    setTaskStatus(task.id, next);
+    if (!(await setTaskStatus(task.id, next))) return;
     toast.success(`Task moved to ${TASK_STATUSES.find((item) => item.id === next)?.label}`, {
       description: task.title,
       action: { label: "Undo", onClick: () => setTaskStatus(task.id, previous) },
@@ -212,9 +214,9 @@ export function TasksScreen() {
   const hasFilters = query !== "" || priority !== "all" || assignee !== "all";
 
   const open = tasks.filter((task) => task.status !== "done");
-  const overdue = open.filter((task) => task.dueOn < DEMO_TODAY).length;
+  const overdue = open.filter((task) => task.dueOn < today).length;
   const thisWeek = open.filter(
-    (task) => task.dueOn >= DEMO_TODAY && task.dueOn <= addDays(DEMO_TODAY, 6),
+    (task) => task.dueOn >= today && task.dueOn <= addDays(today, 6),
   ).length;
 
   return (

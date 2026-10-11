@@ -112,6 +112,98 @@ export const memberRoleSchema = z.object({
 
 export const idSchema = z.uuid();
 
+// ---------------------------------------------------------------------------
+// Business records
+// ---------------------------------------------------------------------------
+
+const text = (max: number) => z.string().trim().max(max, `Use ${max} characters or fewer.`);
+const requiredText = (max: number, missing: string) => text(max).min(1, missing);
+const optionalId = z.union([z.uuid(), z.null()]);
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date.");
+
+export const companySchema = z.object({
+  name: requiredText(120, "Enter the company’s name."),
+  type: z.enum(["client", "prospect"]),
+  industry: text(80),
+  city: text(80),
+  website: text(200),
+  phone: text(40),
+  address: text(300),
+  notes: text(2000),
+});
+
+export const contactSchema = z.object({
+  name: requiredText(120, "Enter the contact’s name."),
+  email,
+  phone: text(40),
+  title: text(120),
+  /** Matched to a company by name, or created when new. Empty for none. */
+  companyName: text(120),
+  status: z.enum(["active", "lead", "inactive"]),
+  tags: z
+    .array(z.string().trim().min(1).max(40, "Keep each tag to 40 characters or fewer."))
+    .max(12, "Use 12 tags or fewer."),
+});
+
+export const noteSchema = z.object({
+  contactId: z.uuid(),
+  body: requiredText(4000, "Write a note before saving."),
+});
+
+export const catalogItemSchema = z.object({
+  name: requiredText(120, "Give the item a name."),
+  description: text(1000),
+  type: z.enum(["service", "product"]),
+  unitPriceMinor: z
+    .number()
+    .int()
+    .positive("Enter a price above zero.")
+    .max(100_000_000_000, "That price is too large."),
+  unit: requiredText(30, "Say what one unit is, like hour or page."),
+});
+
+export const projectSchema = z.object({
+  name: requiredText(160, "Give the project a name."),
+  description: text(2000),
+  contactId: optionalId,
+  ownerId: z.uuid("Choose an owner."),
+  status: z.enum(["active", "on_hold", "completed"]),
+  dueOn: isoDate,
+});
+
+export const taskSchema = z.object({
+  title: requiredText(200, "Describe the task."),
+  description: text(2000),
+  projectId: optionalId,
+  assigneeId: z.uuid("Choose an assignee."),
+  status: z.enum(["todo", "in_progress", "done"]),
+  priority: z.enum(["low", "medium", "high"]),
+  dueOn: isoDate,
+});
+
+export const taskStatusSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(["todo", "in_progress", "done"]),
+});
+
+export const archiveSchema = z.object({ id: z.uuid(), archived: z.boolean() });
+
+/** One row of a contact import, after column mapping. */
+export const importRowSchema = z.object({
+  name: requiredText(120, "Name is missing."),
+  email,
+  phone: text(40).default(""),
+  title: text(120).default(""),
+  company: text(120).default(""),
+  status: z
+    .enum(["active", "lead", "inactive"], "Status must be active, lead or inactive.")
+    .default("active"),
+  tags: z.array(z.string().trim().min(1).max(40)).max(12, "Use 12 tags or fewer.").default([]),
+});
+export type ImportRow = z.infer<typeof importRowSchema>;
+
+export const IMPORT_ROW_LIMIT = 500;
+
 /** Turns a Zod failure into one message per field, for showing beside inputs. */
 export function fieldErrorsOf(error: z.ZodError): Record<string, string> {
   const errors: Record<string, string> = {};

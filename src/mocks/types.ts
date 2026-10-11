@@ -17,6 +17,9 @@ export type Company = {
   industry: string;
   city: string;
   website: string;
+  phone: string;
+  address: string;
+  notes: string;
   type: CompanyType;
   createdOn: string;
   archived: boolean;
@@ -29,6 +32,8 @@ export type Contact = {
   name: string;
   email: string;
   phone: string;
+  /** Their role at the company, e.g. "Operations manager". */
+  title: string;
   companyId: string | null;
   status: ContactStatus;
   tags: string[];
@@ -70,6 +75,8 @@ export type Task = {
   priority: TaskPriority;
   dueOn: string;
   description: string;
+  /** Who added the task; decides whether a member may edit it. */
+  createdBy: string | null;
 };
 
 /** "overdue" is never stored: it is derived from a sent invoice's due date. */

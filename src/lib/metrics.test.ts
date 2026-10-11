@@ -48,7 +48,7 @@ describe("getRevenueByMonth", () => {
 });
 
 describe("getSummary", () => {
-  const summary = getSummary({ invoices, projects, tasks }, TODAY);
+  const summary = getSummary({ invoices, projects, tasks }, TODAY, TODAY);
 
   it("reports collected, open and overdue invoice money", () => {
     expect(summary).toMatchObject({

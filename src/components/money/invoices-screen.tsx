@@ -133,7 +133,7 @@ export function InvoicesScreen() {
             )}
           >
             {row.display === "overdue"
-              ? describeDue(row.dueOn).label
+              ? describeDue(row.dueOn, DEMO_TODAY).label
               : formatDate(row.dueOn, "long")}
           </span>
         ),

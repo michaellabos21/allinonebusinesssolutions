@@ -7,12 +7,9 @@ import { computeInvoiceTotals } from "@/lib/money";
 import * as seed from "@/mocks";
 import type {
   ActivityEntry,
-  ActivityKind,
   CatalogItem,
   Company,
-  CompanyType,
   Contact,
-  ContactStatus,
   Deal,
   DealStage,
   Expense,
@@ -21,24 +18,25 @@ import type {
   Note,
   Notification,
   Project,
-  ProjectStatus,
   Task,
-  TaskPriority,
-  TaskStatus,
   TeamMember,
 } from "@/mocks";
+import { ROLE_LABEL, isAssignable } from "@/server/permissions";
+import type { WorkspaceRecords } from "@/server/records";
 import type { InvitationRow, SessionUser, SessionWorkspace, TeamMemberRow } from "@/server/types";
 
 /**
- * Client state for the workspace screens.
+ * Client state for the workspace screens. Three kinds of data meet here:
  *
- * Two kinds of data meet here:
- *   - `account` is real. It is loaded on the server for the signed-in user and
- *     changed only through server actions.
- *   - Everything else (contacts, projects, invoices and so on) is still demo
- *     data from `src/mocks`, held in memory and reset on reload. Each domain
- *     moves to the database in its own backend phase; until then the UI labels
- *     it as demo data.
+ *   - `account` is real: the signed-in user, their workspace, members and
+ *     invitations, loaded on the server.
+ *   - Contacts, companies, notes, the catalog, projects, tasks and the activity
+ *     feed are real too. They arrive as `records`, loaded on the server, and
+ *     change only through server actions (`src/server/actions/records.ts`),
+ *     after which the server sends fresh lists.
+ *   - Deals, invoices and expenses are still sample data from `src/mocks`,
+ *     held in memory here and reset on reload. They move to the database in
+ *     backend Phases 3 and 4.
  */
 
 /** Record types with a create/edit form. */
@@ -47,22 +45,6 @@ export type EditorKind =
 /** The subset offered in the topbar's Create menu and the setup checklist. */
 export type QuickCreateKind = "contact" | "project" | "task" | "invoice";
 
-export type ContactInput = {
-  name: string;
-  email: string;
-  phone: string;
-  /** Matched to an existing company by name, or created when new. Empty for none. */
-  companyName: string;
-  status: ContactStatus;
-  tags: string[];
-};
-export type CompanyInput = {
-  name: string;
-  industry: string;
-  city: string;
-  website: string;
-  type: CompanyType;
-};
 export type DealInput = {
   name: string;
   companyId: string;
@@ -71,23 +53,6 @@ export type DealInput = {
   stage: DealStage;
   valueMinor: number;
   expectedCloseOn: string;
-};
-export type ProjectInput = {
-  name: string;
-  description: string;
-  contactId: string | null;
-  ownerId: string;
-  status: ProjectStatus;
-  dueOn: string;
-};
-export type TaskInput = {
-  title: string;
-  description: string;
-  projectId: string | null;
-  assigneeId: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  dueOn: string;
 };
 /** One-line draft from the quick-create dialog. */
 export type NewInvoice = {
@@ -107,7 +72,6 @@ export type InvoiceInput = {
   notes: string;
 };
 export type Appearance = { accent: AccentId; density: "comfortable" | "compact" };
-export type CatalogItemInput = Omit<CatalogItem, "id" | "archived">;
 export type ExpenseInput = Omit<Expense, "id">;
 
 export type Account = {
@@ -119,57 +83,49 @@ export type Account = {
 };
 
 type DemoStore = {
+  /** Whether the sample deals, invoices and expenses are shown. */
   demoEnabled: boolean;
   setDemoEnabled: (enabled: boolean) => void;
 
-  /**
-   * The real, signed-in account: user, workspace, members and invitations, as
-   * loaded on the server. Changes go through server actions, not this store.
-   */
   account: Account;
-
-  /**
-   * Fictional teammates who own the demo business records. They are not real
-   * members; the real team is `account.members`.
-   */
+  /** Members who can own projects and be assigned tasks, in the shape the screens use. */
   team: TeamMember[];
-  demoUser: TeamMember;
 
   /** Look and feel, kept in this browser tab only. */
   appearance: Appearance;
   setAppearance: (patch: Partial<Appearance>) => void;
 
-  /** Lists include archived records; screens decide whether to show them. */
+  /** Real records. Lists include archived ones; screens decide whether to show them. */
   contacts: Contact[];
   companies: Company[];
-  deals: Deal[];
   notes: Note[];
   projects: Project[];
   tasks: Task[];
-  invoices: Invoice[];
   catalog: CatalogItem[];
-  expenses: Expense[];
   activity: ActivityEntry[];
-  /** Counts of records added this session, for the getting-started checklist. */
-  created: Record<QuickCreateKind, number>;
+  /** True when a list was cut off at the server's row cap. */
+  recordsTruncated: boolean;
 
-  /** Display helpers that tolerate missing or archived records. */
+  /** Sample records. */
+  deals: Deal[];
+  invoices: Invoice[];
+  expenses: Expense[];
+
+  /**
+   * Display names by id. Real records are checked first; the fallback covers
+   * the fictional companies, contacts and projects that the sample deals,
+   * invoices and expenses still point at.
+   */
   companyName: (companyId: string | null) => string;
+  contactName: (contactId: string | null) => string;
   contactCompanyName: (contactId: string | null) => string;
+  projectName: (projectId: string | null) => string;
+  /** False for an id that belongs to the sample data, which has no detail page. */
+  isRealRecord: (id: string | null) => boolean;
 
-  /** Pass an id to edit, omit it to create. */
-  saveContact: (input: ContactInput, id?: string) => Contact;
-  setContactArchived: (id: string, archived: boolean) => void;
-  saveCompany: (input: CompanyInput, id?: string) => Company;
-  setCompanyArchived: (id: string, archived: boolean) => void;
   saveDeal: (input: DealInput, id?: string) => Deal;
   moveDeal: (id: string, stage: DealStage) => void;
   setDealArchived: (id: string, archived: boolean) => void;
-  addNote: (contactId: string, body: string) => void;
-
-  saveProject: (input: ProjectInput, id?: string) => Project;
-  saveTask: (input: TaskInput, id?: string) => Task;
-  setTaskStatus: (id: string, status: TaskStatus) => void;
   addInvoice: (input: NewInvoice) => Invoice;
   /** Creates a draft, or updates one. Sent and paid invoices are not editable. */
   saveInvoice: (input: InvoiceInput, id?: string) => Invoice;
@@ -177,11 +133,8 @@ type DemoStore = {
   markInvoiceSent: (id: string) => void;
   /** Simulated: records the invoice as paid today. No money moves. */
   recordInvoicePayment: (id: string) => void;
-  saveCatalogItem: (input: CatalogItemInput, id?: string) => CatalogItem;
-  setCatalogItemArchived: (id: string, archived: boolean) => void;
   saveExpense: (input: ExpenseInput, id?: string) => Expense;
   removeExpense: (id: string) => void;
-  toggleTaskDone: (id: string) => void;
 
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
@@ -201,15 +154,15 @@ type DemoStore = {
 const DemoStoreContext = createContext<DemoStore | null>(null);
 
 const FIRST_NEW_INVOICE_NUMBER = 1039;
-const NEW_PREFIX = "new-";
-/** Records added this session carry a `new-` id; everything else is demo data. */
-const isCreated = (record: { id: string }) => record.id.startsWith(NEW_PREFIX);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-/;
 
 export function DemoStoreProvider({
   account,
+  records,
   children,
 }: {
   account: Account;
+  records: WorkspaceRecords;
   children: React.ReactNode;
 }) {
   const [demoEnabled, setDemoEnabled] = useState(true);
@@ -218,109 +171,19 @@ export function DemoStoreProvider({
     density: "comfortable",
   });
 
-  const [contacts, setContacts] = useState<Contact[]>(seed.contacts);
-  const [companies, setCompanies] = useState<Company[]>(seed.companies);
   const [deals, setDeals] = useState<Deal[]>(seed.deals);
-  const [notes, setNotes] = useState<Note[]>(seed.notes);
-  const [projects, setProjects] = useState<Project[]>(seed.projects);
-  const [tasks, setTasks] = useState<Task[]>(seed.tasks);
   const [invoices, setInvoices] = useState<Invoice[]>(seed.invoices);
-  const [catalog, setCatalog] = useState<CatalogItem[]>(seed.catalogItems);
   const [expenses, setExpenses] = useState<Expense[]>(seed.expenses);
-  const [activity, setActivity] = useState<ActivityEntry[]>(seed.activity);
-
   const [notifications, setNotifications] = useState<Notification[]>(seed.notifications);
+
   const [editor, setEditor] = useState<DemoStore["editor"]>(null);
   const [searchOpen, setSearchOpen] = useState(false);
 
   const counter = useRef(0);
   const newId = useCallback((letter: string) => {
     counter.current += 1;
-    return `${NEW_PREFIX}${letter}${counter.current}`;
+    return `new-${letter}${counter.current}`;
   }, []);
-
-  const actorName = account.user.fullName;
-  const logActivity = useCallback(
-    (kind: ActivityKind, action: string, href: string, projectId?: string) => {
-      const entry: ActivityEntry = {
-        id: newId("a"),
-        kind,
-        actor: actorName,
-        action,
-        at: `${DEMO_TODAY}T12:00:00`,
-        href,
-        projectId,
-      };
-      setActivity((entries) => [entry, ...entries]);
-    },
-    [newId, actorName],
-  );
-
-  const saveCompany = useCallback(
-    (input: CompanyInput, id?: string) => {
-      const existing = id ? companies.find((company) => company.id === id) : undefined;
-      const company: Company = existing
-        ? { ...existing, ...input }
-        : { id: newId("co"), createdOn: DEMO_TODAY, archived: false, ...input };
-      setCompanies((list) =>
-        existing
-          ? list.map((item) => (item.id === company.id ? company : item))
-          : [company, ...list],
-      );
-      logActivity(
-        "company",
-        existing ? `updated ${company.name}` : `added ${company.name} as a company`,
-        `/crm/companies/${company.id}`,
-      );
-      return company;
-    },
-    [companies, newId, logActivity],
-  );
-
-  const saveContact = useCallback(
-    (input: ContactInput, id?: string) => {
-      const { companyName, ...fields } = input;
-      let companyId: string | null = null;
-      if (companyName) {
-        const match = companies.find(
-          (company) => company.name.toLowerCase() === companyName.toLowerCase(),
-        );
-        if (match) {
-          companyId = match.id;
-        } else {
-          const company: Company = {
-            id: newId("co"),
-            name: companyName,
-            industry: "",
-            city: "",
-            website: "",
-            type: fields.status === "lead" ? "prospect" : "client",
-            createdOn: DEMO_TODAY,
-            archived: false,
-          };
-          setCompanies((list) => [company, ...list]);
-          companyId = company.id;
-        }
-      }
-
-      const existing = id ? contacts.find((contact) => contact.id === id) : undefined;
-      const contact: Contact = existing
-        ? { ...existing, ...fields, companyId }
-        : { id: newId("c"), createdOn: DEMO_TODAY, archived: false, ...fields, companyId };
-      setContacts((list) =>
-        existing
-          ? list.map((item) => (item.id === contact.id ? contact : item))
-          : [contact, ...list],
-      );
-      logActivity(
-        "contact",
-        existing ? `updated ${contact.name}` : `added ${contact.name} as a contact`,
-        `/crm/contacts/${contact.id}`,
-      );
-      return contact;
-    },
-    [companies, contacts, newId, logActivity],
-  );
 
   const saveDeal = useCallback(
     (input: DealInput, id?: string) => {
@@ -331,138 +194,18 @@ export function DemoStoreProvider({
       setDeals((list) =>
         existing ? list.map((item) => (item.id === deal.id ? deal : item)) : [deal, ...list],
       );
-      logActivity(
-        "deal",
-        existing ? `updated the deal “${deal.name}”` : `added the deal “${deal.name}”`,
-        "/crm/deals",
-      );
       return deal;
     },
-    [deals, newId, logActivity],
+    [deals, newId],
   );
 
-  const moveDeal = useCallback(
-    (id: string, stage: DealStage) => {
-      const deal = deals.find((item) => item.id === id);
-      if (!deal || deal.stage === stage) return;
-      setDeals((list) => list.map((item) => (item.id === id ? { ...item, stage } : item)));
-      const label = seed.DEAL_STAGES.find((item) => item.id === stage)?.label ?? stage;
-      logActivity("deal", `moved “${deal.name}” to ${label}`, "/crm/deals");
-    },
-    [deals, logActivity],
-  );
+  const moveDeal = useCallback((id: string, stage: DealStage) => {
+    setDeals((list) => list.map((item) => (item.id === id ? { ...item, stage } : item)));
+  }, []);
 
-  const setContactArchived = useCallback(
-    (id: string, archived: boolean) => {
-      const contact = contacts.find((item) => item.id === id);
-      if (!contact) return;
-      setContacts((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
-      logActivity(
-        "contact",
-        `${archived ? "archived" : "restored"} ${contact.name}`,
-        `/crm/contacts/${id}`,
-      );
-    },
-    [contacts, logActivity],
-  );
-
-  const setCompanyArchived = useCallback(
-    (id: string, archived: boolean) => {
-      const company = companies.find((item) => item.id === id);
-      if (!company) return;
-      setCompanies((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
-      logActivity(
-        "company",
-        `${archived ? "archived" : "restored"} ${company.name}`,
-        `/crm/companies/${id}`,
-      );
-    },
-    [companies, logActivity],
-  );
-
-  const setDealArchived = useCallback(
-    (id: string, archived: boolean) => {
-      const deal = deals.find((item) => item.id === id);
-      if (!deal) return;
-      setDeals((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
-      logActivity(
-        "deal",
-        `${archived ? "archived" : "restored"} the deal “${deal.name}”`,
-        "/crm/deals",
-      );
-    },
-    [deals, logActivity],
-  );
-
-  const addNote = useCallback(
-    (contactId: string, body: string) => {
-      const note: Note = {
-        id: newId("n"),
-        contactId,
-        authorId: seed.currentUser.id,
-        body,
-        at: `${DEMO_TODAY}T12:00:00`,
-      };
-      setNotes((list) => [note, ...list]);
-    },
-    [newId],
-  );
-
-  const saveProject = useCallback(
-    (input: ProjectInput, id?: string) => {
-      const existing = id ? projects.find((project) => project.id === id) : undefined;
-      const project: Project = existing
-        ? { ...existing, ...input }
-        : { id: newId("p"), startOn: DEMO_TODAY, ...input };
-      setProjects((list) =>
-        existing
-          ? list.map((item) => (item.id === project.id ? project : item))
-          : [project, ...list],
-      );
-      logActivity(
-        "project",
-        existing ? `updated project “${project.name}”` : `started project “${project.name}”`,
-        `/work/projects/${project.id}`,
-        project.id,
-      );
-      return project;
-    },
-    [projects, newId, logActivity],
-  );
-
-  const saveTask = useCallback(
-    (input: TaskInput, id?: string) => {
-      const existing = id ? tasks.find((task) => task.id === id) : undefined;
-      const task: Task = existing ? { ...existing, ...input } : { id: newId("t"), ...input };
-      setTasks((list) =>
-        existing ? list.map((item) => (item.id === task.id ? task : item)) : [task, ...list],
-      );
-      logActivity(
-        "task",
-        existing ? `updated task “${task.title}”` : `added task “${task.title}”`,
-        task.projectId ? `/work/projects/${task.projectId}` : "/work/tasks",
-        task.projectId ?? undefined,
-      );
-      return task;
-    },
-    [tasks, newId, logActivity],
-  );
-
-  const setTaskStatus = useCallback(
-    (id: string, status: TaskStatus) => {
-      const task = tasks.find((item) => item.id === id);
-      if (!task || task.status === status) return;
-      setTasks((list) => list.map((item) => (item.id === id ? { ...item, status } : item)));
-      const label = seed.TASK_STATUSES.find((item) => item.id === status)?.label ?? status;
-      logActivity(
-        "task",
-        status === "done" ? `completed “${task.title}”` : `moved “${task.title}” to ${label}`,
-        task.projectId ? `/work/projects/${task.projectId}` : "/work/tasks",
-        task.projectId ?? undefined,
-      );
-    },
-    [tasks, logActivity],
-  );
+  const setDealArchived = useCallback((id: string, archived: boolean) => {
+    setDeals((list) => list.map((item) => (item.id === id ? { ...item, archived } : item)));
+  }, []);
 
   const saveInvoice = useCallback(
     (input: InvoiceInput, id?: string) => {
@@ -499,14 +242,9 @@ export function DemoStoreProvider({
           ? list.map((item) => (item.id === invoice.id ? invoice : item))
           : [invoice, ...list],
       );
-      logActivity(
-        "invoice",
-        existing ? `updated draft invoice ${invoice.number}` : `drafted invoice ${invoice.number}`,
-        `/money/invoices/${invoice.id}`,
-      );
       return invoice;
     },
-    [invoices, newId, logActivity],
+    [invoices, newId],
   );
 
   const addInvoice = useCallback(
@@ -523,70 +261,23 @@ export function DemoStoreProvider({
     [saveInvoice],
   );
 
-  const markInvoiceSent = useCallback(
-    (id: string) => {
-      const invoice = invoices.find((item) => item.id === id);
-      if (!invoice || invoice.status !== "draft") return;
-      setInvoices((list) =>
-        list.map((item) => (item.id === id ? { ...item, status: "sent" } : item)),
-      );
-      logActivity("invoice", `marked invoice ${invoice.number} as sent`, `/money/invoices/${id}`);
-    },
-    [invoices, logActivity],
-  );
+  const markInvoiceSent = useCallback((id: string) => {
+    setInvoices((list) =>
+      list.map((item) =>
+        item.id === id && item.status === "draft" ? { ...item, status: "sent" } : item,
+      ),
+    );
+  }, []);
 
-  const recordInvoicePayment = useCallback(
-    (id: string) => {
-      const invoice = invoices.find((item) => item.id === id);
-      if (!invoice || invoice.status !== "sent") return;
-      setInvoices((list) =>
-        list.map((item) =>
-          item.id === id ? { ...item, status: "paid", paidOn: DEMO_TODAY } : item,
-        ),
-      );
-      logActivity(
-        "invoice",
-        `recorded payment for invoice ${invoice.number}`,
-        `/money/invoices/${id}`,
-      );
-    },
-    [invoices, logActivity],
-  );
-
-  const saveCatalogItem = useCallback(
-    (input: CatalogItemInput, id?: string) => {
-      const existing = id ? catalog.find((item) => item.id === id) : undefined;
-      const saved: CatalogItem = existing
-        ? { ...existing, ...input }
-        : { id: newId("k"), archived: false, ...input };
-      setCatalog((list) =>
-        existing ? list.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...list],
-      );
-      logActivity(
-        "catalog",
-        existing
-          ? `updated “${saved.name}” in the catalog`
-          : `added “${saved.name}” to the catalog`,
-        "/catalog",
-      );
-      return saved;
-    },
-    [catalog, newId, logActivity],
-  );
-
-  const setCatalogItemArchived = useCallback(
-    (id: string, archived: boolean) => {
-      const item = catalog.find((entry) => entry.id === id);
-      if (!item) return;
-      setCatalog((list) => list.map((entry) => (entry.id === id ? { ...entry, archived } : entry)));
-      logActivity(
-        "catalog",
-        `${archived ? "archived" : "restored"} “${item.name}” in the catalog`,
-        "/catalog",
-      );
-    },
-    [catalog, logActivity],
-  );
+  const recordInvoicePayment = useCallback((id: string) => {
+    setInvoices((list) =>
+      list.map((item) =>
+        item.id === id && item.status === "sent"
+          ? { ...item, status: "paid", paidOn: DEMO_TODAY }
+          : item,
+      ),
+    );
+  }, []);
 
   const saveExpense = useCallback(
     (input: ExpenseInput, id?: string) => {
@@ -595,93 +286,80 @@ export function DemoStoreProvider({
       setExpenses((list) =>
         existing ? list.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...list],
       );
-      logActivity(
-        "expense",
-        `${existing ? "updated" : "recorded"} an expense from ${saved.vendor}`,
-        "/money/expenses",
-      );
       return saved;
     },
-    [expenses, newId, logActivity],
+    [expenses, newId],
   );
 
-  const removeExpense = useCallback(
-    (id: string) => {
-      const expense = expenses.find((item) => item.id === id);
-      if (!expense) return;
-      setExpenses((list) => list.filter((item) => item.id !== id));
-      logActivity("expense", `deleted an expense from ${expense.vendor}`, "/money/expenses");
-    },
-    [expenses, logActivity],
-  );
-
-  const toggleTaskDone = useCallback(
-    (id: string) => {
-      const task = tasks.find((item) => item.id === id);
-      if (task) setTaskStatus(id, task.status === "done" ? "todo" : "done");
-    },
-    [tasks, setTaskStatus],
-  );
+  const removeExpense = useCallback((id: string) => {
+    setExpenses((list) => list.filter((item) => item.id !== id));
+  }, []);
 
   const value = useMemo<DemoStore>(() => {
-    // With demo data off, only records added this session are visible.
-    const visible = <T extends { id: string }>(records: T[]) =>
-      demoEnabled ? records : records.filter(isCreated);
+    // With sample data off, only sample records added this session are visible.
+    const sample = <T extends { id: string }>(list: T[]) =>
+      demoEnabled ? list : list.filter((record) => record.id.startsWith("new-"));
 
-    const companyName = (companyId: string | null) =>
-      companies.find((company) => company.id === companyId)?.name ?? "";
-    const count = (records: { id: string }[]) => records.filter(isCreated).length;
+    const nameIn = (lists: { id: string; name: string }[][], id: string | null) => {
+      if (!id) return "";
+      for (const list of lists) {
+        const match = list.find((record) => record.id === id);
+        if (match) return match.name;
+      }
+      return "";
+    };
+    const companyName = (id: string | null) => nameIn([records.companies, seed.companies], id);
+    const contactCompanyName = (id: string | null) => {
+      const contact =
+        records.contacts.find((item) => item.id === id) ??
+        seed.contacts.find((item) => item.id === id);
+      return companyName(contact?.companyId ?? null);
+    };
 
     return {
       demoEnabled,
       setDemoEnabled,
       account,
-      team: seed.teamMembers,
-      demoUser: seed.currentUser,
+      team: account.members
+        .filter((member) => isAssignable(member.role))
+        .map((member) => ({
+          id: member.userId,
+          name: member.fullName,
+          email: member.email,
+          title: member.jobTitle,
+          role: ROLE_LABEL[member.role] as TeamMember["role"],
+        })),
       appearance,
       setAppearance: (patch) => setAppearanceState((current) => ({ ...current, ...patch })),
 
-      contacts: visible(contacts),
-      companies: visible(companies),
-      deals: visible(deals),
-      notes: visible(notes),
-      projects: visible(projects),
-      tasks: visible(tasks),
-      invoices: visible(invoices),
-      catalog: visible(catalog),
-      expenses: visible(expenses),
-      activity: visible(activity),
-      created: {
-        contact: count(contacts),
-        project: count(projects),
-        task: count(tasks),
-        invoice: count(invoices),
-      },
+      contacts: records.contacts,
+      companies: records.companies,
+      notes: records.notes,
+      projects: records.projects,
+      tasks: records.tasks,
+      catalog: records.catalog,
+      activity: records.activity,
+      recordsTruncated: records.truncated,
+
+      deals: sample(deals),
+      invoices: sample(invoices),
+      expenses: sample(expenses),
 
       companyName,
-      contactCompanyName: (contactId) =>
-        companyName(contacts.find((contact) => contact.id === contactId)?.companyId ?? null),
+      contactName: (id) => nameIn([records.contacts, seed.contacts], id),
+      contactCompanyName,
+      projectName: (id) => nameIn([records.projects, seed.projects], id),
+      isRealRecord: (id) => Boolean(id && UUID_PATTERN.test(id)),
 
-      saveContact,
-      setContactArchived,
-      saveCompany,
-      setCompanyArchived,
       saveDeal,
       moveDeal,
       setDealArchived,
-      addNote,
-      saveProject,
-      saveTask,
-      setTaskStatus,
       addInvoice,
       saveInvoice,
       markInvoiceSent,
       recordInvoicePayment,
-      saveCatalogItem,
-      setCatalogItemArchived,
       saveExpense,
       removeExpense,
-      toggleTaskDone,
 
       notifications: demoEnabled ? notifications : [],
       markNotificationRead: (id) =>
@@ -700,40 +378,23 @@ export function DemoStoreProvider({
   }, [
     demoEnabled,
     account,
+    records,
     appearance,
-    contacts,
-    companies,
     deals,
-    notes,
-    projects,
-    tasks,
     invoices,
-    catalog,
     expenses,
-    activity,
     notifications,
     editor,
     searchOpen,
-    saveContact,
-    setContactArchived,
-    saveCompany,
-    setCompanyArchived,
     saveDeal,
     moveDeal,
     setDealArchived,
-    addNote,
-    saveProject,
-    saveTask,
-    setTaskStatus,
     addInvoice,
     saveInvoice,
     markInvoiceSent,
     recordInvoicePayment,
-    saveCatalogItem,
-    setCatalogItemArchived,
     saveExpense,
     removeExpense,
-    toggleTaskDone,
   ]);
 
   return <DemoStoreContext.Provider value={value}>{children}</DemoStoreContext.Provider>;

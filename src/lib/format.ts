@@ -1,5 +1,4 @@
-import { DEMO_TODAY } from "@/config/app";
-import { getRuntime } from "@/lib/runtime";
+import { getRuntime, getToday } from "@/lib/runtime";
 
 const DAY_MS = 86_400_000;
 
@@ -81,7 +80,7 @@ export function addDays(iso: string, days: number) {
 }
 
 /** "Today", "Yesterday", "3 days ago", then a plain date. */
-export function formatRelativeDay(iso: string, today: string = DEMO_TODAY) {
+export function formatRelativeDay(iso: string, today: string = getToday()) {
   const days = daysBetween(iso, today);
   if (days === 0) return "Today";
   if (days === 1) return "Yesterday";
@@ -94,7 +93,7 @@ export type DueTone = "overdue" | "today" | "upcoming";
 /** Describes a due date relative to today, with a tone for styling. */
 export function describeDue(
   iso: string,
-  today: string = DEMO_TODAY,
+  today: string = getToday(),
 ): { label: string; tone: DueTone } {
   const days = daysBetween(today, iso);
   if (days < 0) {

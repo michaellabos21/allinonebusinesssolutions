@@ -1,15 +1,16 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
-import { useDemoStore } from "@/components/providers/demo-store";
+import { setTaskStatus } from "@/lib/record-actions";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/mocks";
 
 /** Tick box that completes or reopens a task, with an undo on completion. */
 export function TaskCheck({ task, className }: { task: Task; className?: string }) {
-  const { toggleTaskDone } = useDemoStore();
+  const [pending, setPending] = useState(false);
   const done = task.status === "done";
 
   return (
@@ -18,12 +19,15 @@ export function TaskCheck({ task, className }: { task: Task; className?: string 
       role="checkbox"
       aria-checked={done}
       aria-label={done ? `Reopen “${task.title}”` : `Mark “${task.title}” as done`}
-      onClick={() => {
-        toggleTaskDone(task.id);
-        if (!done) {
+      disabled={pending}
+      onClick={async () => {
+        setPending(true);
+        const ok = await setTaskStatus(task.id, done ? "todo" : "done");
+        setPending(false);
+        if (ok && !done) {
           toast.success("Task completed", {
             description: task.title,
-            action: { label: "Undo", onClick: () => toggleTaskDone(task.id) },
+            action: { label: "Undo", onClick: () => setTaskStatus(task.id, task.status) },
           });
         }
       }}

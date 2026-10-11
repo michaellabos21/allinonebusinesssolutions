@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DEMO_TODAY } from "@/config/app";
 import { formatRelativeDay } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +84,7 @@ export function NotificationsMenu() {
                   </span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatRelativeDay(notification.at)}
+                  {formatRelativeDay(notification.at, DEMO_TODAY)}
                 </span>
               </DropdownMenuItem>
             ))}
