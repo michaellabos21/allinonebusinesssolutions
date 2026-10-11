@@ -157,6 +157,24 @@ describe("the app before this change", () => {
     await ana.client.from("tasks").update({ assignee_id: leo.id }).eq("id", data!.id);
     expect(await assigneesOf(data!.id)).toEqual([leo.id]);
   });
+
+  it("doesn't reset assignees when only other fields of an old task change", async () => {
+    const { data } = await ana.client
+      .from("tasks")
+      .insert({
+        workspace_id: workspaceA,
+        title: "Old with extra",
+        due_on: "2026-12-01",
+        assignee_id: mia.id,
+      })
+      .select("id")
+      .single();
+    await ana.client
+      .from("task_assignees")
+      .insert({ task_id: data!.id, workspace_id: workspaceA, user_id: leo.id });
+    expect((await saveTask(ana, { description: "Updated" }, null, data!.id)).error).toBeNull();
+    expect(await assigneesOf(data!.id)).toEqual([mia.id, leo.id].sort());
+  });
 });
 
 describe("checklists", () => {
