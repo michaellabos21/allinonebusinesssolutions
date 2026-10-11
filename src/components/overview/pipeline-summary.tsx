@@ -11,8 +11,8 @@ import { getOpenDeals, getPipeline } from "@/lib/metrics";
 
 /** Open deal value by stage. Bars share one scale so stages compare directly. */
 export function PipelineSummary() {
-  const { deals } = useDemoStore();
-  const stages = getPipeline(deals);
+  const { deals, stages: allStages } = useDemoStore();
+  const stages = getPipeline(deals, allStages);
   const openCount = getOpenDeals(deals).length;
   const totalMinor = stages.reduce((sum, stage) => sum + stage.valueMinor, 0);
   const maxMinor = Math.max(...stages.map((stage) => stage.valueMinor), 1);
@@ -35,7 +35,7 @@ export function PipelineSummary() {
         <EmptyState
           icon={Handshake}
           title="No open deals"
-          description="Add a deal from Leads & Deals to see your pipeline here."
+          description="Add a deal, or convert a lead, to see your pipeline here."
         />
       ) : (
         <ul className="space-y-4 pt-1">

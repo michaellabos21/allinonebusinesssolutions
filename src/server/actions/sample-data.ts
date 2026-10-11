@@ -4,7 +4,16 @@ import { refresh } from "next/cache";
 
 import { logger } from "@/lib/logger";
 import { createClient } from "@/lib/supabase/server";
-import { catalogItems, companies, contacts, notes, projects, tasks } from "@/mocks";
+import {
+  DEAL_STAGES,
+  catalogItems,
+  companies,
+  contacts,
+  deals,
+  notes,
+  projects,
+  tasks,
+} from "@/mocks";
 import { can } from "@/server/permissions";
 import { getSession } from "@/server/session";
 import type { ActionResult } from "@/server/types";
@@ -17,6 +26,37 @@ import type { ActionResult } from "@/server/types";
  * through the normal tables as the signed-in user, so validation, row-level
  * security and the activity feed all apply exactly as they do for real input.
  */
+/** Fictional enquiries at different points, so the leads screen has something to show. */
+const SAMPLE_LEADS = [
+  {
+    name: "Marco Villanueva",
+    email: "marco@villanuevafarms.example",
+    company_name: "Villanueva Farms",
+    source: "Website",
+    status: "new" as const,
+    notes: "Wants a simple site to sell produce boxes online.",
+    owned: false,
+  },
+  {
+    name: "Tessa Lim",
+    email: "tessa@limdental.example",
+    company_name: "Lim Dental",
+    source: "Referral",
+    status: "contacted" as const,
+    notes: "Referred by Liza Mercado. Asked about a booking page.",
+    owned: true,
+  },
+  {
+    name: "Rafael Ocampo",
+    email: "rafael@ocampobuilds.example",
+    company_name: "Ocampo Builds",
+    source: "Event",
+    status: "qualified" as const,
+    notes: "Met at the Iloilo business expo. Budget agreed for a rebrand.",
+    owned: true,
+  },
+];
+
 export async function loadSampleRecordsAction(): Promise<ActionResult> {
   if (process.env.ENABLE_SAMPLE_DATA !== "true") {
     return { ok: false, error: "Sample records are not available in this environment." };
@@ -153,6 +193,41 @@ export async function loadSampleRecordsAction(): Promise<ActionResult> {
     })),
   );
   if (taskRows.error) return fail("tasks", taskRows.error.message);
+
+  // Sample deals sit in the workspace's own stages, matched by name.
+  const { data: stageRows } = await supabase
+    .from("pipeline_stages")
+    .select("id, name")
+    .eq("workspace_id", workspace_id)
+    .is("archived_at", null);
+  const stageId = new Map(
+    DEAL_STAGES.map((stage) => [stage.id, stageRows?.find((row) => row.name === stage.name)?.id]),
+  );
+  const dealRows = await supabase.from("deals").insert(
+    deals
+      .filter((deal) => stageId.get(deal.stageId))
+      .map((deal) => ({
+        workspace_id,
+        name: deal.name,
+        company_id: companyId.get(deal.companyId ?? "") ?? null,
+        contact_id: contactId.get(deal.contactId ?? "") ?? null,
+        owner_id: me,
+        stage_id: stageId.get(deal.stageId),
+        amount_minor: deal.valueMinor,
+        expected_close_on: deal.expectedCloseOn,
+        lost_reason: deal.lostReason,
+      })),
+  );
+  if (dealRows.error) return fail("deals", dealRows.error.message);
+
+  const leadRows = await supabase.from("leads").insert(
+    SAMPLE_LEADS.map(({ owned, ...lead }) => ({
+      ...lead,
+      workspace_id,
+      owner_id: owned ? me : null,
+    })),
+  );
+  if (leadRows.error) return fail("leads", leadRows.error.message);
 
   refresh();
   return { ok: true };

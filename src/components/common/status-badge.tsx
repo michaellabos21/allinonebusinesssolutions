@@ -2,9 +2,9 @@ import { cn } from "@/lib/utils";
 import {
   type CompanyType,
   type ContactStatus,
-  DEAL_STAGES,
   type DealStage,
   type InvoiceDisplayStatus,
+  type LeadStatus,
   type ProjectStatus,
   TASK_STATUSES,
   type TaskPriority,
@@ -94,20 +94,44 @@ export function CompanyTypeBadge({ type, archived }: { type: CompanyType; archiv
   );
 }
 
-const STAGE_TONE: Record<DealStage, Tone> = {
-  lead: "neutral",
-  qualified: "neutral",
-  proposal: "primary",
-  negotiation: "primary",
+const STAGE_KIND_TONE: Record<DealStage["kind"], Tone> = {
+  open: "primary",
   won: "success",
   lost: "danger",
 };
 
-export function DealStageBadge({ stage, archived }: { stage: DealStage; archived?: boolean }) {
+/** A deal's stage. Stages are the workspace's own, so the colour follows the stage's kind. */
+export function DealStageBadge({
+  stage,
+  archived,
+}: {
+  stage: DealStage | undefined;
+  archived?: boolean;
+}) {
   if (archived) return <Pill tone="warning">Archived</Pill>;
-  return (
-    <Pill tone={STAGE_TONE[stage]}>{DEAL_STAGES.find((item) => item.id === stage)?.label}</Pill>
-  );
+  if (!stage) return <Pill>Unknown stage</Pill>;
+  return <Pill tone={STAGE_KIND_TONE[stage.kind]}>{stage.name}</Pill>;
+}
+
+export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
+  new: "New",
+  contacted: "Contacted",
+  qualified: "Qualified",
+  disqualified: "Disqualified",
+  converted: "Converted",
+};
+
+const LEAD_STATUS_TONE: Record<LeadStatus, Tone> = {
+  new: "primary",
+  contacted: "neutral",
+  qualified: "primary",
+  disqualified: "danger",
+  converted: "success",
+};
+
+export function LeadStatusBadge({ status, archived }: { status: LeadStatus; archived?: boolean }) {
+  if (archived) return <Pill tone="warning">Archived</Pill>;
+  return <Pill tone={LEAD_STATUS_TONE[status]}>{LEAD_STATUS_LABEL[status]}</Pill>;
 }
 
 const TASK_STATUS_TONE: Record<TaskStatus, Tone> = {

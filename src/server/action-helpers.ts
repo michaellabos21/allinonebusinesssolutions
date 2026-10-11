@@ -1,0 +1,119 @@
+import "server-only";
+
+import type { z } from "zod";
+
+import { logger } from "@/lib/logger";
+import { createClient } from "@/lib/supabase/server";
+import { type Action, can } from "@/server/permissions";
+import { getSession } from "@/server/session";
+import type { ActionResult } from "@/server/types";
+import { fieldErrorsOf } from "@/server/validation";
+
+/**
+ * Steps shared by the server actions for business records. A `"use server"`
+ * file may only export actions, so these live here.
+ */
+
+export const SESSION_ENDED: ActionResult<never> = {
+  ok: false,
+  error: "Your session has ended. Sign in again.",
+};
+export const FORBIDDEN: ActionResult<never> = {
+  ok: false,
+  error: "You don’t have permission to do that.",
+};
+export const invalid = (error: z.ZodError): ActionResult<never> => ({
+  ok: false,
+  error: "Check the highlighted fields.",
+  fieldErrors: fieldErrorsOf(error),
+});
+
+/** The verified workspace and user for an action, or the reason there is none. */
+export async function context(action: Action) {
+  const session = await getSession();
+  if (!session?.workspace) return { allowed: false as const, failure: SESSION_ENDED };
+  if (!can(session.workspace.role, action)) return { allowed: false as const, failure: FORBIDDEN };
+  return {
+    allowed: true as const,
+    workspace: session.workspace,
+    user: session.user,
+    supabase: await createClient(),
+  };
+}
+export type ActionContext = Extract<Awaited<ReturnType<typeof context>>, { allowed: true }>;
+
+type DatabaseError = { code?: string; message: string } | null;
+
+/**
+ * Rules the database enforces with a named exception, and what to tell the
+ * person. Field names point the message at the right input.
+ */
+const DATABASE_RULES: Record<string, { error: string; field?: string }> = {
+  assignee_not_a_member: { error: "Choose someone on the team.", field: "assigneeId" },
+  owner_not_a_member: { error: "Choose someone on the team.", field: "ownerId" },
+  lost_reason_required: { error: "Say why the deal was lost.", field: "lostReason" },
+  stage_archived: { error: "That stage has been archived. Choose another.", field: "stageId" },
+  stage_has_deals: {
+    error: "Move this stage’s deals to another stage before archiving it.",
+  },
+  pipeline_needs_open_won_lost: {
+    error: "The pipeline needs at least one open stage, one won stage and one lost stage.",
+  },
+  stage_kind_in_use: { error: "Deals have used this stage, so its type can’t change." },
+  invalid_stage_list: { error: "The stage list changed. Reload the page and try again." },
+  already_converted: { error: "This lead has already been converted." },
+  lead_archived: { error: "Restore this lead before converting it." },
+  email_required: {
+    error: "Add the lead’s email, or choose an existing contact, to convert it.",
+    field: "email",
+  },
+  contact_not_found: {
+    error: "That contact no longer exists. Choose another.",
+    field: "contactId",
+  },
+};
+
+/** Turns a database refusal into something a person can act on. */
+export function explain(
+  error: DatabaseError,
+  event: string,
+  duplicate?: ActionResult<never>,
+): ActionResult<never> {
+  if (error?.code === "23505" && duplicate) return duplicate;
+  if (error?.code === "42501") return FORBIDDEN;
+  const rule = Object.entries(DATABASE_RULES).find(([name]) => error?.message.includes(name));
+  if (rule) {
+    const [, { error: message, field }] = rule;
+    return { ok: false, error: message, fieldErrors: field ? { [field]: message } : undefined };
+  }
+  logger.error(event, {
+    code: error?.code ?? "no_rows",
+    message: error?.message ?? "no rows changed",
+  });
+  return { ok: false, error: "We couldn’t save that. Try again." };
+}
+
+/**
+ * Finds a company by name in the workspace, or creates it. A unique index on
+ * the lower-cased name makes this safe if two people add the same company at once.
+ */
+export async function findOrCreateCompany(
+  ctx: ActionContext,
+  name: string,
+  type: "client" | "prospect",
+): Promise<{ id: string } | { error: DatabaseError }> {
+  const existing = await ctx.supabase
+    .from("companies")
+    .select("id")
+    .eq("workspace_id", ctx.workspace.id)
+    .ilike("name", name.replace(/[%_\\]/g, "\\$&"))
+    .maybeSingle();
+  if (existing.data) return { id: existing.data.id };
+  const created = await ctx.supabase
+    .from("companies")
+    .insert({ workspace_id: ctx.workspace.id, name, type })
+    .select("id")
+    .single();
+  if (created.error) return { error: created.error };
+  return { id: created.data.id };
+}

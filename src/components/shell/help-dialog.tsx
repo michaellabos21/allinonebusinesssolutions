@@ -23,11 +23,13 @@ const REAL = [
   "Your account, sign-in and password reset.",
   "Workspaces, their settings, and switching between them.",
   "Team members, roles and invitations, enforced on the server and in the database.",
+  "Contacts, companies, notes, the catalog, projects, tasks and the activity feed.",
+  "Leads, deals, pipeline stages and public lead forms.",
 ];
 
 const SIMULATED = [
-  "Contacts, companies, deals, projects, tasks, invoices, expenses and the catalog are sample data.",
-  "Anything you add, edit or archive in those areas stays until you reload.",
+  "Invoices, expenses, reports and notifications are sample data.",
+  "Anything you add, edit or remove in those areas stays until you reload.",
   "Marking an invoice as sent or paid only changes its status. Nothing is emailed and no money moves.",
   "Invitation links are shown for you to send; the app does not email them yet.",
 ];

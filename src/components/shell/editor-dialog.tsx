@@ -24,14 +24,9 @@ import {
   saveProjectAction,
   saveTaskAction,
 } from "@/server/actions/records";
+import { saveDealAction, saveLeadAction } from "@/server/actions/sales";
 import type { ActionResult } from "@/server/types";
-import {
-  CONTACT_TAGS,
-  DEAL_STAGES,
-  type DealStage,
-  EXPENSE_CATEGORIES,
-  TASK_STATUSES,
-} from "@/mocks";
+import { CONTACT_TAGS, EXPENSE_CATEGORIES, TASK_STATUSES } from "@/mocks";
 
 /**
  * Turns a server action's result into what the form expects. `rename` maps
@@ -269,19 +264,119 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           ),
       };
     }
+    case "lead": {
+      const lead = store.leads.find((item) => item.id === id);
+      if (id && !lead) return null;
+      return {
+        title: lead ? "Edit lead" : "New lead",
+        description: lead
+          ? `Update ${lead.name}.`
+          : "Someone who has shown interest but isn’t a client yet.",
+        submitLabel: lead ? "Save changes" : "Add lead",
+        fields: [
+          {
+            name: "name",
+            label: "Name",
+            type: "text",
+            required: true,
+            missing: "Enter the lead’s name.",
+            placeholder: "Ana Cruz",
+          },
+          {
+            name: "email",
+            label: "Email",
+            type: "email",
+            half: true,
+            placeholder: "ana@company.com",
+            hint: "Needed to convert the lead into a contact.",
+          },
+          { name: "phone", label: "Phone", type: "tel", half: true, placeholder: "0917 555 0100" },
+          {
+            name: "companyName",
+            label: "Company",
+            type: "text",
+            half: true,
+            placeholder: "Company name",
+          },
+          {
+            name: "source",
+            label: "Source",
+            type: "text",
+            half: true,
+            placeholder: "Referral, website, event",
+          },
+          {
+            name: "status",
+            label: "Status",
+            type: "select",
+            required: true,
+            half: true,
+            options: [
+              { value: "new", label: "New" },
+              { value: "contacted", label: "Contacted" },
+              { value: "qualified", label: "Qualified" },
+              { value: "disqualified", label: "Disqualified" },
+            ],
+          },
+          {
+            name: "ownerId",
+            label: "Owner",
+            type: "select",
+            half: true,
+            options: optional(memberOptions, "Unassigned"),
+          },
+          {
+            name: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "What they asked about.",
+          },
+        ],
+        initial: {
+          name: lead?.name ?? "",
+          email: lead?.email ?? "",
+          phone: lead?.phone ?? "",
+          companyName: lead?.companyName ?? "",
+          source: lead?.source ?? "",
+          status: lead && lead.status !== "converted" ? lead.status : "new",
+          ownerId: lead ? (lead.ownerId ?? NONE) : store.account.user.id,
+          notes: lead?.notes ?? "",
+        },
+        submit: async (v) =>
+          outcome(
+            await saveLeadAction(
+              {
+                name: v.name,
+                email: v.email.trim().toLowerCase(),
+                phone: v.phone,
+                companyName: v.companyName,
+                source: v.source,
+                status: v.status,
+                notes: v.notes,
+                ownerId: orNull(v.ownerId),
+              },
+              id,
+            ),
+            (saved) => ({
+              message: lead ? `Changes to ${saved.name} saved` : `${saved.name} added to leads`,
+              viewLabel: "View leads",
+              href: "/crm/leads",
+            }),
+          ),
+      };
+    }
     case "deal": {
       const deal = store.deals.find((item) => item.id === id);
       if (id && !deal) return null;
+      const lostStageIds = new Set(
+        store.liveStages.filter((stage) => stage.kind === "lost").map((stage) => stage.id),
+      );
       return {
         title: deal ? "Edit deal" : "New deal",
         description: deal
           ? `Update “${deal.name}”.`
           : "Track an opportunity from first contact to a decision.",
         submitLabel: deal ? "Save changes" : "Add deal",
-        warning:
-          activeCompanies.length === 0
-            ? "Add a company first. A deal belongs to a company."
-            : undefined,
         fields: [
           {
             name: "name",
@@ -292,30 +387,36 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             placeholder: "Website redesign",
           },
           {
-            name: "companyId",
+            name: "companyName",
             label: "Company",
-            type: "select",
-            required: true,
-            missing: "Choose the company this deal is with.",
+            type: "combo",
             half: true,
-            options: activeCompanies.map((company) => ({ value: company.id, label: company.name })),
+            placeholder: "Pick one or type a new name",
+            options: activeCompanies.map((company) => ({
+              value: company.name,
+              label: company.name,
+            })),
           },
           {
             name: "contactId",
             label: "Contact",
             type: "select",
             half: true,
-            options: (values) =>
-              optional(
+            options: (values) => {
+              const company = activeCompanies.find(
+                (item) => item.name.toLowerCase() === values.companyName.trim().toLowerCase(),
+              );
+              return optional(
                 activeContacts
-                  .filter((contact) => !values.companyId || contact.companyId === values.companyId)
+                  .filter((contact) => !company || contact.companyId === company.id)
                   .map((contact) => ({ value: contact.id, label: contact.name })),
                 "No contact",
-              ),
+              );
+            },
           },
           {
             name: "value",
-            label: `Value (${getRuntime().currency})`,
+            label: `Value (${deal?.currency ?? getRuntime().currency})`,
             type: "amount",
             required: true,
             missing: "Enter what the deal is worth.",
@@ -323,12 +424,12 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             half: true,
           },
           {
-            name: "stage",
+            name: "stageId",
             label: "Stage",
             type: "select",
             required: true,
             half: true,
-            options: DEAL_STAGES.map((stage) => ({ value: stage.id, label: stage.label })),
+            options: store.liveStages.map((stage) => ({ value: stage.id, label: stage.name })),
           },
           {
             name: "ownerId",
@@ -346,41 +447,51 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             missing: "Choose an expected close date.",
             half: true,
           },
+          {
+            name: "lostReason",
+            label: "Reason lost",
+            type: "text",
+            placeholder: "Went with another supplier",
+            hint: "Needed when the stage is a lost stage.",
+          },
         ],
         initial: {
           name: deal?.name ?? "",
-          companyId: deal?.companyId ?? "",
+          companyName: store.companyName(deal?.companyId ?? null),
           contactId: deal?.contactId ?? NONE,
           value: deal ? formatAmountInput(deal.valueMinor) : "",
-          stage: deal?.stage ?? "lead",
+          stageId:
+            deal?.stageId ?? store.liveStages.find((stage) => stage.kind === "open")?.id ?? "",
           ownerId: deal?.ownerId ?? store.account.user.id,
-          expectedCloseOn: deal?.expectedCloseOn ?? addDays(DEMO_TODAY, 30),
+          expectedCloseOn: deal?.expectedCloseOn ?? addDays(getToday(), 30),
+          lostReason: deal?.lostReason ?? "",
         },
-        check: (v) => {
-          const contact = activeContacts.find((item) => item.id === v.contactId);
-          return contact && contact.companyId !== v.companyId
-            ? { contactId: "Choose a contact from the selected company." }
-            : {};
-        },
-        submit: (v) => {
-          const saved = store.saveDeal(
-            {
-              name: v.name.trim(),
-              companyId: v.companyId,
-              contactId: orNull(v.contactId),
-              ownerId: v.ownerId,
-              stage: v.stage as DealStage,
-              valueMinor: parseAmountToMinor(v.value) ?? 0,
-              expectedCloseOn: v.expectedCloseOn,
-            },
-            id,
-          );
-          return {
-            message: deal ? `Changes to “${saved.name}” saved` : `Deal “${saved.name}” added`,
-            viewLabel: "View deals",
-            href: "/crm/deals",
-          };
-        },
+        check: (v) =>
+          lostStageIds.has(v.stageId) && !v.lostReason.trim()
+            ? { lostReason: "Say why the deal was lost." }
+            : {},
+        submit: async (v) =>
+          outcome(
+            await saveDealAction(
+              {
+                name: v.name,
+                companyName: v.companyName,
+                contactId: orNull(v.contactId),
+                ownerId: v.ownerId,
+                stageId: v.stageId,
+                valueMinor: parseAmountToMinor(v.value) ?? 0,
+                expectedCloseOn: v.expectedCloseOn,
+                lostReason: lostStageIds.has(v.stageId) ? v.lostReason : "",
+              },
+              id,
+            ),
+            (saved) => ({
+              message: deal ? `Changes to “${saved.name}” saved` : `Deal “${saved.name}” added`,
+              viewLabel: "View deal",
+              href: `/crm/deals?deal=${saved.id}`,
+            }),
+            { valueMinor: "value" },
+          ),
       };
     }
     case "project": {
@@ -834,8 +945,8 @@ function EditorForm({
   const router = useRouter();
   const spec = useFormSpec(kind, id);
   if (!spec) return null;
-  // Deals, invoices and expenses are still sample data held in this tab.
-  const sample = kind === "deal" || kind === "invoice" || kind === "expense";
+  // Invoices and expenses are still sample data held in this tab.
+  const sample = kind === "invoice" || kind === "expense";
 
   return (
     <RecordForm

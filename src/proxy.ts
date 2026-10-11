@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 /** Pages a signed-out visitor may open. Everything else needs a session. */
-const PUBLIC_PREFIXES = ["/login", "/signup", "/forgot-password", "/auth/", "/invite/"];
+const PUBLIC_PREFIXES = ["/login", "/signup", "/forgot-password", "/auth/", "/invite/", "/f/"];
 /** Pages that make no sense once signed in. */
 const SIGNED_OUT_ONLY = ["/login", "/signup", "/forgot-password"];
 

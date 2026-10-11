@@ -4,6 +4,7 @@ import {
   Building2,
   FolderKanban,
   Handshake,
+  Inbox,
   ListChecks,
   ReceiptText,
   Search,
@@ -63,6 +64,7 @@ export function GlobalSearch() {
   const contacts = store.contacts.filter((contact) => !contact.archived);
   const companies = store.companies.filter((company) => !company.archived);
   const deals = store.deals.filter((deal) => !deal.archived);
+  const leads = store.leads.filter((lead) => !lead.archived && lead.status !== "converted");
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -87,7 +89,7 @@ export function GlobalSearch() {
       open={searchOpen}
       onOpenChange={setSearchOpen}
       title="Search"
-      description="Search pages, contacts, companies, deals, projects, tasks and invoices"
+      description="Search pages, contacts, companies, leads, deals, projects, tasks and invoices"
     >
       <Command>
         <CommandInput placeholder="Search pages and records" />
@@ -142,7 +144,7 @@ export function GlobalSearch() {
                 <CommandItem
                   key={deal.id}
                   value={`deal ${deal.name} ${companyName(deal.companyId)} ${deal.id}`}
-                  onSelect={() => go("/crm/deals")}
+                  onSelect={() => go(`/crm/deals?deal=${deal.id}`)}
                 >
                   <Handshake aria-hidden />
                   <span className="truncate">{deal.name}</span>
@@ -152,6 +154,21 @@ export function GlobalSearch() {
                   <span className="tabular ml-auto text-xs text-muted-foreground">
                     {formatMoney(deal.valueMinor)}
                   </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+          {leads.length > 0 ? (
+            <CommandGroup heading="Leads">
+              {leads.map((lead) => (
+                <CommandItem
+                  key={lead.id}
+                  value={`lead ${lead.name} ${lead.email} ${lead.companyName} ${lead.id}`}
+                  onSelect={() => go("/crm/leads")}
+                >
+                  <Inbox aria-hidden />
+                  <span className="truncate">{lead.name}</span>
+                  <span className="truncate text-muted-foreground">{lead.companyName}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
