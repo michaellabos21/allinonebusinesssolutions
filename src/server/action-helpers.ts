@@ -71,6 +71,29 @@ const DATABASE_RULES: Record<string, { error: string; field?: string }> = {
     error: "That contact no longer exists. Choose another.",
     field: "contactId",
   },
+  // Finance
+  invalid_items: { error: "Check the lines: each needs a description, quantity and price." },
+  not_a_draft: { error: "Only drafts can be changed. This one has already been issued." },
+  bill_to_required: {
+    error: "Choose who the document is for before issuing it.",
+    field: "contactId",
+  },
+  total_required: { error: "The total must be above zero to issue." },
+  not_payable: { error: "Payments can only be recorded on issued, unpaid invoices." },
+  overpayment: {
+    error: "That is more than is still owed. Record the amount actually outstanding.",
+    field: "amountMinor",
+  },
+  invalid_amount: { error: "Enter an amount above zero.", field: "amountMinor" },
+  invalid_date: { error: "The payment date can’t be in the future.", field: "paidOn" },
+  not_issued: { error: "Drafts aren’t voided; delete the draft instead." },
+  has_payments: {
+    error:
+      "This invoice has payments recorded, so it can’t be voided. Refunds aren’t supported yet.",
+  },
+  reason_required: { error: "Say why the invoice is being voided.", field: "reason" },
+  not_sent: { error: "Send the estimate before recording the client’s answer." },
+  not_accepted: { error: "Only an accepted estimate can become an invoice." },
 };
 
 /** Turns a database refusal into something a person can act on. */

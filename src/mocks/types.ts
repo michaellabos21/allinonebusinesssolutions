@@ -80,22 +80,48 @@ export type Task = {
 };
 
 /** "overdue" is never stored: it is derived from a sent invoice's due date. */
-export type InvoiceStatus = "draft" | "sent" | "paid";
+/**
+ * Stored statuses. "Overdue" is never stored: it follows from the due date
+ * (see `invoiceDisplayStatus`), so it can't go stale.
+ */
+export type InvoiceStatus = "draft" | "sent" | "partially_paid" | "paid" | "void";
 export type InvoiceDisplayStatus = InvoiceStatus | "overdue";
 
 export type InvoiceItem = {
   id: string;
   description: string;
-  /** Whole units only in this prototype. */
-  quantity: number;
+  /** Thousandths of a unit: 1.5 hours is 1500. */
+  quantityMilli: number;
   unitPriceMinor: number;
+  /** Written by the database from quantity and price, rounded once. */
+  amountMinor: number;
+  catalogItemId: string | null;
+};
+
+/** Who an issued invoice was addressed to, kept as it was on the day. */
+export type BillTo = { name: string; email: string; company: string; address: string };
+
+export type PaymentMethod = "cash" | "bank_transfer" | "card" | "e_wallet" | "check" | "other";
+
+/** A payment recorded by hand. No money moves through the app. */
+export type Payment = {
+  id: string;
+  invoiceId: string;
+  amountMinor: number;
+  paidOn: string;
+  method: PaymentMethod;
+  reference: string;
+  note: string;
 };
 
 export type Invoice = {
   id: string;
-  number: string;
-  contactId: string;
-  /** Short summary shown in lists. */
+  /** Given when the invoice is issued; null for drafts. */
+  number: string | null;
+  contactId: string | null;
+  /** Set when issued. */
+  billTo: BillTo | null;
+  /** Short summary shown in lists: the first line's description. */
   description: string;
   items: InvoiceItem[];
   /** Flat amount taken off the subtotal before tax. */
@@ -103,12 +129,42 @@ export type Invoice = {
   /** Tax rate in basis points: 1200 is 12%. */
   taxRateBps: number;
   notes: string;
-  /** The total. Always written by `computeInvoiceTotals`, never typed in. */
+  subtotalMinor: number;
+  taxMinor: number;
+  /** The total, computed by the database from the lines. */
   amountMinor: number;
+  /** Sum of recorded payments. */
+  paidMinor: number;
+  currency: string;
   status: InvoiceStatus;
   issuedOn: string;
   dueOn: string;
+  /** Date of the payment that settled it, when fully paid. */
   paidOn: string | null;
+  voidReason: string;
+  estimateId: string | null;
+};
+
+export type EstimateStatus = "draft" | "sent" | "accepted" | "declined";
+/** "Expired" follows from the validity date, like "overdue" for invoices. */
+export type EstimateDisplayStatus = EstimateStatus | "expired";
+
+export type Estimate = {
+  id: string;
+  number: string | null;
+  contactId: string | null;
+  items: InvoiceItem[];
+  discountMinor: number;
+  taxRateBps: number;
+  notes: string;
+  subtotalMinor: number;
+  taxMinor: number;
+  amountMinor: number;
+  currency: string;
+  status: EstimateStatus;
+  issuedOn: string;
+  validUntil: string;
+  convertedInvoiceId: string | null;
 };
 
 export type CatalogItemType = "service" | "product";
@@ -132,7 +188,13 @@ export type Expense = {
   category: string;
   description: string;
   amountMinor: number;
+  currency: string;
+  paymentMethod: PaymentMethod;
+  notes: string;
   projectId: string | null;
+  /** Path in the private receipts bucket, when a receipt was attached. */
+  receiptPath: string | null;
+  archived: boolean;
 };
 
 export type StageKind = "open" | "won" | "lost";

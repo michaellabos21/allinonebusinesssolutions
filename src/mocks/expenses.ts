@@ -18,7 +18,20 @@ const expense = (
   amountMinor: number,
   description: string,
   projectId: string | null = null,
-): Expense => ({ id, date, vendor, category, amountMinor, description, projectId });
+): Expense => ({
+  id,
+  date,
+  vendor,
+  category,
+  amountMinor,
+  description,
+  projectId,
+  currency: "PHP",
+  paymentMethod: "card",
+  notes: "",
+  receiptPath: null,
+  archived: false,
+});
 
 /** Newest first. Amounts are centavos. */
 export const expenses: Expense[] = [

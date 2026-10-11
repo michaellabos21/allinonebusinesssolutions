@@ -1,6 +1,6 @@
-import { computeInvoiceTotals } from "@/lib/money";
+import { computeInvoiceTotals, lineTotalMinor } from "@/lib/money";
 
-import type { Invoice } from "./types";
+import type { Invoice, Payment } from "./types";
 
 type Line = [description: string, quantity: number, unitPriceMinor: number];
 
@@ -10,7 +10,7 @@ const invoice = (
   number: string,
   contactId: string,
   description: string,
-  status: Invoice["status"],
+  status: "draft" | "sent" | "paid",
   issuedOn: string,
   dueOn: string,
   paidOn: string | null,
@@ -19,23 +19,33 @@ const invoice = (
   const items = lines.map(([lineDescription, quantity, unitPriceMinor], index) => ({
     id: `${id}-${index + 1}`,
     description: lineDescription,
-    quantity,
+    quantityMilli: quantity * 1000,
     unitPriceMinor,
+    amountMinor: lineTotalMinor({ quantityMilli: quantity * 1000, unitPriceMinor }),
+    catalogItemId: null,
   }));
+  const totals = computeInvoiceTotals(items);
   return {
     id,
-    number,
+    number: status === "draft" ? null : number,
     contactId,
+    billTo: null,
     description,
     items,
     discountMinor: 0,
     taxRateBps: 0,
     notes: "",
-    amountMinor: computeInvoiceTotals(items).totalMinor,
+    subtotalMinor: totals.subtotalMinor,
+    taxMinor: totals.taxMinor,
+    amountMinor: totals.totalMinor,
+    paidMinor: status === "paid" ? totals.totalMinor : 0,
+    currency: "PHP",
     status,
     issuedOn,
     dueOn,
     paidOn,
+    voidReason: "",
+    estimateId: null,
   };
 };
 
@@ -249,3 +259,16 @@ export const invoices: Invoice[] = [
     [["Print-ready file prep", 5, 550_000]],
   ),
 ];
+
+/** One payment per paid demo invoice, in full, on the day it was paid. */
+export const payments: Payment[] = invoices
+  .filter((item) => item.paidOn)
+  .map((item) => ({
+    id: `pay-${item.id}`,
+    invoiceId: item.id,
+    amountMinor: item.amountMinor,
+    paidOn: item.paidOn!,
+    method: "bank_transfer",
+    reference: "",
+    note: "",
+  }));

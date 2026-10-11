@@ -1,7 +1,6 @@
-import { DEMO_TODAY } from "@/config/app";
-import { invoiceDisplayStatus } from "@/lib/metrics";
-import { memberName } from "@/lib/runtime";
-import type { Expense, Invoice, InvoiceDisplayStatus, Project, Task } from "@/mocks";
+import { balanceMinor, invoiceDisplayStatus } from "@/lib/metrics";
+import { getToday, memberName } from "@/lib/runtime";
+import type { Expense, Invoice, InvoiceDisplayStatus, Payment, Project, Task } from "@/mocks";
 
 /** Report figures, all derived from the same records the other screens use. */
 
@@ -16,7 +15,7 @@ export const RANGE_OPTIONS: { value: RangeId; label: string }[] = [
 ];
 
 /** Resolves a preset to dates. Every range ends today, so the last month is partial. */
-export function getRange(id: RangeId, today: string = DEMO_TODAY): DateRange {
+export function getRange(id: RangeId, today: string = getToday()): DateRange {
   const year = Number(today.slice(0, 4));
   const month = Number(today.slice(5, 7));
   const span = id === "this-month" ? 1 : id === "last-3" ? 3 : id === "last-6" ? 6 : month;
@@ -61,53 +60,77 @@ export type MonthFlow = {
 
 /** Payments received and expenses paid, month by month. */
 export function getMoneyFlow(
-  invoices: Invoice[],
+  payments: Payment[],
   expenses: Expense[],
   range: DateRange,
 ): MonthFlow[] {
+  const live = expenses.filter((expense) => !expense.archived);
   return range.months.map((key, index) => ({
     key,
     label: SHORT_MONTHS[Number(key.slice(5, 7)) - 1],
     collectedMinor: sum(
-      invoices.filter(
-        (invoice) => invoice.paidOn?.startsWith(key) && inRange(invoice.paidOn, range),
+      payments.filter(
+        (payment) => payment.paidOn.startsWith(key) && inRange(payment.paidOn, range),
       ),
     ),
     expenseMinor: sum(
-      expenses.filter((expense) => expense.date.startsWith(key) && inRange(expense.date, range)),
+      live.filter((expense) => expense.date.startsWith(key) && inRange(expense.date, range)),
     ),
     partial: index === range.months.length - 1,
   }));
 }
 
-export function getHeadline(invoices: Invoice[], expenses: Expense[], range: DateRange) {
-  const collectedMinor = sum(invoices.filter((invoice) => inRange(invoice.paidOn, range)));
-  const billed = invoices.filter(
-    (invoice) => invoice.status !== "draft" && inRange(invoice.issuedOn, range),
+/**
+ * The four finance figures, each defined exactly:
+ *
+ *   invoiced     totals of invoices issued in the range, not counting drafts or voided ones
+ *   collected    payments recorded with a payment date in the range
+ *   outstanding  what is still owed today on every open invoice, whenever issued
+ *   expenses     expenses dated in the range, not counting archived ones
+ *
+ * These are cash figures for running the business. They are not an income
+ * statement, and "collected minus expenses" is not profit.
+ */
+export function getHeadline(
+  invoices: Invoice[],
+  payments: Payment[],
+  expenses: Expense[],
+  range: DateRange,
+) {
+  const issued = invoices.filter(
+    (invoice) =>
+      invoice.status !== "draft" && invoice.status !== "void" && inRange(invoice.issuedOn, range),
   );
-  const expenseMinor = sum(expenses.filter((expense) => inRange(expense.date, range)));
+  const open = invoices.filter((invoice) => balanceMinor(invoice) > 0);
   return {
-    collectedMinor,
-    billedMinor: sum(billed),
-    billedCount: billed.length,
-    expenseMinor,
-    netMinor: collectedMinor - expenseMinor,
+    invoicedMinor: sum(issued),
+    invoicedCount: issued.length,
+    collectedMinor: sum(payments.filter((payment) => inRange(payment.paidOn, range))),
+    outstandingMinor: open.reduce((total, invoice) => total + balanceMinor(invoice), 0),
+    outstandingCount: open.length,
+    expenseMinor: sum(
+      expenses.filter((expense) => !expense.archived && inRange(expense.date, range)),
+    ),
   };
 }
 
-const STATUS_ORDER: InvoiceDisplayStatus[] = ["paid", "sent", "overdue", "draft"];
+const STATUS_ORDER: InvoiceDisplayStatus[] = ["paid", "partially_paid", "sent", "overdue", "void"];
 export const STATUS_LABEL: Record<InvoiceDisplayStatus, string> = {
   paid: "Paid",
+  partially_paid: "Part paid",
   sent: "Sent, not yet due",
   overdue: "Overdue",
   draft: "Draft",
+  void: "Void",
 };
 
 /** Invoices issued in the range, grouped by where they stand today. */
 export function getInvoiceStatusBreakdown(invoices: Invoice[], range: DateRange) {
-  const issued = invoices.filter((invoice) => inRange(invoice.issuedOn, range));
+  const issued = invoices.filter(
+    (invoice) => invoice.status !== "draft" && inRange(invoice.issuedOn, range),
+  );
   return STATUS_ORDER.map((status) => {
-    const rows = issued.filter((invoice) => invoiceDisplayStatus(invoice) === status);
+    const rows = issued.filter((invoice) => invoiceDisplayStatus(invoice, range.to) === status);
     return { status, label: STATUS_LABEL[status], count: rows.length, amountMinor: sum(rows) };
   });
 }
@@ -146,7 +169,8 @@ export function getProjectReport(
       done: own.filter((task) => task.status === "done").length,
       spendMinor: sum(
         expenses.filter(
-          (expense) => expense.projectId === project.id && inRange(expense.date, range),
+          (expense) =>
+            !expense.archived && expense.projectId === project.id && inRange(expense.date, range),
         ),
       ),
     };
@@ -156,7 +180,7 @@ export function getProjectReport(
 export function getExpenseCategories(expenses: Expense[], range: DateRange) {
   const totals = new Map<string, { amountMinor: number; count: number }>();
   for (const expense of expenses) {
-    if (!inRange(expense.date, range)) continue;
+    if (expense.archived || !inRange(expense.date, range)) continue;
     const current = totals.get(expense.category) ?? { amountMinor: 0, count: 0 };
     totals.set(expense.category, {
       amountMinor: current.amountMinor + expense.amountMinor,
