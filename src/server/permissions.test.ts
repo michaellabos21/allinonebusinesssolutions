@@ -94,6 +94,7 @@ describe("business records", () => {
       "catalog.manage",
       "tasks.edit_any",
       "pipeline.manage",
+      "finance.manage",
     ] as const) {
       expect(ROLES.filter((role) => can(role, action))).toEqual(["owner", "admin", "manager"]);
     }

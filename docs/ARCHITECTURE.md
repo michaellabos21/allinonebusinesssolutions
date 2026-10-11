@@ -1,6 +1,6 @@
 # Architecture
 
-Status: backend Phase 1. Accounts, workspaces, team and settings are real, backed by PostgreSQL. The business screens still run on in-memory demo data. This document records how the app is built today, where it is going, and the decisions made so far.
+Status: backend Phase 4. Accounts, workspaces, team, settings, CRM, work and finance records are real, backed by PostgreSQL. No screen runs on in-memory demo data any more. This document records how the app is built today, where it is going, and the decisions made so far.
 
 ## Today
 
@@ -40,9 +40,9 @@ Taking "change a member's role" as the example:
 
 Steps 2 and 4 are deliberately redundant. Either alone would stop a forbidden change.
 
-## The seam for the remaining demo data
+## The data seam
 
-Business screens never import records. They call `useDemoStore()` and get lists plus functions such as `saveContact` or `recordInvoicePayment`. That hook is the boundary each later phase replaces, **one domain at a time**. For each domain the work is a vertical slice: migration and row-level security, server-side data access with validation and permission checks, the screens switched from the store to real queries and server actions, then integration and browser tests. Domains not yet migrated keep running on the store, labelled as demo data.
+Business screens never import records. They call `useDemoStore()` (the name predates the backend), which hands them the lists the server loaded for their role, and change data only through server actions, after which the server sends fresh lists. Each phase was built as a vertical slice: migration and row-level security, server-side data access with validation and permission checks, the screens switched to real queries and server actions, then integration and browser tests.
 
 The demo records refer to four fictional teammates (Mara, Paolo, Jenna, Tomas) as owners and assignees. They are not real members. That mismatch disappears as each domain moves to the database and points at real users.
 

@@ -9,7 +9,7 @@ export function BackLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-6 items-center gap-1.5 text-caption font-medium text-muted-foreground hover:text-foreground"
+      className="inline-flex min-h-6 items-center gap-1.5 text-caption font-medium text-muted-foreground hover:text-foreground print:hidden"
     >
       <ArrowLeft className="size-3.5" aria-hidden />
       {label}

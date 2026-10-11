@@ -13,7 +13,6 @@ import {
 } from "@/components/common/record-form";
 import { type EditorKind, useDemoStore } from "@/components/providers/demo-store";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { DEMO_TODAY } from "@/config/app";
 import { addDays, formatAmountInput, parseAmountToMinor } from "@/lib/format";
 import { getRuntime, getToday } from "@/lib/runtime";
 import { useFocusReturn } from "@/lib/use-focus-return";
@@ -24,6 +23,8 @@ import {
   saveProjectAction,
   saveTaskAction,
 } from "@/server/actions/records";
+import { PAYMENT_METHOD_LABEL } from "@/components/money/invoice-actions";
+import { saveExpenseAction } from "@/server/actions/finance";
 import { saveDealAction, saveLeadAction } from "@/server/actions/sales";
 import type { ActionResult } from "@/server/types";
 import { CONTACT_TAGS, EXPENSE_CATEGORIES, TASK_STATUSES } from "@/mocks";
@@ -689,66 +690,6 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           ),
       };
     }
-    case "invoice":
-      return {
-        title: "New invoice",
-        description:
-          "A one-line draft. Open it afterwards to add more lines, a discount or tax. Nothing is sent to the client.",
-        submitLabel: "Save draft",
-        warning:
-          contactOptions.length === 0
-            ? "Add a contact first. An invoice needs a client to bill."
-            : undefined,
-        fields: [
-          {
-            name: "contactId",
-            label: "Client",
-            type: "select",
-            required: true,
-            missing: "Choose a client to bill.",
-            options: contactOptions,
-          },
-          {
-            name: "description",
-            label: "Description",
-            type: "text",
-            required: true,
-            missing: "Describe what the invoice is for.",
-            placeholder: "Design work, October",
-          },
-          {
-            name: "amount",
-            label: `Amount (${getRuntime().currency})`,
-            type: "amount",
-            required: true,
-            missing: "Enter the invoice amount.",
-            placeholder: "25,000",
-            half: true,
-          },
-          {
-            name: "dueOn",
-            label: "Due date",
-            type: "date",
-            required: true,
-            missing: "Choose a due date.",
-            half: true,
-          },
-        ],
-        initial: { contactId: "", description: "", amount: "", dueOn: addDays(DEMO_TODAY, 15) },
-        submit: (v) => {
-          const invoice = store.addInvoice({
-            contactId: v.contactId,
-            description: v.description.trim(),
-            amountMinor: parseAmountToMinor(v.amount) ?? 0,
-            dueOn: v.dueOn,
-          });
-          return {
-            message: `Draft ${invoice.number} saved`,
-            viewLabel: "Open draft",
-            href: `/money/invoices/${invoice.id}`,
-          };
-        },
-      };
     case "catalog": {
       const item = store.catalog.find((entry) => entry.id === id);
       if (id && !item) return null;
@@ -889,43 +830,69 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             placeholder: "Printed proofs for the catalog",
           },
           {
+            name: "paymentMethod",
+            label: "Paid by",
+            type: "select",
+            required: true,
+            half: true,
+            options: Object.entries(PAYMENT_METHOD_LABEL).map(([value, label]) => ({
+              value,
+              label,
+            })),
+          },
+          {
             name: "projectId",
             label: "Project",
             type: "select",
+            half: true,
             options: optional(
               store.projects.map((project) => ({ value: project.id, label: project.name })),
               "No project",
             ),
           },
+          {
+            name: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Anything worth remembering, like an official receipt number.",
+          },
         ],
         initial: {
           vendor: expense?.vendor ?? "",
-          date: expense?.date ?? DEMO_TODAY,
+          date: expense?.date ?? getToday(),
           amount: expense ? formatAmountInput(expense.amountMinor) : "",
           category: expense?.category ?? "",
           description: expense?.description ?? "",
+          paymentMethod: expense?.paymentMethod ?? "bank_transfer",
           projectId: expense?.projectId ?? NONE,
+          notes: expense?.notes ?? "",
         },
         check: (v) =>
-          v.date > DEMO_TODAY ? { date: "An expense can’t be dated in the future." } : {},
-        submit: (v) => {
-          const saved = store.saveExpense(
-            {
-              vendor: v.vendor.trim(),
-              date: v.date,
-              amountMinor: parseAmountToMinor(v.amount) ?? 0,
-              category: v.category,
-              description: v.description.trim(),
-              projectId: orNull(v.projectId),
-            },
-            id,
-          );
-          return {
-            message: expense
-              ? `Expense from ${saved.vendor} updated`
-              : `Expense from ${saved.vendor} recorded`,
-          };
-        },
+          v.date > getToday() ? { date: "An expense can’t be dated in the future." } : {},
+        submit: async (v) =>
+          outcome(
+            await saveExpenseAction(
+              {
+                vendor: v.vendor,
+                date: v.date,
+                amountMinor: parseAmountToMinor(v.amount) ?? 0,
+                category: v.category,
+                description: v.description,
+                paymentMethod: v.paymentMethod,
+                notes: v.notes,
+                projectId: orNull(v.projectId),
+              },
+              id,
+            ),
+            (saved) => ({
+              message: expense
+                ? `Expense from ${saved.name} updated`
+                : `Expense from ${saved.name} recorded`,
+              viewLabel: expense ? undefined : "Attach a receipt",
+              href: expense ? undefined : `/money/expenses?receipt=${saved.id}`,
+            }),
+            { amountMinor: "amount" },
+          ),
       };
     }
   }
@@ -945,21 +912,14 @@ function EditorForm({
   const router = useRouter();
   const spec = useFormSpec(kind, id);
   if (!spec) return null;
-  // Invoices and expenses are still sample data held in this tab.
-  const sample = kind === "invoice" || kind === "expense";
 
   return (
     <RecordForm
-      spec={{
-        ...spec,
-        initial: { ...spec.initial, ...preset },
-        footnote: sample ? "Sample data: kept until you reload." : undefined,
-      }}
+      spec={{ ...spec, initial: { ...spec.initial, ...preset } }}
       onCancel={onDone}
       onSaved={(result) => {
         const href = result.href;
         toast.success(result.message, {
-          description: sample ? "Sample data: kept until you reload." : undefined,
           action:
             href && result.viewLabel
               ? { label: result.viewLabel, onClick: () => router.push(href) }

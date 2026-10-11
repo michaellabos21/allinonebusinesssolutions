@@ -8,9 +8,14 @@ import type {
   Contact,
   Deal,
   DealStage,
+  Estimate,
+  Expense,
+  Invoice,
+  InvoiceItem,
   Lead,
   LeadForm,
   Note,
+  Payment,
   Project,
   Task,
 } from "@/mocks/types";
@@ -31,6 +36,11 @@ export type WorkspaceRecords = {
   leads: Lead[];
   /** Only loaded for managers and above, who are the ones who can share or change them. */
   leadForms: LeadForm[];
+  /** Finance: loaded only for roles that may see it, otherwise empty. */
+  invoices: Invoice[];
+  payments: Payment[];
+  estimates: Estimate[];
+  expenses: Expense[];
   /** True if any list hit its row cap, so the screens can say the view is partial. */
   truncated: boolean;
 };
@@ -55,6 +65,10 @@ const EMPTY: WorkspaceRecords = {
   deals: [],
   leads: [],
   leadForms: [],
+  invoices: [],
+  payments: [],
+  estimates: [],
+  expenses: [],
   truncated: false,
 };
 
@@ -146,6 +160,10 @@ export async function getWorkspaceRecords(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type Row = Record<string, any>;
   const rows = (result: { data: unknown }) => (result.data ?? []) as Row[];
+
+  const finance = can(role, "finance.manage")
+    ? await loadFinance(supabase, workspaceId)
+    : { invoices: [], payments: [], estimates: [], expenses: [], truncated: false };
 
   const stageKind = new Map(rows(stages).map((row) => [row.id, row.kind as Deal["stageKind"]]));
 
@@ -274,7 +292,156 @@ export async function getWorkspaceRecords(
       active: row.active,
       createdOn: day(row.created_at),
     })),
-    truncated: [companies, contacts, notes, catalog, projects, tasks, deals, leads].some(
+    invoices: finance.invoices,
+    payments: finance.payments,
+    estimates: finance.estimates,
+    expenses: finance.expenses,
+    truncated:
+      finance.truncated ||
+      [companies, contacts, notes, catalog, projects, tasks, deals, leads].some(
+        (result) => (result.data?.length ?? 0) >= ROW_CAP,
+      ),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type FinanceRow = Record<string, any>;
+
+const toItem = (row: FinanceRow): InvoiceItem => ({
+  id: row.id,
+  description: row.description,
+  quantityMilli: Number(row.quantity_milli),
+  unitPriceMinor: Number(row.unit_price_minor),
+  amountMinor: Number(row.amount_minor),
+  catalogItemId: row.catalog_item_id,
+});
+
+/** Invoices, estimates, payments and expenses, with their lines attached. */
+async function loadFinance(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  workspaceId: string,
+) {
+  const scoped = (table: string, columns: string) =>
+    supabase.from(table).select(columns).eq("workspace_id", workspaceId).limit(ROW_CAP);
+  const [invoices, invoiceItems, payments, estimates, estimateItems, expenses] = await Promise.all([
+    scoped(
+      "invoices",
+      "id, number, contact_id, bill_to, status, currency, issued_on, due_on, discount_minor, tax_rate_bps, notes, subtotal_minor, tax_minor, total_minor, paid_minor, estimate_id, void_reason",
+    ).order("issued_on", { ascending: false }),
+    supabase
+      .from("invoice_items")
+      .select(
+        "id, invoice_id, position, description, quantity_milli, unit_price_minor, amount_minor, catalog_item_id",
+      )
+      .eq("workspace_id", workspaceId)
+      .order("position")
+      .limit(ROW_CAP * 10),
+    scoped("payments", "id, invoice_id, amount_minor, paid_on, method, reference, note").order(
+      "paid_on",
+    ),
+    scoped(
+      "estimates",
+      "id, number, contact_id, status, currency, issued_on, valid_until, discount_minor, tax_rate_bps, notes, subtotal_minor, tax_minor, total_minor, converted_invoice_id",
+    ).order("issued_on", { ascending: false }),
+    supabase
+      .from("estimate_items")
+      .select(
+        "id, estimate_id, position, description, quantity_milli, unit_price_minor, amount_minor, catalog_item_id",
+      )
+      .eq("workspace_id", workspaceId)
+      .order("position")
+      .limit(ROW_CAP * 10),
+    scoped(
+      "expenses",
+      "id, spent_on, vendor, category, description, amount_minor, currency, payment_method, notes, project_id, receipt_path, archived_at",
+    ).order("spent_on", { ascending: false }),
+  ]);
+  const rows = (result: { data: unknown }) => (result.data ?? []) as FinanceRow[];
+
+  const group = (items: FinanceRow[], key: string) => {
+    const byParent = new Map<string, InvoiceItem[]>();
+    for (const row of items) {
+      const list = byParent.get(row[key]) ?? [];
+      list.push(toItem(row));
+      byParent.set(row[key], list);
+    }
+    return byParent;
+  };
+  const linesByInvoice = group(rows(invoiceItems), "invoice_id");
+  const linesByEstimate = group(rows(estimateItems), "estimate_id");
+
+  const paymentList: Payment[] = rows(payments).map((row) => ({
+    id: row.id,
+    invoiceId: row.invoice_id,
+    amountMinor: Number(row.amount_minor),
+    paidOn: row.paid_on,
+    method: row.method,
+    reference: row.reference,
+    note: row.note,
+  }));
+  const lastPaymentOn = new Map<string, string>();
+  for (const payment of paymentList) lastPaymentOn.set(payment.invoiceId, payment.paidOn);
+
+  return {
+    invoices: rows(invoices).map((row): Invoice => {
+      const items = linesByInvoice.get(row.id) ?? [];
+      const billTo = row.bill_to && row.bill_to.name ? row.bill_to : null;
+      return {
+        id: row.id,
+        number: row.number,
+        contactId: row.contact_id,
+        billTo,
+        description: items[0]?.description ?? "",
+        items,
+        discountMinor: Number(row.discount_minor),
+        taxRateBps: row.tax_rate_bps,
+        notes: row.notes,
+        subtotalMinor: Number(row.subtotal_minor),
+        taxMinor: Number(row.tax_minor),
+        amountMinor: Number(row.total_minor),
+        paidMinor: Number(row.paid_minor),
+        currency: row.currency,
+        status: row.status,
+        issuedOn: row.issued_on,
+        dueOn: row.due_on,
+        paidOn: row.status === "paid" ? (lastPaymentOn.get(row.id) ?? null) : null,
+        voidReason: row.void_reason,
+        estimateId: row.estimate_id,
+      };
+    }),
+    payments: paymentList,
+    estimates: rows(estimates).map((row): Estimate => ({
+      id: row.id,
+      number: row.number,
+      contactId: row.contact_id,
+      items: linesByEstimate.get(row.id) ?? [],
+      discountMinor: Number(row.discount_minor),
+      taxRateBps: row.tax_rate_bps,
+      notes: row.notes,
+      subtotalMinor: Number(row.subtotal_minor),
+      taxMinor: Number(row.tax_minor),
+      amountMinor: Number(row.total_minor),
+      currency: row.currency,
+      status: row.status,
+      issuedOn: row.issued_on,
+      validUntil: row.valid_until,
+      convertedInvoiceId: row.converted_invoice_id,
+    })),
+    expenses: rows(expenses).map((row): Expense => ({
+      id: row.id,
+      date: row.spent_on,
+      vendor: row.vendor,
+      category: row.category,
+      description: row.description,
+      amountMinor: Number(row.amount_minor),
+      currency: row.currency,
+      paymentMethod: row.payment_method,
+      notes: row.notes,
+      projectId: row.project_id,
+      receiptPath: row.receipt_path,
+      archived: row.archived_at !== null,
+    })),
+    truncated: [invoices, payments, estimates, expenses].some(
       (result) => (result.data?.length ?? 0) >= ROW_CAP,
     ),
   };

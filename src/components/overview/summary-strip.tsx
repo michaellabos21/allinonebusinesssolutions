@@ -4,9 +4,9 @@ import { TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
 import { useDemoStore } from "@/components/providers/demo-store";
-import { DEMO_TODAY } from "@/config/app";
 import { formatMoney } from "@/lib/format";
 import { getSummary } from "@/lib/metrics";
+import { getToday } from "@/lib/runtime";
 import { formatMonthName } from "@/lib/work";
 
 type Metric = {
@@ -21,18 +21,22 @@ type Metric = {
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
 /** Headline figures in one ruled band; each cell links to its module. Open invoices have their own statement above. */
-export function SummaryStrip() {
-  const { invoices, projects, tasks } = useDemoStore();
-  const s = getSummary({ invoices, projects, tasks });
-  const monthName = formatMonthName(DEMO_TODAY.slice(0, 7));
+export function SummaryStrip({ showFinance }: { showFinance: boolean }) {
+  const { invoices, payments, projects, tasks } = useDemoStore();
+  const s = getSummary({ invoices, payments, projects, tasks });
+  const monthName = formatMonthName(getToday().slice(0, 7));
 
   const metrics: Metric[] = [
-    {
-      label: `Collected in ${monthName}`,
-      value: formatMoney(s.collectedThisMonthMinor),
-      note: `${plural(s.collectedThisMonthCount, "payment", "payments")} so far. ${s.previousMonthLabel} closed at ${formatMoney(s.collectedPreviousMonthMinor)}.`,
-      href: "/money/invoices",
-    },
+    ...(showFinance
+      ? [
+          {
+            label: `Collected in ${monthName}`,
+            value: formatMoney(s.collectedThisMonthMinor),
+            note: `${plural(s.collectedThisMonthCount, "payment", "payments")} so far. ${s.previousMonthLabel} closed at ${formatMoney(s.collectedPreviousMonthMinor)}.`,
+            href: "/money/invoices",
+          },
+        ]
+      : []),
     {
       label: "Active projects",
       value: String(s.activeProjectCount),
@@ -50,7 +54,7 @@ export function SummaryStrip() {
 
   return (
     <section aria-label="Summary" className="overflow-hidden rounded-lg border bg-card">
-      <dl className="grid sm:grid-cols-3">
+      <dl className={showFinance ? "grid sm:grid-cols-3" : "grid sm:grid-cols-2"}>
         {metrics.map((metric) => (
           <div
             key={metric.label}

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useFocusReturn } from "@/lib/use-focus-return";
 
-/** Asks before an action that removes something from view. */
+/** Asks before an action that removes something from view, or can't be taken back. */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -20,6 +20,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   cancelLabel = "Cancel",
+  tone = "destructive",
   onConfirm,
 }: {
   open: boolean;
@@ -29,6 +30,8 @@ export function ConfirmDialog({
   confirmLabel: string;
   /** Override when "Cancel" would be ambiguous, e.g. when the action itself is a cancellation. */
   cancelLabel?: string;
+  /** "default" for confirmations that don't remove anything, like issuing an invoice. */
+  tone?: "destructive" | "default";
   onConfirm: () => void;
 }) {
   const returnFocus = useFocusReturn(open);
@@ -41,7 +44,7 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={onConfirm}>
+          <AlertDialogAction variant={tone} onClick={onConfirm}>
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>

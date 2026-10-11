@@ -27,6 +27,9 @@ export type SessionWorkspace = {
   currency: string;
   taxRateBps: number;
   paymentTermDays: number;
+  /** Put before invoice and estimate numbers, e.g. "INV-" gives INV-0001. */
+  invoicePrefix: string;
+  estimatePrefix: string;
   /** The signed-in user's role in this workspace. */
   role: Role;
 };

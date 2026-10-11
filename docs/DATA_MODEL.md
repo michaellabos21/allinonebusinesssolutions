@@ -63,19 +63,23 @@ Built in `supabase/migrations/20261011000003_sales_pipeline.sql`.
 
 ## Phase 4: finance
 
-| Table | Purpose | Prototype source | Differences to resolve |
-| --- | --- | --- | --- |
-| `invoices` | Header | `Invoice` | Add currency, bill-to snapshot, `partially_paid` and `void` statuses. Number allocation must be safe under concurrent requests |
-| `invoice_items` | Lines | `InvoiceItem` | Add optional link to a catalog item |
-| `payments` | Manual payments against an invoice | None; the prototype flips a status | New. Enables partial payments |
-| `estimates`, `estimate_items` | Quotations | None | New |
-| `expenses` | Spending | `Expense` | Add currency, payment method, receipt file |
-| `expense_categories` | Category list | `EXPENSE_CATEGORIES`, a fixed list | Becomes data |
-| `files` | Metadata for stored files | None | New; bytes live in private storage |
+Built in `supabase/migrations/20261011000004_finance.sql`. Money is `bigint` minor units with an ISO `currency`; quantities are `quantity_milli` (thousandths of a unit).
 
-## Calculations that carry over unchanged
+| Table | Holds | Notes |
+| --- | --- | --- |
+| `document_counters` | Next invoice and estimate number per workspace | Taken under a row lock by `private.take_document_number`, so concurrent issues never share a number |
+| `estimates`, `estimate_items` | Client, dates, discount, tax rate, notes, stored totals, status (`draft`, `sent`, `accepted`, `declined`), converted invoice | Number set when sent. "Expired" is derived from `valid_until` |
+| `invoices`, `invoice_items` | Client, `bill_to` snapshot, dates, discount, tax rate, notes, stored totals, `paid_minor`, status (`draft`, `sent`, `partially_paid`, `paid`, `void`), void reason, source estimate | A draft has no number and an issued invoice always has one (check constraint). "Overdue" is derived. Lines may link to a catalog item in the same workspace |
+| `payments` | Invoice, amount, date, method, reference, note, who recorded it | Never more than the balance; no update or delete |
+| `expenses` | Date, vendor, category, description, amount, currency, payment method, notes, project, receipt path, archived time | Receipt path must start with the workspace and expense ids |
 
-`src/lib/money.ts` already computes invoice totals in integer minor units with a single rounding step, and is covered by unit tests. Phase 4 runs the same function on the server; the client version becomes a preview only.
+`workspaces` gains `invoice_prefix` and `estimate_prefix`. Users can only read the finance tables except `expenses`; every change goes through security-definer functions that check the role, work out the totals and enforce the status rules: `save_invoice_draft`, `delete_invoice_draft`, `issue_invoice`, `record_payment`, `void_invoice`, `save_estimate_draft`, `delete_estimate_draft`, `send_estimate`, `decide_estimate`, `convert_estimate_to_invoice`. Receipts live in the private `receipts` storage bucket.
+
+Expense categories stay a fixed list in code (`EXPENSE_CATEGORIES`) with free text allowed; a separate table was not needed.
+
+## Calculations
+
+`src/lib/money.ts` and the database functions use the same rules: each line rounded once, half up; discount clamped to the subtotal; tax on what remains, rounded once, half up. `tests/integration/finance.test.ts` checks that both give the same totals.
 
 ## Later phases
 

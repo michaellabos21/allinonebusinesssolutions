@@ -64,6 +64,12 @@ export const createWorkspaceSchema = z.object({
   currency: z.enum(currencyCodes, "Choose a currency."),
 });
 
+/** Letters, digits, dashes and slashes, up to 12; may be empty. */
+const documentPrefix = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9/-]{0,12}$/, "Use up to 12 letters, digits, dashes or slashes.");
+
 export const workspaceSettingsSchema = z.object({
   name: z.string().trim().min(1, "Enter a workspace name.").max(80, "Use 80 characters or fewer."),
   currency: z.enum(currencyCodes, "Choose a currency."),
@@ -75,6 +81,8 @@ export const workspaceSettingsSchema = z.object({
     .int("Enter a whole number of days from 0 to 90.")
     .min(0, "Enter a whole number of days from 0 to 90.")
     .max(90, "Enter a whole number of days from 0 to 90."),
+  invoicePrefix: documentPrefix,
+  estimatePrefix: documentPrefix,
 });
 
 export const profileSchema = z.object({
@@ -264,6 +272,98 @@ export const publicLeadSchema = z.object({
   message: text(2000),
   consent: z.boolean(),
 });
+
+// ---------------------------------------------------------------------------
+// Finance
+// ---------------------------------------------------------------------------
+
+export const PAYMENT_METHODS = [
+  "cash",
+  "bank_transfer",
+  "card",
+  "e_wallet",
+  "check",
+  "other",
+] as const;
+
+const minorUnits = (max: number, message: string) =>
+  z.number(message).int(message).min(0, message).max(max, "That amount is too large.");
+
+export const documentLineSchema = z.object({
+  description: requiredText(500, "Describe the line."),
+  quantityMilli: z
+    .number("Enter a quantity.")
+    .int()
+    .min(1, "Enter a quantity above zero.")
+    .max(100_000_000, "That quantity is too large."),
+  unitPriceMinor: minorUnits(100_000_000_000, "Enter a price."),
+  catalogItemId: optionalId,
+});
+
+const documentFields = {
+  contactId: optionalId,
+  issuedOn: isoDate,
+  discountMinor: minorUnits(10_000_000_000_000, "Enter a discount of zero or more."),
+  taxRateBps: z.number().int().min(0).max(10_000),
+  notes: text(2000),
+  items: z
+    .array(documentLineSchema)
+    .min(1, "Add at least one line.")
+    .max(100, "Use 100 lines or fewer."),
+};
+
+export const invoiceDraftSchema = z
+  .object({ ...documentFields, dueOn: isoDate })
+  .refine((value) => value.dueOn >= value.issuedOn, {
+    path: ["dueOn"],
+    message: "The due date can’t be before the issue date.",
+  });
+
+export const estimateDraftSchema = z
+  .object({ ...documentFields, validUntil: isoDate })
+  .refine((value) => value.validUntil >= value.issuedOn, {
+    path: ["validUntil"],
+    message: "The estimate can’t expire before it’s issued.",
+  });
+
+export const paymentSchema = z.object({
+  invoiceId: z.uuid(),
+  amountMinor: z.number("Enter an amount.").int().min(1, "Enter an amount above zero."),
+  paidOn: isoDate,
+  method: z.enum(PAYMENT_METHODS, "Choose how it was paid."),
+  reference: text(120),
+  note: text(500),
+});
+
+export const voidSchema = z.object({
+  id: z.uuid(),
+  reason: requiredText(300, "Say why the invoice is being voided."),
+});
+
+export const expenseSchema = z.object({
+  date: isoDate,
+  vendor: requiredText(120, "Who was paid?"),
+  category: requiredText(60, "Choose a category."),
+  description: text(500),
+  amountMinor: z
+    .number("Enter an amount.")
+    .int()
+    .min(1, "Enter an amount above zero.")
+    .max(10_000_000_000_000, "That amount is too large."),
+  paymentMethod: z.enum(PAYMENT_METHODS),
+  notes: text(2000),
+  projectId: optionalId,
+});
+
+/** Receipt files accepted for upload, and the most we accept. */
+export const RECEIPT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "application/pdf",
+] as const;
+export const RECEIPT_MAX_BYTES = 5 * 1024 * 1024;
 
 /** One row of a contact import, after column mapping. */
 export const importRowSchema = z.object({

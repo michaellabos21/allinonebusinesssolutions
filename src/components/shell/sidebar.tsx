@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useId } from "react";
+import { Suspense } from "react";
 
 import { useDemoStore } from "@/components/providers/demo-store";
 import { WorkspaceSwitcher } from "@/components/shell/workspace-switcher";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PRODUCT_NAME } from "@/config/app";
 import { COMING_LATER, NAV_GROUPS, isActivePath, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import { can } from "@/server/permissions";
 
 function NavLink({
   item,
@@ -60,9 +59,15 @@ function NavGroups({
   collapsed,
   onNavigate,
 }: NavGroupsProps & { pathname: string | null }) {
+  const { role } = useDemoStore().account.workspace;
+  // Links a role can't use are left out; the pages check access again.
+  const groups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.requires || can(role, item.requires)),
+  })).filter((group) => group.items.length > 0);
   return (
     <>
-      {NAV_GROUPS.map((group, index) => (
+      {groups.map((group, index) => (
         <div key={group.label ?? "top"} className={cn(index > 0 && "mt-4")}>
           {group.label ? (
             collapsed ? (
@@ -107,9 +112,6 @@ export function Sidebar({
   inDrawer?: boolean;
   onNavigate?: () => void;
 }) {
-  const { demoEnabled, setDemoEnabled } = useDemoStore();
-  const switchId = useId();
-
   return (
     <div className="flex h-full flex-col">
       <div className={cn("px-3 pt-3", collapsed && "px-2", inDrawer && "pr-12")}>
@@ -141,26 +143,6 @@ export function Sidebar({
           </div>
         )}
       </nav>
-
-      {collapsed ? null : (
-        <div className="border-t px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor={switchId} className="font-medium">
-              Demo data
-            </label>
-            <Switch id={switchId} checked={demoEnabled} onCheckedChange={setDemoEnabled} />
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {demoEnabled
-              ? "Invoices and expenses show sample records. Nothing there is saved yet."
-              : "Sample records hidden. Anything you add there lasts until you reload."}
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {PRODUCT_NAME}: your account, team, contacts, companies, leads, deals, catalog, projects
-            and tasks are saved.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

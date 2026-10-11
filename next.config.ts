@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     // before the session is known. Every workspace page here waits for the
     // signed-in user, so the check is opt-in per segment, not on by default.
     instantInsights: { validationLevel: "manual-warning" },
+    // Receipts may be up to 5 MB; leave room for the form's own overhead.
+    serverActions: { bodySizeLimit: "6mb" },
   },
   turbopack: {
     // Pin the root to this project; a stray lockfile higher up would otherwise win.

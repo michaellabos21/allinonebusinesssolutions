@@ -4,16 +4,17 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 
 import { useDemoStore } from "@/components/providers/demo-store";
-import { DEMO_TODAY } from "@/config/app";
 import { Button } from "@/components/ui/button";
 import { describeDue, formatMoney } from "@/lib/format";
-import { getOpenInvoices, invoiceDisplayStatus } from "@/lib/metrics";
+import { balanceMinor, getOpenInvoices, invoiceDisplayStatus } from "@/lib/metrics";
 import { cn } from "@/lib/utils";
 
 const VISIBLE_LINES = 4;
 
 const sum = (items: { amountMinor: number }[]) =>
   items.reduce((total, item) => total + item.amountMinor, 0);
+const owed = (items: Parameters<typeof balanceMinor>[0][]) =>
+  items.reduce((total, item) => total + balanceMinor(item), 0);
 
 const countLabel = (count: number) => `${count} ${count === 1 ? "invoice" : "invoices"}`;
 
@@ -22,14 +23,19 @@ const countLabel = (count: number) => `${count} ${count === 1 ? "invoice" : "inv
  * open invoices set out like lines on a statement.
  */
 export function ReceivablesStatement() {
-  const { invoices, contactCompanyName, openQuickCreate } = useDemoStore();
+  const { invoices, contactCompanyName, contactName } = useDemoStore();
   const open = getOpenInvoices(invoices);
   const overdue = open.filter((invoice) => invoiceDisplayStatus(invoice) === "overdue");
   const drafts = invoices.filter((invoice) => invoice.status === "draft");
-  const openMinor = sum(open);
-  const overdueMinor = sum(overdue);
+  const openMinor = owed(open);
+  const overdueMinor = owed(overdue);
   const notDueMinor = openMinor - overdueMinor;
-  const client = (contactId: string) => contactCompanyName(contactId) || "Unknown client";
+  const client = (invoice: (typeof open)[number]) =>
+    invoice.billTo?.company ||
+    invoice.billTo?.name ||
+    contactCompanyName(invoice.contactId) ||
+    contactName(invoice.contactId) ||
+    "Unknown client";
 
   const headline =
     open.length > 0
@@ -38,7 +44,7 @@ export function ReceivablesStatement() {
   const detail =
     open.length === 0
       ? drafts.length > 0
-        ? `${countLabel(drafts.length)} in draft, worth ${formatMoney(sum(drafts))}, not sent yet.`
+        ? `${countLabel(drafts.length)} in draft, worth ${formatMoney(sum(drafts))}, not issued yet.`
         : "Draft an invoice to bill a client."
       : overdue.length > 0
         ? `${countLabel(open.length)} out. ${formatMoney(overdueMinor)} is past its due date.`
@@ -82,9 +88,11 @@ export function ReceivablesStatement() {
         ) : null}
 
         <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-6">
-          <Button className="hover:bg-primary-hover" onClick={() => openQuickCreate("invoice")}>
-            <Plus data-icon="inline-start" aria-hidden />
-            New invoice
+          <Button asChild className="hover:bg-primary-hover">
+            <Link href="/money/invoices/new">
+              <Plus data-icon="inline-start" aria-hidden />
+              New invoice
+            </Link>
           </Button>
           <Link href="/money/invoices" className="font-medium text-primary hover:underline">
             View all invoices
@@ -95,7 +103,7 @@ export function ReceivablesStatement() {
       <div className="border-t bg-canvas/60 px-5 py-5 sm:px-6 lg:border-t-0 lg:border-l">
         {open.length === 0 ? (
           <p className="flex h-full min-h-24 items-center text-muted-foreground">
-            Sent invoices appear here until they are paid.
+            Issued invoices appear here until they are paid.
           </p>
         ) : (
           <>
@@ -110,7 +118,7 @@ export function ReceivablesStatement() {
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-medium group-hover:underline">
-                          {client(invoice.contactId)}
+                          {client(invoice)}
                         </span>
                         <span className="tabular block truncate text-caption text-muted-foreground">
                           {invoice.number}, {invoice.description}
@@ -118,7 +126,7 @@ export function ReceivablesStatement() {
                       </span>
                       <span className="text-right">
                         <span className="tabular block font-display text-base font-semibold">
-                          {formatMoney(invoice.amountMinor)}
+                          {formatMoney(balanceMinor(invoice))}
                         </span>
                         <span
                           className={cn(
@@ -126,7 +134,7 @@ export function ReceivablesStatement() {
                             late ? "font-medium text-danger" : "text-muted-foreground",
                           )}
                         >
-                          {describeDue(invoice.dueOn, DEMO_TODAY).label}
+                          {describeDue(invoice.dueOn).label}
                         </span>
                       </span>
                     </Link>

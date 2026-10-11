@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/sheet";
 import { ACCENTS, CURRENCY_OPTIONS, WORKSPACE_DEFAULTS } from "@/config/app";
 import { applyRuntime } from "@/lib/runtime";
-import { teamMembers as sampleTeam } from "@/mocks";
 import type { WorkspaceRecords } from "@/server/records";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { cn } from "@/lib/utils";
@@ -76,8 +75,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
       dateLocale: user.dateFormat === "mdy" ? "en-US" : "en-GB",
       weekStartsOn: user.weekStartsOn,
       timezone: workspace.timezone,
-      // Real members first; the fictional people on sample deals follow, for their names only.
-      team: [...team, ...sampleTeam],
+      team,
     });
     // Syncing React with the module-level runtime is the point of this effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -105,10 +103,11 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
 
-      <div className="flex min-h-dvh lg:h-dvh lg:overflow-hidden">
+      {/* The print: classes unwind the shell so a document prints on its own. */}
+      <div className="flex min-h-dvh lg:h-dvh lg:overflow-hidden print:block print:h-auto print:overflow-visible">
         <aside
           className={cn(
-            "hidden shrink-0 transition-[width] duration-200 lg:block",
+            "hidden shrink-0 transition-[width] duration-200 lg:block print:hidden",
             collapsed ? "w-[60px]" : "w-60",
           )}
         >
@@ -123,14 +122,14 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Navigation</SheetTitle>
-              <SheetDescription>Workspace pages and demo data settings</SheetDescription>
+              <SheetDescription>Workspace pages</SheetDescription>
             </SheetHeader>
             <Sidebar inDrawer onNavigate={() => setMobileNavOpen(false)} />
           </SheetContent>
         </Sheet>
 
-        <div className="flex min-w-0 flex-1 flex-col lg:py-2 lg:pr-2">
-          <div className="flex min-h-0 flex-1 flex-col bg-background lg:overflow-hidden lg:rounded-xl lg:border">
+        <div className="flex min-w-0 flex-1 flex-col lg:py-2 lg:pr-2 print:block print:p-0">
+          <div className="flex min-h-0 flex-1 flex-col bg-background lg:overflow-hidden lg:rounded-xl lg:border print:block print:overflow-visible print:border-0">
             <Topbar
               sidebarCollapsed={collapsed}
               onToggleSidebar={() => setCollapsed((value) => !value)}
@@ -142,7 +141,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
               key={runtimeKey}
               id="main-content"
               tabIndex={-1}
-              className="relative flex-1 outline-none lg:overflow-y-auto"
+              className="relative flex-1 outline-none lg:overflow-y-auto print:overflow-visible"
             >
               {appliedKey === runtimeKey ? children : <PageSkeleton />}
             </main>

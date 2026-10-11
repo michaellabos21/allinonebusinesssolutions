@@ -187,3 +187,36 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/*
+ * Printing an invoice or estimate: only the document itself appears, on
+ * white, so "Print" and "Save as PDF" give a clean copy of the stored record.
+ */
+/* Printing a document page: the shell and side panels carry print:hidden, so
+   only the document is left. Browsers offer "Save as PDF" from the same dialog. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: white;
+  }
+  [data-sonner-toaster] {
+    display: none;
+  }
+  .page-container:has([data-printable]) {
+    padding: 0;
+    max-width: none;
+  }
+  [data-printable] {
+    border: 0;
+    border-radius: 0;
+    background: white;
+    color: black;
+    break-inside: auto;
+  }
+  [data-printable] tr {
+    break-inside: avoid;
+  }
+}

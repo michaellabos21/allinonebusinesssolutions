@@ -27,7 +27,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
     supabase
       .from("workspace_memberships")
       .select(
-        "role, workspaces (id, name, timezone, country, currency, tax_rate_bps, payment_term_days, created_at)",
+        "role, workspaces (id, name, timezone, country, currency, tax_rate_bps, payment_term_days, invoice_prefix, estimate_prefix, created_at)",
       )
       .eq("user_id", user.id)
       .eq("status", "active"),
@@ -42,6 +42,8 @@ export const getSession = cache(async (): Promise<Session | null> => {
     currency: string;
     tax_rate_bps: number;
     payment_term_days: number;
+    invoice_prefix: string;
+    estimate_prefix: string;
     created_at: string;
   };
   const workspaces: SessionWorkspace[] = (memberships ?? [])
@@ -59,6 +61,8 @@ export const getSession = cache(async (): Promise<Session | null> => {
       currency: record.currency,
       taxRateBps: record.tax_rate_bps,
       paymentTermDays: record.payment_term_days,
+      invoicePrefix: record.invoice_prefix,
+      estimatePrefix: record.estimate_prefix,
       role,
     }));
 

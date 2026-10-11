@@ -25,20 +25,21 @@ const REAL = [
   "Team members, roles and invitations, enforced on the server and in the database.",
   "Contacts, companies, notes, the catalog, projects, tasks and the activity feed.",
   "Leads, deals, pipeline stages and public lead forms.",
+  "Estimates, invoices, payments you record, expenses with receipts, and reports.",
 ];
 
-const SIMULATED = [
-  "Invoices, expenses, reports and notifications are sample data.",
-  "Anything you add, edit or remove in those areas stays until you reload.",
-  "Marking an invoice as sent or paid only changes its status. Nothing is emailed and no money moves.",
-  "Invitation links are shown for you to send; the app does not email them yet.",
+const NOT_YET = [
+  "Nothing is emailed: invitation links, invoices and estimates are shown for you to send yourself.",
+  "Payments are recorded by hand. No money moves through this app.",
+  "Notifications are not built yet.",
+  "Tax and invoice rules differ by country. Check yours before relying on the app for compliance.",
 ];
 
 export function HelpDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Help: what is real and what is sample data">
+        <Button variant="ghost" size="icon" aria-label="Help: what works and what doesn’t yet">
           <CircleHelp aria-hidden />
         </Button>
       </DialogTrigger>
@@ -48,7 +49,7 @@ export function HelpDialog() {
           <DialogDescription>{PROTOTYPE_NOTICE}</DialogDescription>
         </DialogHeader>
         <div>
-          <h3 className="font-semibold">What is real</h3>
+          <h3 className="font-semibold">What works</h3>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
             {REAL.map((line) => (
               <li key={line}>{line}</li>
@@ -56,9 +57,9 @@ export function HelpDialog() {
           </ul>
         </div>
         <div>
-          <h3 className="font-semibold">What is still sample data</h3>
+          <h3 className="font-semibold">What it doesn’t do yet</h3>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-            {SIMULATED.map((line) => (
+            {NOT_YET.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>

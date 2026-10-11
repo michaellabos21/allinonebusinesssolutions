@@ -42,17 +42,17 @@ function ChartTooltip({
       </p>
       <p className="tabular font-semibold">{formatMoney(month.totalMinor)}</p>
       <p className="text-xs text-muted-foreground">
-        {month.invoiceCount} {month.invoiceCount === 1 ? "invoice" : "invoices"} paid
+        {month.paymentCount} {month.paymentCount === 1 ? "payment" : "payments"} recorded
       </p>
     </div>
   );
 }
 
-/** Payments received per month, from paid invoices. */
+/** Payments received per month, from recorded payments. */
 export function RevenueChart() {
-  const { invoices } = useDemoStore();
+  const { payments } = useDemoStore();
   const [months, setMonths] = useState(6);
-  const data = getRevenueByMonth(invoices, months);
+  const data = getRevenueByMonth(payments, months);
   const totalMinor = data.reduce((sum, month) => sum + month.totalMinor, 0);
   const current = data[data.length - 1];
 
@@ -62,7 +62,7 @@ export function RevenueChart() {
       description={
         totalMinor > 0
           ? `${formatMoney(totalMinor)} collected over the last ${months} months.`
-          : "Totals appear here once invoices are paid."
+          : "Totals appear here once payments are recorded."
       }
       action={
         <SegmentedControl
@@ -77,7 +77,7 @@ export function RevenueChart() {
         <EmptyState
           icon={ReceiptText}
           title="No payments recorded yet"
-          description="Marking invoices as paid arrives with the Invoices screen in a later phase."
+          description="Record a payment on an issued invoice and it shows here, in the month it was received."
           className="h-64 justify-center"
         />
       ) : (
@@ -131,7 +131,7 @@ export function RevenueChart() {
               <tr>
                 <th scope="col">Month</th>
                 <th scope="col">Collected</th>
-                <th scope="col">Invoices paid</th>
+                <th scope="col">Payments</th>
               </tr>
             </thead>
             <tbody>
@@ -142,7 +142,7 @@ export function RevenueChart() {
                     {month.partial ? " (month to date)" : ""}
                   </th>
                   <td>{formatMoney(month.totalMinor)}</td>
-                  <td>{month.invoiceCount}</td>
+                  <td>{month.paymentCount}</td>
                 </tr>
               ))}
             </tbody>

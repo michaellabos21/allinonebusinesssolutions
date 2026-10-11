@@ -8,7 +8,8 @@ import {
   getSummary,
   invoiceDisplayStatus,
 } from "@/lib/metrics";
-import { DEAL_STAGES, deals, invoices, projects, tasks } from "@/mocks";
+import { DEAL_STAGES, deals, invoices, payments, projects, tasks } from "@/mocks";
+import type { Invoice } from "@/mocks";
 
 /** The demo records double as fixtures: these are the figures the UI was reviewed against. */
 const TODAY = "2026-10-11";
@@ -21,6 +22,12 @@ describe("invoiceDisplayStatus", () => {
     expect(invoiceDisplayStatus(sent, "2026-10-01")).toBe("overdue");
   });
 
+  it("marks a part-paid invoice overdue too, but never a void one", () => {
+    const part: Invoice = { ...sent, status: "partially_paid", paidMinor: 1 };
+    expect(invoiceDisplayStatus(part, "2026-10-01")).toBe("overdue");
+    expect(invoiceDisplayStatus({ ...sent, status: "void" }, "2030-01-01")).toBe("void");
+  });
+
   it("never marks a draft or paid invoice overdue", () => {
     const paid = invoices.find((invoice) => invoice.status === "paid")!;
     const draft = invoices.find((invoice) => invoice.status === "draft")!;
@@ -31,11 +38,11 @@ describe("invoiceDisplayStatus", () => {
 
 describe("getRevenueByMonth", () => {
   it("totals payments by the month they were received", () => {
-    const months = getRevenueByMonth(invoices, 6, TODAY);
+    const months = getRevenueByMonth(payments, 6, TODAY);
     expect(months.map((month) => month.totalMinor)).toEqual([
       8_300_000, 9_050_000, 11_640_000, 10_750_000, 14_650_000, 9_610_000,
     ]);
-    expect(months.at(-1)).toMatchObject({ key: "2026-10", partial: true, invoiceCount: 2 });
+    expect(months.at(-1)).toMatchObject({ key: "2026-10", partial: true, paymentCount: 2 });
   });
 
   it("crosses a year boundary", () => {
@@ -48,7 +55,7 @@ describe("getRevenueByMonth", () => {
 });
 
 describe("getSummary", () => {
-  const summary = getSummary({ invoices, projects, tasks }, TODAY, TODAY);
+  const summary = getSummary({ invoices, payments, projects, tasks }, TODAY);
 
   it("reports collected, open and overdue invoice money", () => {
     expect(summary).toMatchObject({
@@ -68,6 +75,20 @@ describe("getSummary", () => {
       tasksDueThisWeekCount: 5,
       overdueTaskCount: 2,
     });
+  });
+
+  it("counts only what is still owed on a part-paid invoice", () => {
+    const part: Invoice = {
+      ...invoices[0],
+      status: "partially_paid",
+      amountMinor: 1000,
+      paidMinor: 300,
+      dueOn: "2026-12-01",
+    };
+    expect(
+      getSummary({ invoices: [part], payments: [], projects: [], tasks: [] }, TODAY)
+        .openInvoiceMinor,
+    ).toBe(700);
   });
 
   it("agrees with the open invoice list", () => {

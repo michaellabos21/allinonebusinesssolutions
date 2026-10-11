@@ -21,7 +21,7 @@ export function Topbar({
   onOpenMobileNav: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 sm:px-4 lg:static">
+    <header className="sticky top-0 z-30 print:hidden flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 sm:px-4 lg:static">
       <Button
         variant="ghost"
         size="icon"

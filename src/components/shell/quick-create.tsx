@@ -9,6 +9,8 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { useRouter } from "next/navigation";
+
 import { type QuickCreateKind, useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +20,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { can } from "@/server/permissions";
 
 export const QUICK_CREATE_OPTIONS: { kind: QuickCreateKind; label: string; icon: LucideIcon }[] = [
   { kind: "contact", label: "New contact", icon: UserRound },
@@ -28,7 +31,11 @@ export const QUICK_CREATE_OPTIONS: { kind: QuickCreateKind; label: string; icon:
 
 /** Topbar button that lists the record types you can create. */
 export function QuickCreateMenu() {
-  const { openQuickCreate } = useDemoStore();
+  const { openQuickCreate, account } = useDemoStore();
+  const router = useRouter();
+  const options = QUICK_CREATE_OPTIONS.filter(
+    (option) => option.kind !== "invoice" || can(account.workspace.role, "finance.manage"),
+  );
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -39,8 +46,14 @@ export function QuickCreateMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Create</DropdownMenuLabel>
-        {QUICK_CREATE_OPTIONS.map(({ kind, label, icon: Icon }) => (
-          <DropdownMenuItem key={kind} onSelect={() => openQuickCreate(kind)}>
+        {options.map(({ kind, label, icon: Icon }) => (
+          <DropdownMenuItem
+            key={kind}
+            onSelect={() =>
+              // Invoices have their own editor page; the rest open a dialog.
+              kind === "invoice" ? router.push("/money/invoices/new") : openQuickCreate(kind)
+            }
+          >
             <Icon aria-hidden />
             {label}
           </DropdownMenuItem>

@@ -96,6 +96,8 @@ export async function updateWorkspaceSettingsAction(input: unknown): Promise<Act
       currency: parsed.data.currency,
       tax_rate_bps: parsed.data.taxRateBps,
       payment_term_days: parsed.data.paymentTermDays,
+      invoice_prefix: parsed.data.invoicePrefix,
+      estimate_prefix: parsed.data.estimatePrefix,
     })
     .eq("id", session.workspace.id)
     .select("id");

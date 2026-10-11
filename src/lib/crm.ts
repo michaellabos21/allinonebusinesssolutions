@@ -1,4 +1,4 @@
-import { getOpenDeals, invoiceDisplayStatus } from "@/lib/metrics";
+import { balanceMinor, getOpenDeals, invoiceDisplayStatus } from "@/lib/metrics";
 import type { Company, Contact, Deal, Invoice, Note } from "@/mocks";
 import { memberName } from "@/lib/runtime";
 
@@ -45,7 +45,12 @@ export function getContactTimeline(
     events.push({
       id: `issued-${invoice.id}`,
       kind: "invoice",
-      title: `Invoice ${invoice.number} ${invoice.status === "draft" ? "drafted" : "sent"}`,
+      title:
+        invoice.status === "draft"
+          ? "Draft invoice started"
+          : invoice.status === "void"
+            ? `Invoice ${invoice.number} issued, later voided`
+            : `Invoice ${invoice.number} issued`,
       detail: invoice.description,
       at: invoice.issuedOn,
     });
@@ -73,9 +78,13 @@ export function getCompanyRollup(
   const contactIds = new Set(
     contacts.filter((contact) => contact.companyId === company.id).map((contact) => contact.id),
   );
-  const companyInvoices = invoices.filter((invoice) => contactIds.has(invoice.contactId));
-  const billed = companyInvoices.filter((invoice) => invoice.status !== "draft");
-  const unpaid = billed.filter((invoice) => invoice.status === "sent");
+  const companyInvoices = invoices.filter(
+    (invoice) => invoice.contactId !== null && contactIds.has(invoice.contactId),
+  );
+  const billed = companyInvoices.filter(
+    (invoice) => invoice.status !== "draft" && invoice.status !== "void",
+  );
+  const unpaid = billed.filter((invoice) => balanceMinor(invoice) > 0);
   const companyDeals = deals.filter((deal) => deal.companyId === company.id && !deal.archived);
   const openDeals = getOpenDeals(companyDeals);
   const sum = (items: { amountMinor: number }[]) =>
@@ -89,7 +98,7 @@ export function getCompanyRollup(
     openDealCount: openDeals.length,
     openDealMinor: openDeals.reduce((total, deal) => total + deal.valueMinor, 0),
     billedMinor: sum(billed),
-    unpaidMinor: sum(unpaid),
+    unpaidMinor: unpaid.reduce((total, invoice) => total + balanceMinor(invoice), 0),
     overdueCount: unpaid.filter((invoice) => invoiceDisplayStatus(invoice) === "overdue").length,
   };
 }

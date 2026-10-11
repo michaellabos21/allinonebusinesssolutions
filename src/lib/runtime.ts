@@ -48,9 +48,8 @@ export const memberName = (id: string) =>
   runtime.team.find((member) => member.id === id)?.name ?? "Unassigned";
 
 /**
- * Today's date (`YYYY-MM-DD`) in the workspace's time zone. Real records use
- * this for "overdue", "due today" and defaults. The sample deals, invoices and
- * expenses use the fixed `DEMO_TODAY` instead, so their figures stay stable.
+ * Today's date (`YYYY-MM-DD`) in the workspace's time zone, used for
+ * "overdue", "due today", "expired" and form defaults.
  */
 export function getToday(now: Date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
