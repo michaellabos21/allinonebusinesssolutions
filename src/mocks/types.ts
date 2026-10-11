@@ -293,11 +293,29 @@ export type ActivityEntry = {
   taskId?: string;
 };
 
+export type NotificationKind =
+  | "task_assigned"
+  | "task_mentioned"
+  | "task_comment"
+  | "task_due"
+  | "invoice_paid"
+  | "invoice_overdue"
+  | "lead_new";
+
 export type Notification = {
   id: string;
+  kind: NotificationKind;
   title: string;
   body: string;
   at: string;
   href: string;
   read: boolean;
+};
+
+/** The bell's contents: the latest notifications and how many are unread in all. */
+export type NotificationFeed = {
+  items: Notification[];
+  unread: number;
+  /** When the server read them, so the newest copy wins on the client. */
+  loadedAt: number;
 };

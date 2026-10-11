@@ -96,10 +96,13 @@ export const preferencesSchema = z.object({
 });
 
 export const NOTIFICATION_COLUMNS = {
-  invoiceOverdue: "notify_invoice_overdue",
-  paymentReceived: "notify_payment_received",
-  taskDue: "notify_task_due",
+  taskAssigned: "notify_task_assigned",
   mentions: "notify_mentions",
+  taskComments: "notify_task_comments",
+  taskDue: "notify_task_due",
+  paymentReceived: "notify_payment_received",
+  invoiceOverdue: "notify_invoice_overdue",
+  newLeads: "notify_new_leads",
   weeklySummary: "notify_weekly_summary",
 } as const;
 

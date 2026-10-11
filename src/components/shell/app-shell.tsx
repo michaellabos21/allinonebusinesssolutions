@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sheet";
 import { ACCENTS, CURRENCY_OPTIONS, WORKSPACE_DEFAULTS } from "@/config/app";
 import { applyRuntime } from "@/lib/runtime";
+import type { NotificationFeed } from "@/mocks/types";
 import type { WorkspaceRecords } from "@/server/records";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { cn } from "@/lib/utils";
@@ -28,15 +29,22 @@ import { cn } from "@/lib/utils";
 export function AppShell({
   account,
   records,
+  notifications,
   children,
 }: {
   account: Account;
   records: WorkspaceRecords;
+  notifications: NotificationFeed;
   children: React.ReactNode;
 }) {
   return (
     // Keyed on the workspace: switching workspace starts the sample records afresh.
-    <DemoStoreProvider key={account.workspace.id} account={account} records={records}>
+    <DemoStoreProvider
+      key={account.workspace.id}
+      account={account}
+      records={records}
+      notifications={notifications}
+    >
       <ShellFrame>{children}</ShellFrame>
     </DemoStoreProvider>
   );

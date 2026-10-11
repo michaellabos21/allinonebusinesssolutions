@@ -13,4 +13,4 @@ export { invoices, payments } from "./invoices";
 export { catalogItems } from "./catalog";
 export { expenses, EXPENSE_CATEGORIES } from "./expenses";
 export { deals, DEAL_STAGES, OPEN_DEAL_STAGES } from "./deals";
-export { activity, notifications } from "./activity";
+export { activity } from "./activity";
