@@ -15,12 +15,18 @@
 
 export type LineInput = { quantityMilli: number; unitPriceMinor: number };
 
+// BigInt(…) rather than literals like 2n: the TypeScript target predates them.
+const TWO = BigInt(2);
+const ZERO = BigInt(0);
+const THOUSAND = BigInt(1000);
+const TEN_THOUSAND = BigInt(10_000);
+
 /** Integer division of non-negative BigInts, rounding half up. */
 const divideRounded = (numerator: bigint, denominator: bigint) =>
-  (numerator * 2n + denominator) / (denominator * 2n);
+  (numerator * TWO + denominator) / (denominator * TWO);
 
 export function lineTotalMinor({ quantityMilli, unitPriceMinor }: LineInput) {
-  return Number(divideRounded(BigInt(quantityMilli) * BigInt(unitPriceMinor), 1000n));
+  return Number(divideRounded(BigInt(quantityMilli) * BigInt(unitPriceMinor), THOUSAND));
 }
 
 export type InvoiceTotals = {
@@ -35,10 +41,10 @@ export function computeInvoiceTotals(
   discountMinor = 0,
   taxRateBps = 0,
 ): InvoiceTotals {
-  const subtotal = items.reduce((total, item) => total + BigInt(lineTotalMinor(item)), 0n);
+  const subtotal = items.reduce((total, item) => total + BigInt(lineTotalMinor(item)), ZERO);
   const discount = BigInt(Math.min(Math.max(discountMinor, 0), Number(subtotal)));
   const taxable = subtotal - discount;
-  const tax = divideRounded(taxable * BigInt(taxRateBps), 10_000n);
+  const tax = divideRounded(taxable * BigInt(taxRateBps), TEN_THOUSAND);
   return {
     subtotalMinor: Number(subtotal),
     discountMinor: Number(discount),

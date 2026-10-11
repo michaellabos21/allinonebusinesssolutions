@@ -61,7 +61,7 @@ const DATABASE_RULES: Record<string, { error: string; field?: string }> = {
   },
   stage_kind_in_use: { error: "Deals have used this stage, so its type can’t change." },
   invalid_stage_list: { error: "The stage list changed. Reload the page and try again." },
-  already_converted: { error: "This lead has already been converted." },
+  already_converted: { error: "This has already been converted. Reload to see the result." },
   lead_archived: { error: "Restore this lead before converting it." },
   email_required: {
     error: "Add the lead’s email, or choose an existing contact, to convert it.",

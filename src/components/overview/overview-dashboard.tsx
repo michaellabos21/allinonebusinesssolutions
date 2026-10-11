@@ -17,6 +17,7 @@ export function OverviewDashboard({ sampleDataAvailable }: { sampleDataAvailable
   const { account, contacts, projects, tasks } = useDemoStore();
   const { workspace } = account;
   const firstName = account.user.fullName.split(" ")[0];
+  const seesFinance = can(workspace.role, "finance.manage");
   const setUp = contacts.length > 0 && projects.length > 0 && tasks.length > 0;
 
   if (!can(workspace.role, "records.view")) {
@@ -40,14 +41,19 @@ export function OverviewDashboard({ sampleDataAvailable }: { sampleDataAvailable
 
       {setUp ? null : <GettingStarted sampleDataAvailable={sampleDataAvailable} />}
 
-      <ReceivablesStatement />
-      <SummaryStrip />
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <RevenueChart />
+      {/* Money owed and received is for finance roles only. */}
+      {seesFinance ? <ReceivablesStatement /> : null}
+      <SummaryStrip showFinance={seesFinance} />
+      {seesFinance ? (
+        <div className="grid gap-6 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <RevenueChart />
+          </div>
+          <PipelineSummary />
         </div>
+      ) : (
         <PipelineSummary />
-      </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-2">
         <UpcomingTasks />
         <RecentActivity />

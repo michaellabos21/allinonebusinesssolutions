@@ -3,6 +3,8 @@ import { getToday } from "@/lib/runtime";
 import {
   type Deal,
   type DealStage,
+  type Estimate,
+  type EstimateDisplayStatus,
   type Invoice,
   type InvoiceDisplayStatus,
   type Payment,
@@ -30,6 +32,15 @@ export function invoiceDisplayStatus(
 ): InvoiceDisplayStatus {
   if (isOpen(invoice) && daysBetween(invoice.dueOn, today) > 0) return "overdue";
   return invoice.status;
+}
+
+/** A sent estimate past its "valid until" date shows as expired; it can still be accepted. */
+export function estimateDisplayStatus(
+  estimate: Estimate,
+  today: string = getToday(),
+): EstimateDisplayStatus {
+  if (estimate.status === "sent" && daysBetween(estimate.validUntil, today) > 0) return "expired";
+  return estimate.status;
 }
 
 const sumBalances = (invoices: Invoice[]) =>

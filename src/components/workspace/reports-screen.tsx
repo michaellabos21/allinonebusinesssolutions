@@ -25,15 +25,16 @@ import {
   getRange,
   getTaskLoad,
 } from "@/lib/reports";
-import { getToday } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 import type { InvoiceDisplayStatus } from "@/mocks";
 
 const STATUS_SWATCH: Record<InvoiceDisplayStatus, string> = {
   paid: "bg-success",
+  partially_paid: "bg-[var(--chart-2)]",
   sent: "bg-[var(--chart-1)]",
   overdue: "bg-danger",
   draft: "bg-input",
+  void: "bg-muted-foreground/40",
 };
 
 function FlowTooltip({
@@ -68,17 +69,16 @@ function FlowTooltip({
 }
 
 export function ReportsScreen() {
-  const { invoices, expenses, tasks, projects } = useDemoStore();
+  const { invoices, payments, expenses, tasks, projects } = useDemoStore();
   const [rangeId, setRangeId] = useState<RangeId>("last-6");
   const range = getRange(rangeId);
 
-  const headline = getHeadline(invoices, expenses, range);
-  const flow = getMoneyFlow(invoices, expenses, range);
+  const headline = getHeadline(invoices, payments, expenses, range);
+  const flow = getMoneyFlow(payments, expenses, range);
   const statuses = getInvoiceStatusBreakdown(invoices, range);
   const issuedCount = statuses.reduce((total, row) => total + row.count, 0);
   const issuedMinor = statuses.reduce((total, row) => total + row.amountMinor, 0);
-  // Tasks and projects are real, so their panels count back from the real date.
-  const taskLoad = getTaskLoad(tasks, getRange(rangeId, getToday()));
+  const taskLoad = getTaskLoad(tasks, range);
   const busiest = Math.max(...taskLoad.map((row) => row.done + row.open), 1);
   const projectRows = getProjectReport(projects, tasks, expenses, range);
   const categories = getExpenseCategories(expenses, range);
@@ -93,15 +93,18 @@ export function ReportsScreen() {
     },
     {
       label: "Invoiced",
-      value: headline.billedMinor,
-      note: `${headline.billedCount} ${headline.billedCount === 1 ? "invoice" : "invoices"} sent in this period.`,
+      value: headline.invoicedMinor,
+      note: `${headline.invoicedCount} ${headline.invoicedCount === 1 ? "invoice" : "invoices"} issued in this period, not counting voided ones.`,
     },
-    { label: "Expenses", value: headline.expenseMinor, note: "Spending dated in this period." },
     {
-      label: "Net",
-      value: headline.netMinor,
-      note: "Collected minus expenses.",
-      negative: headline.netMinor < 0,
+      label: "Outstanding today",
+      value: headline.outstandingMinor,
+      note: `Still owed on ${headline.outstandingCount} open ${headline.outstandingCount === 1 ? "invoice" : "invoices"}, whenever issued.`,
+    },
+    {
+      label: "Expenses",
+      value: headline.expenseMinor,
+      note: "Spending dated in this period, not counting archived entries.",
     },
   ];
 
@@ -109,7 +112,7 @@ export function ReportsScreen() {
     <div className="page-container space-y-6">
       <PageHeader
         title="Reports"
-        description={`${range.label}: ${formatDate(range.from, "long")} to ${formatDate(range.to, "long")}. Every figure is computed from the records in this workspace.`}
+        description={`${range.label}: ${formatDate(range.from, "long")} to ${formatDate(range.to, "long")}. These are cash figures from the records in this workspace, not accounts or tax figures.`}
         actions={
           <SegmentedControl
             label="Date range"
@@ -125,7 +128,7 @@ export function ReportsScreen() {
           <EmptyState
             icon={ChartColumn}
             title="Nothing to report yet"
-            description="Reports fill in as you add invoices, expenses, projects and tasks. Turn demo data on in the sidebar to see them with sample records."
+            description="Reports fill in as you add invoices, payments, expenses, projects and tasks."
             className="py-16"
           />
         </div>
@@ -140,12 +143,7 @@ export function ReportsScreen() {
                 <div key={figure.label} className="-mt-px -ml-px border-t border-l px-5 py-4">
                   <dt className="text-muted-foreground">{figure.label}</dt>
                   <dd className="mt-1">
-                    <span
-                      className={cn(
-                        "block font-display text-figure",
-                        figure.negative && "text-danger",
-                      )}
-                    >
+                    <span className="block font-display text-figure">
                       {formatMoney(figure.value)}
                     </span>
                     <span className="mt-1 block text-caption text-muted-foreground">
@@ -159,7 +157,7 @@ export function ReportsScreen() {
 
           <Panel
             title="Money in and out"
-            description="Payments received against expenses paid, by month."
+            description="Payments received against expenses paid, by month. The difference is cash in minus cash out, not profit."
             action={
               <ul className="flex items-center gap-4 text-caption" aria-label="Legend">
                 <li className="flex items-center gap-1.5">
@@ -217,7 +215,9 @@ export function ReportsScreen() {
               </div>
               <div className="relative overflow-x-auto">
                 <table className="w-full border-collapse text-left">
-                  <caption className="sr-only">Collected, expenses and net by month</caption>
+                  <caption className="sr-only">
+                    Collected, expenses and the difference by month
+                  </caption>
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
                       <th scope="col" className="py-2 pr-3 font-medium">
@@ -230,7 +230,7 @@ export function ReportsScreen() {
                         Expenses
                       </th>
                       <th scope="col" className="py-2 text-right font-medium">
-                        Net
+                        Difference
                       </th>
                     </tr>
                   </thead>
@@ -265,8 +265,8 @@ export function ReportsScreen() {
               title="Invoice status"
               description={
                 issuedCount > 0
-                  ? `${issuedCount} ${issuedCount === 1 ? "invoice" : "invoices"} dated in this period, worth ${formatMoney(issuedMinor)}, by where they stand today.`
-                  : "No invoices are dated in this period."
+                  ? `${issuedCount} ${issuedCount === 1 ? "invoice" : "invoices"} issued in this period, worth ${formatMoney(issuedMinor)}, by where they stand today.`
+                  : "No invoices were issued in this period."
               }
               action={
                 <Link

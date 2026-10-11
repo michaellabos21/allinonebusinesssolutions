@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/sheet";
 import { ACCENTS, CURRENCY_OPTIONS, WORKSPACE_DEFAULTS } from "@/config/app";
 import { applyRuntime } from "@/lib/runtime";
-import { teamMembers as sampleTeam } from "@/mocks";
 import type { WorkspaceRecords } from "@/server/records";
 import { useFocusReturn } from "@/lib/use-focus-return";
 import { cn } from "@/lib/utils";
@@ -76,8 +75,7 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
       dateLocale: user.dateFormat === "mdy" ? "en-US" : "en-GB",
       weekStartsOn: user.weekStartsOn,
       timezone: workspace.timezone,
-      // Real members first; the fictional people on sample deals follow, for their names only.
-      team: [...team, ...sampleTeam],
+      team,
     });
     // Syncing React with the module-level runtime is the point of this effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect

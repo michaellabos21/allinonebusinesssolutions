@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ChartColumn,
   FileInput,
+  FileText,
   FolderKanban,
   Handshake,
   Inbox,
@@ -17,7 +18,11 @@ import {
   Wallet,
 } from "lucide-react";
 
+import type { Action } from "@/server/permissions";
+
 export type NavItem = {
+  /** Shown only to roles allowed this action; everyone else doesn't see the link. */
+  requires?: Action;
   title: string;
   href: string;
   icon: LucideIcon;
@@ -116,6 +121,15 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Money",
     items: [
       {
+        requires: "finance.manage",
+        title: "Estimates",
+        href: "/money/estimates",
+        icon: FileText,
+        summary: "Quotes for clients that become invoices once accepted.",
+        phase: 4,
+      },
+      {
+        requires: "finance.manage",
         title: "Invoices",
         href: "/money/invoices",
         icon: ReceiptText,
@@ -123,6 +137,7 @@ export const NAV_GROUPS: NavGroup[] = [
         phase: 4,
       },
       {
+        requires: "finance.manage",
         title: "Expenses",
         href: "/money/expenses",
         icon: Wallet,
@@ -147,6 +162,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Workspace",
     items: [
       {
+        requires: "finance.manage",
         title: "Reports",
         href: "/reports",
         icon: ChartColumn,

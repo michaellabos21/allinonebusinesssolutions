@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Eye, Pencil, Plus, ReceiptText, SearchX, Send } from "lucide-react";
+import { Ban, BadgeCheck, Eye, Pencil, Plus, ReceiptText, SearchX, Send } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -10,12 +10,12 @@ import { RowActions } from "@/components/common/row-actions";
 import { EmptyState } from "@/components/common/states";
 import { InvoiceStatusBadge } from "@/components/common/status-badge";
 import { SearchInput, TableToolbar } from "@/components/common/table-toolbar";
-import { PaymentDialog, useInvoiceActions } from "@/components/money/invoice-actions";
+import { InvoiceActionDialogs, useInvoiceActions } from "@/components/money/invoice-actions";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
-import { DEMO_TODAY } from "@/config/app";
 import { describeDue, formatDate, formatMoney } from "@/lib/format";
-import { invoiceDisplayStatus } from "@/lib/metrics";
+import { balanceMinor, invoiceDisplayStatus } from "@/lib/metrics";
+import { getToday } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 import { formatMonthName } from "@/lib/work";
 import type { Invoice, InvoiceDisplayStatus } from "@/mocks";
@@ -24,19 +24,22 @@ type Tab = "all" | InvoiceDisplayStatus;
 const TABS: { value: Tab; label: string }[] = [
   { value: "all", label: "All" },
   { value: "draft", label: "Draft" },
-  { value: "sent", label: "Sent" },
+  { value: "sent", label: "Issued" },
+  { value: "partially_paid", label: "Part paid" },
   { value: "overdue", label: "Overdue" },
   { value: "paid", label: "Paid" },
+  { value: "void", label: "Void" },
 ];
 
 type InvoiceRow = Invoice & { display: InvoiceDisplayStatus; client: string };
 
 const sum = (rows: { amountMinor: number }[]) =>
   rows.reduce((total, row) => total + row.amountMinor, 0);
+const owed = (rows: InvoiceRow[]) => rows.reduce((total, row) => total + balanceMinor(row), 0);
 const countLabel = (count: number) => `${count} ${count === 1 ? "invoice" : "invoices"}`;
 
 export function InvoicesScreen() {
-  const { invoices, contactCompanyName, contacts } = useDemoStore();
+  const { invoices, payments, contactCompanyName, contactName } = useDemoStore();
   const actions = useInvoiceActions();
   const [tab, setTab] = useState<Tab>("all");
   const [query, setQuery] = useState("");
@@ -47,18 +50,20 @@ export function InvoicesScreen() {
         ...invoice,
         display: invoiceDisplayStatus(invoice),
         client:
+          invoice.billTo?.company ||
+          invoice.billTo?.name ||
           contactCompanyName(invoice.contactId) ||
-          contacts.find((contact) => contact.id === invoice.contactId)?.name ||
-          "Unknown client",
+          contactName(invoice.contactId) ||
+          "No client yet",
       })),
-    [invoices, contacts, contactCompanyName],
+    [invoices, contactName, contactCompanyName],
   );
 
   const searched = useMemo(() => {
     const text = query.trim().toLowerCase();
     return text
       ? all.filter((row) =>
-          [row.number, row.client, row.description].some((value) =>
+          [row.number ?? "draft", row.client, row.description].some((value) =>
             value.toLowerCase().includes(text),
           ),
         )
@@ -66,20 +71,37 @@ export function InvoicesScreen() {
   }, [all, query]);
   const rows = tab === "all" ? searched : searched.filter((row) => row.display === tab);
 
-  const month = DEMO_TODAY.slice(0, 7);
-  const unpaid = all.filter((row) => row.status === "sent");
+  const month = getToday().slice(0, 7);
+  const unpaid = all.filter((row) => balanceMinor(row) > 0);
   const overdue = all.filter((row) => row.display === "overdue");
-  const paidThisMonth = all.filter((row) => row.paidOn?.startsWith(month));
+  const receivedThisMonth = payments.filter((payment) => payment.paidOn.startsWith(month));
   const drafts = all.filter((row) => row.status === "draft");
   const figures = [
-    { label: "Awaiting payment", rows: unpaid, note: "Sent and not yet paid, including overdue." },
-    { label: "Overdue", rows: overdue, note: "Past the due date.", alert: overdue.length > 0 },
     {
-      label: "Paid this month",
-      rows: paidThisMonth,
-      note: `Payments recorded in ${formatMonthName(month)}.`,
+      label: "Still owed",
+      amount: owed(unpaid),
+      count: countLabel(unpaid.length),
+      note: "Issued and not fully paid, including overdue.",
     },
-    { label: "Drafts", rows: drafts, note: "Not sent yet." },
+    {
+      label: "Overdue",
+      amount: owed(overdue),
+      count: countLabel(overdue.length),
+      note: "Past the due date.",
+      alert: overdue.length > 0,
+    },
+    {
+      label: "Received this month",
+      amount: sum(receivedThisMonth),
+      count: `${receivedThisMonth.length} ${receivedThisMonth.length === 1 ? "payment" : "payments"}`,
+      note: `Recorded in ${formatMonthName(month)}.`,
+    },
+    {
+      label: "Drafts",
+      amount: sum(drafts),
+      count: countLabel(drafts.length),
+      note: "Not issued yet.",
+    },
   ];
 
   const columns = useMemo<Column<InvoiceRow>[]>(
@@ -87,14 +109,14 @@ export function InvoicesScreen() {
       {
         id: "number",
         header: "Invoice",
-        sortValue: (row) => row.number,
+        sortValue: (row) => row.number ?? "",
         cell: (row) => (
           <div className="min-w-32">
             <Link
               href={`/money/invoices/${row.id}`}
               className="tabular font-medium hover:underline"
             >
-              {row.number}
+              {row.number ?? "Draft"}
             </Link>
             <span className="block max-w-56 truncate text-caption text-muted-foreground">
               {row.description}
@@ -133,7 +155,7 @@ export function InvoicesScreen() {
             )}
           >
             {row.display === "overdue"
-              ? describeDue(row.dueOn, DEMO_TODAY).label
+              ? describeDue(row.dueOn).label
               : formatDate(row.dueOn, "long")}
           </span>
         ),
@@ -149,7 +171,16 @@ export function InvoicesScreen() {
         header: "Total",
         align: "right",
         sortValue: (row) => row.amountMinor,
-        cell: (row) => <span className="whitespace-nowrap">{formatMoney(row.amountMinor)}</span>,
+        cell: (row) => (
+          <span className="whitespace-nowrap">
+            {formatMoney(row.amountMinor, { currency: row.currency })}
+            {row.status === "partially_paid" ? (
+              <span className="block text-caption text-muted-foreground">
+                {formatMoney(balanceMinor(row), { currency: row.currency })} owed
+              </span>
+            ) : null}
+          </span>
+        ),
       },
       {
         id: "actions",
@@ -158,21 +189,31 @@ export function InvoicesScreen() {
         align: "right",
         cell: (row) => (
           <RowActions
-            label={`Actions for ${row.number}`}
+            label={`Actions for ${row.number ?? "draft invoice"}`}
             actions={[
               { label: "View", icon: Eye, href: `/money/invoices/${row.id}` },
               ...(row.status === "draft"
                 ? [
                     { label: "Edit draft", icon: Pencil, href: `/money/invoices/${row.id}/edit` },
-                    { label: "Mark as sent", icon: Send, onSelect: () => actions.markSent(row) },
+                    { label: "Issue", icon: Send, onSelect: () => actions.askIssue(row) },
                   ]
                 : []),
-              ...(row.status === "sent"
+              ...(row.status === "sent" || row.status === "partially_paid"
                 ? [
                     {
                       label: "Record payment",
                       icon: BadgeCheck,
                       onSelect: () => actions.askPayment(row),
+                    },
+                  ]
+                : []),
+              ...(row.status === "sent"
+                ? [
+                    {
+                      label: "Void",
+                      icon: Ban,
+                      destructive: true,
+                      onSelect: () => actions.askVoid(row),
                     },
                   ]
                 : []),
@@ -186,14 +227,14 @@ export function InvoicesScreen() {
 
   const table = useTableState(rows, columns, {
     pageSize: 10,
-    initialSort: { id: "number", direction: "desc" },
+    initialSort: { id: "issued", direction: "desc" },
   });
 
   return (
     <div className="page-container space-y-5">
       <PageHeader
         title="Invoices"
-        description="Draft, send and track what clients owe. Sending and payments are simulated in this prototype."
+        description="Draft, issue and track what clients owe. Payments are recorded by hand; nothing is emailed or charged."
         actions={
           <Button asChild className="hover:bg-primary-hover">
             <Link href="/money/invoices/new">
@@ -209,7 +250,7 @@ export function InvoicesScreen() {
           <EmptyState
             icon={ReceiptText}
             title="No invoices yet"
-            description="Create your first invoice, or turn demo data on in the sidebar."
+            description="Create your first invoice, or turn an accepted estimate into one."
             action={
               <Button asChild variant="outline">
                 <Link href="/money/invoices/new">New invoice</Link>
@@ -227,7 +268,7 @@ export function InvoicesScreen() {
                   <dt className="text-muted-foreground">{figure.label}</dt>
                   <dd className="mt-1">
                     <span className="block font-display text-figure">
-                      {formatMoney(sum(figure.rows))}
+                      {formatMoney(figure.amount)}
                     </span>
                     <span
                       className={cn(
@@ -235,7 +276,7 @@ export function InvoicesScreen() {
                         figure.alert ? "font-medium text-danger" : "text-muted-foreground",
                       )}
                     >
-                      {countLabel(figure.rows.length)}. {figure.note}
+                      {figure.count}. {figure.note}
                     </span>
                   </dd>
                 </div>
@@ -317,7 +358,7 @@ export function InvoicesScreen() {
         </>
       )}
 
-      <PaymentDialog {...actions.paymentDialog} />
+      <InvoiceActionDialogs {...actions.dialogs} />
     </div>
   );
 }

@@ -187,3 +187,24 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/*
+ * Printing an invoice or estimate: only the document itself appears, on
+ * white, so "Print" and "Save as PDF" give a clean copy of the stored record.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  [data-printable],
+  [data-printable] * {
+    visibility: visible;
+  }
+  [data-printable] {
+    position: absolute;
+    inset: 0 0 auto 0;
+    border: 0;
+    background: white;
+    color: black;
+  }
+}

@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEMO_TODAY } from "@/config/app";
 import { formatRelativeDay } from "@/lib/format";
+import { getToday } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 
 export function NotificationsMenu() {
@@ -84,7 +84,7 @@ export function NotificationsMenu() {
                   </span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatRelativeDay(notification.at, DEMO_TODAY)}
+                  {formatRelativeDay(notification.at, getToday())}
                 </span>
               </DropdownMenuItem>
             ))}
@@ -92,7 +92,7 @@ export function NotificationsMenu() {
         )}
         <DropdownMenuSeparator className="my-0" />
         <p className="px-3 py-2 text-xs text-muted-foreground">
-          Demo notifications. No emails or push alerts are sent.
+          Notifications are not built yet. No emails or push alerts are sent.
         </p>
       </DropdownMenuContent>
     </DropdownMenu>

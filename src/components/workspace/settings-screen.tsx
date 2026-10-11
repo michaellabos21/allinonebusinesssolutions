@@ -218,11 +218,15 @@ function WorkspaceSection() {
   const [currency, setCurrency] = useState(workspace.currency);
   const [taxRateBps, setTaxRateBps] = useState(String(workspace.taxRateBps));
   const [terms, setTerms] = useState(String(workspace.paymentTermDays));
+  const [invoicePrefix, setInvoicePrefix] = useState(workspace.invoicePrefix);
+  const [estimatePrefix, setEstimatePrefix] = useState(workspace.estimatePrefix);
   const dirty =
     name !== workspace.name ||
     currency !== workspace.currency ||
     taxRateBps !== String(workspace.taxRateBps) ||
-    terms !== String(workspace.paymentTermDays);
+    terms !== String(workspace.paymentTermDays) ||
+    invoicePrefix !== workspace.invoicePrefix ||
+    estimatePrefix !== workspace.estimatePrefix;
 
   return (
     <SectionCard
@@ -234,7 +238,14 @@ function WorkspaceSection() {
         onSubmit={(event) => {
           event.preventDefault();
           save(() =>
-            updateWorkspaceSettingsAction({ name, currency, taxRateBps, paymentTermDays: terms }),
+            updateWorkspaceSettingsAction({
+              name,
+              currency,
+              taxRateBps,
+              paymentTermDays: terms,
+              invoicePrefix,
+              estimatePrefix,
+            }),
           );
         }}
       >
@@ -289,7 +300,7 @@ function WorkspaceSection() {
             id={`${id}-tax`}
             label="Default tax on new invoices"
             error={errors.taxRateBps}
-            hint="Demo rates only, not tax advice."
+            hint="A starting point you can change on each invoice. Check your local rules; this is not tax advice."
           >
             <Select value={taxRateBps} onValueChange={setTaxRateBps} disabled={!editable}>
               <SelectTrigger
@@ -326,6 +337,44 @@ function WorkspaceSection() {
                 errors.paymentTermDays
                   ? `${id}-paymentTermDays-error`
                   : `${id}-paymentTermDays-hint`
+              }
+            />
+          </Field>
+          <Field
+            id={`${id}-invoicePrefix`}
+            label="Invoice number prefix"
+            error={errors.invoicePrefix}
+            hint={`Invoice numbers will look like ${invoicePrefix}0001. Changing it doesn’t renumber issued invoices.`}
+          >
+            <Input
+              id={`${id}-invoicePrefix`}
+              value={invoicePrefix}
+              maxLength={12}
+              autoComplete="off"
+              className="tabular"
+              onChange={(event) => setInvoicePrefix(event.target.value)}
+              aria-invalid={Boolean(errors.invoicePrefix)}
+              aria-describedby={
+                errors.invoicePrefix ? `${id}-invoicePrefix-error` : `${id}-invoicePrefix-hint`
+              }
+            />
+          </Field>
+          <Field
+            id={`${id}-estimatePrefix`}
+            label="Estimate number prefix"
+            error={errors.estimatePrefix}
+            hint={`Estimate numbers will look like ${estimatePrefix}0001.`}
+          >
+            <Input
+              id={`${id}-estimatePrefix`}
+              value={estimatePrefix}
+              maxLength={12}
+              autoComplete="off"
+              className="tabular"
+              onChange={(event) => setEstimatePrefix(event.target.value)}
+              aria-invalid={Boolean(errors.estimatePrefix)}
+              aria-describedby={
+                errors.estimatePrefix ? `${id}-estimatePrefix-error` : `${id}-estimatePrefix-hint`
               }
             />
           </Field>

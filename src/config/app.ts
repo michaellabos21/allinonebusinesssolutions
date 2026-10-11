@@ -8,7 +8,7 @@ export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
 /** Shown anywhere the UI needs to explain that nothing is persisted. */
 export const PROTOTYPE_NOTICE =
-  "Accounts, workspaces and teams are real and saved. Business records are still sample data while each area is connected to the database.";
+  "Everything you add is saved to your workspace. This is an early version: some areas, like notifications and the client portal, are not built yet.";
 
 /** Workspace-level formatting defaults (editable in a later settings phase). */
 export const WORKSPACE_DEFAULTS = {
@@ -75,12 +75,6 @@ export const TAX_OPTIONS = [
   { bps: 0, label: "No tax" },
   { bps: 1200, label: "VAT 12%" },
 ] as const;
-
-/**
- * The demo data is written around a fixed "today" so that due dates, overdue
- * invoices and month-to-date totals always reconcile, whenever the app is run.
- */
-export const DEMO_TODAY = "2026-10-11";
 
 /** Countries offered when creating a workspace. ISO 3166-1 alpha-2 codes. */
 export const COUNTRY_OPTIONS = [

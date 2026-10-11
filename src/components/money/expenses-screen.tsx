@@ -1,7 +1,17 @@
 "use client";
 
-import { Pencil, Plus, SearchX, Trash2, Wallet } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Eye,
+  Paperclip,
+  Pencil,
+  Plus,
+  SearchX,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,22 +25,39 @@ import { Pill } from "@/components/common/status-badge";
 import { FilterMenu, SearchInput, TableToolbar } from "@/components/common/table-toolbar";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
-import { DEMO_TODAY } from "@/config/app";
+import { ReceiptDialog, openReceipt } from "@/components/money/receipt-dialog";
+import { PAYMENT_METHOD_LABEL } from "@/components/money/invoice-actions";
 import { formatDate, formatMoney } from "@/lib/format";
+import { runAction } from "@/lib/run-action";
+import { getToday } from "@/lib/runtime";
 import { formatMonth, shiftMonth } from "@/lib/work";
 import { EXPENSE_CATEGORIES, type Expense } from "@/mocks";
+import { setExpenseArchivedAction } from "@/server/actions/finance";
 
 const sum = (rows: Expense[]) => rows.reduce((total, row) => total + row.amountMinor, 0);
+const setArchived = (id: string, archived: boolean) =>
+  runAction(setExpenseArchivedAction({ id, archived }));
 
 export function ExpensesScreen() {
-  const { expenses, projects, openQuickCreate, openEditor, removeExpense, saveExpense } =
-    useDemoStore();
+  const { expenses: allExpenses, projects, openQuickCreate, openEditor } = useDemoStore();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [period, setPeriod] = useState("all");
-  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const [showArchived, setShowArchived] = useState("live");
+  const [archiveTarget, setArchiveTarget] = useState<Expense | null>(null);
 
-  const thisMonth = DEMO_TODAY.slice(0, 7);
+  // The expense whose receipt is being attached lives in the address, so the
+  // "Attach a receipt" link after saving an expense opens it here.
+  const receiptTarget = allExpenses.find((item) => item.id === searchParams.get("receipt"));
+  const setReceiptTarget = (id: string | null) =>
+    router.replace(id ? `${pathname}?receipt=${id}` : pathname, { scroll: false });
+
+  const live = allExpenses.filter((expense) => !expense.archived);
+  const expenses = showArchived === "archived" ? allExpenses.filter((e) => e.archived) : live;
+  const thisMonth = getToday().slice(0, 7);
   const lastMonth = shiftMonth(thisMonth, -1);
   const periodOptions = [
     { value: "all", label: "All time" },
@@ -39,7 +66,7 @@ export function ExpensesScreen() {
   ];
   const categoryOptions = [
     { value: "all", label: "All" },
-    ...[...new Set([...EXPENSE_CATEGORIES, ...expenses.map((expense) => expense.category)])].map(
+    ...[...new Set([...EXPENSE_CATEGORIES, ...allExpenses.map((expense) => expense.category)])].map(
       (name) => ({
         value: name,
         label: name,
@@ -94,6 +121,12 @@ export function ExpensesScreen() {
         cell: (expense) => (
           <div className="min-w-36">
             <span className="font-medium">{expense.vendor}</span>
+            {expense.receiptPath ? (
+              <Paperclip
+                className="ml-1.5 inline size-3.5 text-muted-foreground"
+                aria-label="Receipt attached"
+              />
+            ) : null}
             <span className="block max-w-72 truncate text-caption text-muted-foreground">
               {expense.description}
             </span>
@@ -127,7 +160,12 @@ export function ExpensesScreen() {
         align: "right",
         sortValue: (expense) => expense.amountMinor,
         cell: (expense) => (
-          <span className="whitespace-nowrap">{formatMoney(expense.amountMinor)}</span>
+          <span className="whitespace-nowrap">
+            {formatMoney(expense.amountMinor, { currency: expense.currency })}
+            <span className="block text-caption text-muted-foreground">
+              {PAYMENT_METHOD_LABEL[expense.paymentMethod]}
+            </span>
+          </span>
         ),
       },
       {
@@ -139,35 +177,54 @@ export function ExpensesScreen() {
           <RowActions
             label={`Actions for the ${expense.vendor} expense`}
             actions={[
-              { label: "Edit", icon: Pencil, onSelect: () => openEditor("expense", expense.id) },
+              ...(expense.receiptPath
+                ? [{ label: "View receipt", icon: Eye, onSelect: () => openReceipt(expense.id) }]
+                : []),
               {
-                label: "Delete",
-                icon: Trash2,
-                destructive: true,
-                onSelect: () => setDeleteTarget(expense),
+                label: expense.receiptPath ? "Replace receipt" : "Attach receipt",
+                icon: Paperclip,
+                onSelect: () =>
+                  router.replace(`${pathname}?receipt=${expense.id}`, { scroll: false }),
               },
+              { label: "Edit", icon: Pencil, onSelect: () => openEditor("expense", expense.id) },
+              expense.archived
+                ? {
+                    label: "Restore",
+                    icon: ArchiveRestore,
+                    onSelect: async () => {
+                      if (await setArchived(expense.id, false))
+                        toast.success(`Expense from ${expense.vendor} restored`);
+                    },
+                  }
+                : {
+                    label: "Archive",
+                    icon: Archive,
+                    destructive: true,
+                    onSelect: () => setArchiveTarget(expense),
+                  },
             ]}
           />
         ),
       },
     ],
-    [projectName, openEditor],
+    [projectName, openEditor, router, pathname],
   );
 
   const table = useTableState(rows, columns, {
     pageSize: 10,
     initialSort: { id: "date", direction: "desc" },
   });
-  const hasFilters = query !== "" || category !== "all" || period !== "all";
-  const monthRows = expenses.filter((expense) => expense.date.startsWith(thisMonth));
-  const lastMonthRows = expenses.filter((expense) => expense.date.startsWith(lastMonth));
+  const hasFilters =
+    query !== "" || category !== "all" || period !== "all" || showArchived !== "live";
+  const monthRows = live.filter((expense) => expense.date.startsWith(thisMonth));
+  const lastMonthRows = live.filter((expense) => expense.date.startsWith(lastMonth));
 
   return (
     <div className="page-container space-y-5">
       <PageHeader
         title="Expenses"
         description={
-          expenses.length > 0
+          live.length > 0
             ? `${formatMoney(sum(monthRows))} spent so far in ${formatMonth(thisMonth)}. ${formatMonth(lastMonth)} came to ${formatMoney(sum(lastMonthRows))}.`
             : "Record what the business pays for."
         }
@@ -179,12 +236,12 @@ export function ExpensesScreen() {
         }
       />
 
-      {expenses.length === 0 ? (
+      {allExpenses.length === 0 ? (
         <div className="rounded-lg border bg-card">
           <EmptyState
             icon={Wallet}
             title="No expenses yet"
-            description="Record your first expense, or turn demo data on in the sidebar."
+            description="Record what the business pays for, and attach the receipt so it’s easy to find later."
             action={
               <Button variant="outline" onClick={() => openQuickCreate("expense")}>
                 New expense
@@ -209,6 +266,15 @@ export function ExpensesScreen() {
               value={category}
               onChange={setCategory}
             />
+            <FilterMenu
+              label="Show"
+              options={[
+                { value: "live", label: "Current" },
+                { value: "archived", label: "Archived" },
+              ]}
+              value={showArchived}
+              onChange={setShowArchived}
+            />
             {hasFilters ? (
               <Button
                 variant="ghost"
@@ -216,6 +282,7 @@ export function ExpensesScreen() {
                   setQuery("");
                   setCategory("all");
                   setPeriod("all");
+                  setShowArchived("live");
                 }}
               >
                 Clear filters
@@ -276,26 +343,32 @@ export function ExpensesScreen() {
       )}
 
       <ConfirmDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete this expense?"
+        open={archiveTarget !== null}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+        title="Archive this expense?"
         description={
-          deleteTarget
-            ? `${formatMoney(deleteTarget.amountMinor)} to ${deleteTarget.vendor} on ${formatDate(deleteTarget.date, "long")} will be removed from your totals.`
+          archiveTarget
+            ? `${formatMoney(archiveTarget.amountMinor)} to ${archiveTarget.vendor} on ${formatDate(archiveTarget.date, "long")} leaves your totals and reports. It is kept, with its receipt, under Show: Archived.`
             : ""
         }
-        confirmLabel="Delete expense"
-        onConfirm={() => {
-          if (!deleteTarget) return;
-          const { vendor, date, amountMinor, category, description, projectId } = deleteTarget;
-          const fields = { vendor, date, amountMinor, category, description, projectId };
-          removeExpense(deleteTarget.id);
-          toast.success(`Expense from ${deleteTarget.vendor} deleted`, {
-            action: { label: "Undo", onClick: () => saveExpense(fields) },
+        confirmLabel="Archive expense"
+        onConfirm={async () => {
+          if (!archiveTarget) return;
+          const { id, vendor } = archiveTarget;
+          if (!(await setArchived(id, true))) return;
+          toast.success(`Expense from ${vendor} archived`, {
+            action: { label: "Undo", onClick: () => setArchived(id, false) },
           });
-          setDeleteTarget(null);
+          setArchiveTarget(null);
         }}
       />
+      {receiptTarget ? (
+        <ReceiptDialog
+          key={receiptTarget.id}
+          expense={receiptTarget}
+          onClose={() => setReceiptTarget(null)}
+        />
+      ) : null}
     </div>
   );
 }

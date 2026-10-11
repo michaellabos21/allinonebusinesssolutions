@@ -3,6 +3,7 @@ import {
   type CompanyType,
   type ContactStatus,
   type DealStage,
+  type EstimateDisplayStatus,
   type InvoiceDisplayStatus,
   type LeadStatus,
   type ProjectStatus,
@@ -46,10 +47,25 @@ export function Pill({
 
 const INVOICE_STATUS: Record<InvoiceDisplayStatus, { label: string; tone: Tone }> = {
   draft: { label: "Draft", tone: "neutral" },
-  sent: { label: "Sent", tone: "primary" },
+  sent: { label: "Issued", tone: "primary" },
+  partially_paid: { label: "Part paid", tone: "warning" },
   paid: { label: "Paid", tone: "success" },
   overdue: { label: "Overdue", tone: "danger" },
+  void: { label: "Void", tone: "neutral" },
 };
+
+const ESTIMATE_STATUS: Record<EstimateDisplayStatus, { label: string; tone: Tone }> = {
+  draft: { label: "Draft", tone: "neutral" },
+  sent: { label: "Sent", tone: "primary" },
+  accepted: { label: "Accepted", tone: "success" },
+  declined: { label: "Declined", tone: "danger" },
+  expired: { label: "Expired", tone: "warning" },
+};
+
+export function EstimateStatusBadge({ status }: { status: EstimateDisplayStatus }) {
+  const { label, tone } = ESTIMATE_STATUS[status];
+  return <Pill tone={tone}>{label}</Pill>;
+}
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceDisplayStatus }) {
   const { label, tone } = INVOICE_STATUS[status];

@@ -21,53 +21,71 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DEMO_TODAY, TAX_OPTIONS } from "@/config/app";
+import { TAX_OPTIONS } from "@/config/app";
 import { addDays, formatAmountInput, formatMoney, parseAmountToMinor } from "@/lib/format";
-import { computeInvoiceTotals, formatTaxRate } from "@/lib/money";
-import { getRuntime } from "@/lib/runtime";
-import type { Invoice } from "@/mocks";
+import {
+  computeInvoiceTotals,
+  formatQuantity,
+  formatTaxRate,
+  lineTotalMinor,
+  parseQuantityToMilli,
+} from "@/lib/money";
+import { getRuntime, getToday } from "@/lib/runtime";
+import type { Estimate, Invoice } from "@/mocks";
+import { saveEstimateDraftAction, saveInvoiceDraftAction } from "@/server/actions/finance";
 
-type Row = { key: number; description: string; quantity: string; unitPrice: string };
+type Row = {
+  key: number;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  catalogItemId: string | null;
+};
 type Errors = Record<string, string>;
+export type DocumentKind = "invoice" | "estimate";
 
-const QUANTITY_PATTERN = /^[1-9]\d{0,5}$/;
+const NO_CLIENT = "none";
 
 /** Reads a row as numbers, or null where the text is not yet valid. */
 function parseRow(row: Row) {
-  const quantity = QUANTITY_PATTERN.test(row.quantity.trim()) ? Number(row.quantity.trim()) : null;
-  const unitPriceMinor = parseAmountToMinor(row.unitPrice);
-  return {
-    quantity,
-    unitPriceMinor: unitPriceMinor !== null && unitPriceMinor > 0 ? unitPriceMinor : null,
-  };
+  const unitPriceMinor = row.unitPrice.trim() === "" ? null : parseAmountToMinor(row.unitPrice);
+  return { quantityMilli: parseQuantityToMilli(row.quantity), unitPriceMinor };
 }
 
-/** Route entry for editing: resolves the draft from the URL. */
-export function InvoiceEditRoute() {
-  const { id } = useParams<{ id: string }>();
-  const { invoices } = useDemoStore();
-  const invoice = invoices.find((item) => item.id === id);
+const PATHS: Record<DocumentKind, string> = {
+  invoice: "/money/invoices",
+  estimate: "/money/estimates",
+};
 
-  if (!invoice) {
+/** Route entry for editing: resolves the draft from the URL. */
+export function DocumentEditRoute({ kind }: { kind: DocumentKind }) {
+  const { id } = useParams<{ id: string }>();
+  const store = useDemoStore();
+  const doc =
+    kind === "invoice"
+      ? store.invoices.find((item) => item.id === id)
+      : store.estimates.find((item) => item.id === id);
+
+  if (!doc) {
     return (
       <MissingRecord
         icon={ReceiptText}
-        noun="invoice"
-        listHref="/money/invoices"
-        listLabel="Back to invoices"
+        noun={kind}
+        listHref={PATHS[kind]}
+        listLabel={kind === "invoice" ? "Back to invoices" : "Back to estimates"}
       />
     );
   }
-  if (invoice.status !== "draft") {
+  if (doc.status !== "draft") {
     return (
       <div className="page-container">
         <EmptyState
           icon={ReceiptText}
-          title={`${invoice.number} can’t be edited`}
-          description="Only drafts can be changed. Once an invoice is sent, its lines and total are locked."
+          title={`${doc.number} can’t be edited`}
+          description={`Only drafts can be changed. Once ${kind === "invoice" ? "an invoice is issued" : "an estimate is sent"}, its lines and total are locked.`}
           action={
             <Button asChild variant="outline">
-              <Link href={`/money/invoices/${invoice.id}`}>View invoice</Link>
+              <Link href={`${PATHS[kind]}/${doc.id}`}>View {kind}</Link>
             </Button>
           }
           className="py-20"
@@ -75,47 +93,63 @@ export function InvoiceEditRoute() {
       </div>
     );
   }
-  return <InvoiceEditor invoice={invoice} />;
+  return <DocumentEditor kind={kind} doc={doc} />;
 }
 
-/** Full invoice form with line items and live totals. Saves a draft to session state. */
-export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
+/**
+ * The invoice or estimate form, with line items and a live preview of the
+ * totals. The preview uses the same arithmetic as the database; the saved
+ * figures are the database's own.
+ */
+export function DocumentEditor({ kind, doc }: { kind: DocumentKind; doc?: Invoice | Estimate }) {
   const router = useRouter();
   const store = useDemoStore();
-  const nextKey = useRef(invoice?.items.length ?? 1);
+  const runtime = getRuntime();
+  const currency = doc?.currency ?? runtime.currency;
+  const nextKey = useRef(doc?.items.length ?? 1);
+  const noun = kind === "invoice" ? "invoice" : "estimate";
+  const today = getToday();
 
-  const [contactId, setContactId] = useState(invoice?.contactId ?? "");
-  const [issuedOn, setIssuedOn] = useState(invoice?.issuedOn ?? DEMO_TODAY);
-  const [dueOn, setDueOn] = useState(
-    invoice?.dueOn ?? addDays(DEMO_TODAY, getRuntime().paymentTermDays),
+  const [contactId, setContactId] = useState(doc?.contactId ?? NO_CLIENT);
+  const [issuedOn, setIssuedOn] = useState(doc?.issuedOn ?? today);
+  const [endsOn, setEndsOn] = useState(
+    doc
+      ? "dueOn" in doc
+        ? doc.dueOn
+        : doc.validUntil
+      : addDays(today, kind === "invoice" ? runtime.paymentTermDays : 30),
   );
   const [rows, setRows] = useState<Row[]>(
-    invoice?.items.map((item, index) => ({
+    doc?.items.map((item, index) => ({
       key: index,
       description: item.description,
-      quantity: String(item.quantity),
+      quantity: formatQuantity(item.quantityMilli),
       unitPrice: formatAmountInput(item.unitPriceMinor),
-    })) ?? [{ key: 0, description: "", quantity: "1", unitPrice: "" }],
+      catalogItemId: item.catalogItemId,
+    })) ?? [{ key: 0, description: "", quantity: "1", unitPrice: "", catalogItemId: null }],
   );
   const [discount, setDiscount] = useState(
-    invoice?.discountMinor ? formatAmountInput(invoice.discountMinor) : "",
+    doc?.discountMinor ? formatAmountInput(doc.discountMinor) : "",
   );
-  const [taxRateBps, setTaxRateBps] = useState(
-    String(invoice?.taxRateBps ?? getRuntime().taxRateBps),
-  );
-  const [notes, setNotes] = useState(invoice?.notes ?? "");
+  const [taxRateBps, setTaxRateBps] = useState(String(doc?.taxRateBps ?? runtime.taxRateBps));
+  const [notes, setNotes] = useState(doc?.notes ?? "");
   const [errors, setErrors] = useState<Errors>({});
+  const [busy, setBusy] = useState(false);
 
   const contacts = store.contacts.filter(
-    (contact) => !contact.archived || contact.id === invoice?.contactId,
+    (contact) => !contact.archived || contact.id === doc?.contactId,
   );
   const catalog = store.catalog.filter((item) => !item.archived);
+  const money = (amount: number) => formatMoney(amount, { currency });
 
   // Live totals use whatever parses so far; unfinished rows count as zero.
   const parsed = rows.map(parseRow);
   const discountMinor = discount.trim() ? (parseAmountToMinor(discount) ?? 0) : 0;
   const totals = computeInvoiceTotals(
-    parsed.map((row) => ({ quantity: row.quantity ?? 0, unitPriceMinor: row.unitPriceMinor ?? 0 })),
+    parsed.map((row) => ({
+      quantityMilli: row.quantityMilli ?? 0,
+      unitPriceMinor: row.unitPriceMinor ?? 0,
+    })),
     discountMinor,
     Number(taxRateBps),
   );
@@ -128,7 +162,9 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
     clearError(`row-${key}`);
     clearError("items");
   };
-  const addRow = (row: Omit<Row, "key"> = { description: "", quantity: "1", unitPrice: "" }) => {
+  const addRow = (
+    row: Omit<Row, "key"> = { description: "", quantity: "1", unitPrice: "", catalogItemId: null },
+  ) => {
     nextKey.current += 1;
     setRows((current) => [...current, { key: nextKey.current, ...row }]);
     clearError("items");
@@ -138,9 +174,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
     const item = catalog.find((entry) => entry.id === id);
     if (!item) return;
     const filled = {
-      description: item.name,
+      description: item.description ? `${item.name}: ${item.description}` : item.name,
       quantity: "1",
       unitPrice: formatAmountInput(item.unitPriceMinor),
+      catalogItemId: item.id,
     };
     // Reuse a single untouched first row instead of leaving it blank above the new one.
     const [only] = rows;
@@ -149,22 +186,24 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
     else addRow(filled);
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const found: Errors = {};
-    if (!contactId) found.contactId = "Choose a client to bill.";
     if (!issuedOn) found.issuedOn = "Choose an issue date.";
-    if (!dueOn) found.dueOn = "Choose a due date.";
-    else if (issuedOn && dueOn < issuedOn)
-      found.dueOn = "The due date can’t be before the issue date.";
+    if (!endsOn) found.endsOn = kind === "invoice" ? "Choose a due date." : "Choose a date.";
+    else if (issuedOn && endsOn < issuedOn)
+      found.endsOn =
+        kind === "invoice"
+          ? "The due date can’t be before the issue date."
+          : "The estimate can’t expire before it’s issued.";
 
     rows.forEach((row, index) => {
       const numbers = parsed[index];
       if (!row.description.trim()) found[`row-${row.key}`] = "Describe this line.";
-      else if (numbers.quantity === null)
-        found[`row-${row.key}`] = "Quantity must be a whole number, 1 or more.";
+      else if (numbers.quantityMilli === null)
+        found[`row-${row.key}`] = "Enter a quantity above zero, with up to three decimals.";
       else if (numbers.unitPriceMinor === null)
-        found[`row-${row.key}`] = "Enter a unit price above zero, like 2500 or 2,500.50.";
+        found[`row-${row.key}`] = "Enter a unit price, like 2500 or 2,500.50.";
     });
     if (rows.length === 0) found.items = "Add at least one line.";
 
@@ -182,29 +221,48 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
       return;
     }
 
-    const saved = store.saveInvoice(
-      {
-        contactId,
-        issuedOn,
-        dueOn,
-        items: rows.map((row, index) => ({
-          description: row.description.trim(),
-          quantity: parsed[index].quantity ?? 1,
-          unitPriceMinor: parsed[index].unitPriceMinor ?? 0,
-        })),
-        discountMinor,
-        taxRateBps: Number(taxRateBps),
-        notes: notes.trim(),
-      },
-      invoice?.id,
-    );
-    toast.success(invoice ? `Draft ${saved.number} updated` : `Draft ${saved.number} saved`, {
-      description: "Kept for this session only. Nothing was sent.",
-    });
-    router.push(`/money/invoices/${saved.id}`);
+    const input = {
+      contactId: contactId === NO_CLIENT ? null : contactId,
+      issuedOn,
+      discountMinor,
+      taxRateBps: Number(taxRateBps),
+      notes: notes.trim(),
+      items: rows.map((row, index) => ({
+        description: row.description.trim(),
+        quantityMilli: parsed[index].quantityMilli ?? 0,
+        unitPriceMinor: parsed[index].unitPriceMinor ?? 0,
+        catalogItemId: row.catalogItemId,
+      })),
+    };
+    setBusy(true);
+    try {
+      const result =
+        kind === "invoice"
+          ? await saveInvoiceDraftAction({ ...input, dueOn: endsOn }, doc?.id)
+          : await saveEstimateDraftAction({ ...input, validUntil: endsOn }, doc?.id);
+      if (!result.ok || !result.data) {
+        const fieldErrors = result.ok ? {} : (result.fieldErrors ?? {});
+        setErrors({
+          ...fieldErrors,
+          endsOn: fieldErrors.dueOn ?? fieldErrors.validUntil ?? "",
+        });
+        toast.error(
+          result.ok ? "The server didn’t confirm the save. Reload and check." : result.error,
+        );
+        return;
+      }
+      toast.success(doc ? "Draft updated" : "Draft saved", {
+        description: `Nothing is sent until you ${kind === "invoice" ? "issue" : "send"} it.`,
+      });
+      router.push(`${PATHS[kind]}/${result.data.id}`);
+    } catch {
+      toast.error("We couldn’t reach the server. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const backHref = invoice ? `/money/invoices/${invoice.id}` : "/money/invoices";
+  const backHref = doc ? `${PATHS[kind]}/${doc.id}` : PATHS[kind];
   const errorId = (name: string) => (errors[name] ? `invoice-${name}-error` : undefined);
   const fieldError = (name: string) =>
     errors[name] ? (
@@ -215,10 +273,13 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="page-container space-y-6">
-      <BackLink href={backHref} label={invoice ? invoice.number : "Invoices"} />
+      <BackLink
+        href={backHref}
+        label={doc ? `Draft ${noun}` : kind === "invoice" ? "Invoices" : "Estimates"}
+      />
       <PageHeader
-        title={invoice ? `Edit ${invoice.number}` : "New invoice"}
-        description="Saved as a draft. Nothing is sent to the client until you mark it as sent, and that step is simulated too."
+        title={doc ? `Edit draft ${noun}` : `New ${noun}`}
+        description={`Saved as a draft. It gets its number, and the client sees it, only once you ${kind === "invoice" ? "issue" : "send"} it.`}
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -232,7 +293,8 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             </h2>
             {contacts.length === 0 ? (
               <p className="mt-3 rounded-md bg-warning-soft px-3 py-2 text-caption text-warning">
-                Add a contact first. An invoice needs a client to bill.
+                Add a contact first. A draft can be saved without one, but it needs a client before
+                it is {kind === "invoice" ? "issued" : "sent"}.
               </p>
             ) : null}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -254,6 +316,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                     <SelectValue placeholder="Choose a client" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={NO_CLIENT}>Choose later</SelectItem>
                     {contacts.map((contact) => {
                       const company = store.companyName(contact.companyId);
                       return (
@@ -282,19 +345,21 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                 {fieldError("issuedOn")}
               </div>
               <div className="grid content-start gap-1.5">
-                <Label htmlFor="invoice-dueOn">Due date</Label>
+                <Label htmlFor="invoice-endsOn">
+                  {kind === "invoice" ? "Due date" : "Valid until"}
+                </Label>
                 <Input
-                  id="invoice-dueOn"
+                  id="invoice-endsOn"
                   type="date"
-                  value={dueOn}
+                  value={endsOn}
                   onChange={(event) => {
-                    setDueOn(event.target.value);
-                    clearError("dueOn");
+                    setEndsOn(event.target.value);
+                    clearError("endsOn");
                   }}
-                  aria-invalid={Boolean(errors.dueOn)}
-                  aria-describedby={errorId("dueOn")}
+                  aria-invalid={Boolean(errors.endsOn)}
+                  aria-describedby={errorId("endsOn")}
                 />
-                {fieldError("dueOn")}
+                {fieldError("endsOn")}
               </div>
             </div>
           </section>
@@ -315,7 +380,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                   <SelectContent>
                     {catalog.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {item.name}, {formatMoney(item.unitPriceMinor)} per {item.unit}
+                        {item.name}, {money(item.unitPriceMinor)} per {item.unit}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -326,7 +391,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             <ul className="mt-4 space-y-4">
               {rows.map((row, index) => {
                 const numbers = parsed[index];
-                const lineMinor = (numbers.quantity ?? 0) * (numbers.unitPriceMinor ?? 0);
+                const lineMinor = lineTotalMinor({
+                  quantityMilli: numbers.quantityMilli ?? 0,
+                  unitPriceMinor: numbers.unitPriceMinor ?? 0,
+                });
                 const rowError = errors[`row-${row.key}`];
                 const describedBy = rowError ? `invoice-row-${row.key}-error` : undefined;
                 return (
@@ -344,7 +412,10 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                           placeholder="What you are billing for"
                           autoComplete="off"
                           onChange={(event) =>
-                            updateRow(row.key, { description: event.target.value })
+                            updateRow(row.key, {
+                              description: event.target.value,
+                              catalogItemId: null,
+                            })
                           }
                           aria-invalid={Boolean(rowError)}
                           aria-describedby={describedBy}
@@ -354,7 +425,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                         <Label htmlFor={`invoice-qty-${row.key}`}>Qty</Label>
                         <Input
                           id={`invoice-qty-${row.key}`}
-                          inputMode="numeric"
+                          inputMode="decimal"
                           value={row.quantity}
                           autoComplete="off"
                           className="tabular text-right"
@@ -381,7 +452,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                         <span className="text-caption text-muted-foreground md:sr-only">
                           Line total
                         </span>
-                        <span className="tabular font-medium">{formatMoney(lineMinor)}</span>
+                        <span className="tabular font-medium">{money(lineMinor)}</span>
                       </div>
                       <Button
                         type="button"
@@ -416,7 +487,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
             </Button>
             {fieldError("items")}
             <p className="mt-3 text-xs text-muted-foreground">
-              Quantities are whole numbers in this prototype. Prices are in {getRuntime().currency}.
+              Quantities can have up to three decimals, like 1.5 hours. Prices are in {currency}.
             </p>
           </section>
 
@@ -436,7 +507,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
               className="mt-3"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Payment instructions or a thank-you, shown at the bottom of the invoice."
+              placeholder={`Payment instructions or a thank-you, shown at the bottom of the ${noun}.`}
             />
           </section>
         </div>
@@ -449,7 +520,7 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
           <div className="mt-4 grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="invoice-discount">
-                Discount ({getRuntime().currency})
+                Discount ({currency})
                 <span className="font-normal text-muted-foreground">(optional)</span>
               </Label>
               <Input
@@ -487,7 +558,8 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                 </SelectContent>
               </Select>
               <p id="invoice-tax-hint" className="text-xs text-muted-foreground">
-                Demo rates only, not tax advice. Tax applies after the discount.
+                Tax applies after the discount. Check rates and rules for your country; this app
+                gives no tax advice.
               </p>
             </div>
           </div>
@@ -495,12 +567,12 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
           <dl className="mt-5 space-y-1.5 border-t pt-4" aria-live="polite">
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="tabular">{formatMoney(totals.subtotalMinor)}</dd>
+              <dd className="tabular">{money(totals.subtotalMinor)}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Discount</dt>
               <dd className="tabular">
-                {totals.discountMinor > 0 ? `−${formatMoney(totals.discountMinor)}` : "None"}
+                {totals.discountMinor > 0 ? `−${money(totals.discountMinor)}` : "None"}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
@@ -508,24 +580,26 @@ export function InvoiceEditor({ invoice }: { invoice?: Invoice }) {
                 {Number(taxRateBps) > 0 ? `Tax (${formatTaxRate(Number(taxRateBps))})` : "Tax"}
               </dt>
               <dd className="tabular">
-                {Number(taxRateBps) > 0 ? formatMoney(totals.taxMinor) : "None"}
+                {Number(taxRateBps) > 0 ? money(totals.taxMinor) : "None"}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t pt-2.5">
               <dt className="font-medium">Total</dt>
-              <dd className="font-display text-figure">{formatMoney(totals.totalMinor)}</dd>
+              <dd className="font-display text-figure">{money(totals.totalMinor)}</dd>
             </div>
           </dl>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button type="submit" className="hover:bg-primary-hover">
-              {invoice ? "Save changes" : "Save draft"}
+            <Button type="submit" className="hover:bg-primary-hover" disabled={busy}>
+              {busy ? "Saving…" : doc ? "Save changes" : "Save draft"}
             </Button>
             <Button asChild variant="outline">
               <Link href={backHref}>Cancel</Link>
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">Sample data: kept until you reload.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            This is a preview. The saved totals are worked out again on the server.
+          </p>
         </aside>
       </div>
     </form>
