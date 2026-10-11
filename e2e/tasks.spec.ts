@@ -9,6 +9,8 @@ import { addTeammate, mainNav, startWorkspace } from "./helpers";
  * saved; a teammate's view proves comments and assignments are shared.
  */
 test("a task is planned, assigned, discussed and moved", async ({ page, browser }) => {
+  // Two browsers and many saved steps: close to the default 30s on a slow machine.
+  test.slow();
   const { workspace } = await startWorkspace(page, "tasks");
   const teammate = await addTeammate(page, browser, workspace, "Rhea Aguilar");
   const main = page.getByRole("main");
@@ -62,6 +64,8 @@ test("a task is planned, assigned, discussed and moved", async ({ page, browser 
   await page.getByRole("option", { name: "Rhea Aguilar" }).click();
   await box.pressSequentially("can you review?");
   await main.getByRole("button", { name: "Comment", exact: true }).click();
+  // The box clears once the comment is saved; its text alone also matches the box.
+  await expect(box).toHaveValue("");
   await expect(main.getByText("can you review?")).toBeVisible();
 
   await page.reload();
