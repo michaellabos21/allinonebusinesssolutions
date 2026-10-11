@@ -6,6 +6,18 @@ export const PRODUCT_NAME = "Workspace";
 
 export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
+/** The name on the public landing page. */
+export const MARKETING_NAME = "All In One Business Solutions";
+
+/**
+ * The landing page's video: a YouTube video id (the part after `v=` in its
+ * link), or a file in `public/` such as `{ src: "/landing/demo.mp4" }`. The page
+ * then shows a video section and a "Watch the video" button; null hides both.
+ */
+export const LANDING_VIDEO: { youtubeId: string } | { src: string; poster?: string } | null = {
+  youtubeId: "ThFC4wwFB7M",
+};
+
 /** Shown anywhere the UI needs to explain that nothing is persisted. */
 export const PROTOTYPE_NOTICE =
   "Everything you add is saved to your workspace. This is an early version: some areas, like emails and the client portal, are not built yet.";

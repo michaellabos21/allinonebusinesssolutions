@@ -22,7 +22,7 @@ const displayFont = Bricolage_Grotesque({
 
 export const metadata: Metadata = {
   title: { default: PRODUCT_NAME, template: `%s | ${PRODUCT_NAME}` },
-  description: `${PRODUCT_TAGLINE}. UI prototype with demo data.`,
+  description: `${PRODUCT_TAGLINE}.`,
 };
 
 /** Google Tag Manager container. Tags and what they collect are managed in GTM itself. */
