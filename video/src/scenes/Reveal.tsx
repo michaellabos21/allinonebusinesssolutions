@@ -42,6 +42,17 @@ export const Reveal = () => {
           >
             {BRAND.tagline}
           </div>
+          <div
+            style={{
+              marginTop: -28,
+              fontFamily: BODY,
+              fontSize: 30,
+              color: "rgba(255,255,255,.5)",
+              opacity: interpolate(frame, [72, 86], [0, 1], clamp),
+            }}
+          >
+            {BRAND.taglineEn}
+          </div>
         </div>
       </AbsoluteFill>
       <AbsoluteFill

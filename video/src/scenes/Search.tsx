@@ -55,7 +55,7 @@ export const Search = () => {
           transform: `scale(${1 + keysOut * 0.6})`,
         }}
       >
-        <KineticText text="Find anything, fast." delay={0} size={92} />
+        <KineticText text="Hanapin agad, kahit ano." delay={0} size={92} />
         <div style={{ display: "flex", gap: 34, alignItems: "center" }}>
           <Key label="Ctrl" at={14} wide />
           <span style={{ fontFamily: BODY, fontSize: 70, color: "rgba(255,255,255,.6)" }}>+</span>

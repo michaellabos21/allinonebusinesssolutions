@@ -104,7 +104,7 @@ export const Reports = () => {
       </div>
       <div style={{ position: "absolute", left: 110, top: 108 }}>
         <KineticText
-          text="See the numbers."
+          text="Kita mo ang kita."
           delay={6}
           size={76}
           style={{ justifyContent: "flex-start" }}

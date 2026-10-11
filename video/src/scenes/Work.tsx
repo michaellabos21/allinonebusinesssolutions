@@ -138,27 +138,27 @@ export const Work = () => {
       >
         <Eyebrow text="02 · Projects & tasks" delay={4} color={C.teal} />
         <KineticText
-          text="Keep work"
+          text="Tuloy-tuloy"
           delay={8}
-          size={100}
+          size={84}
           style={{ justifyContent: "flex-start" }}
         />
         <KineticText
-          text="moving."
+          text="ang trabaho."
           delay={16}
-          size={100}
+          size={84}
           color={C.teal}
           style={{ justifyContent: "flex-start", marginTop: -20 }}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: 22, marginTop: 20 }}>
-          <Bullet text="Projects, tasks and owners" delay={30} />
-          <Bullet text="List, board and calendar" delay={38} />
-          <Bullet text="Overdue work stands out" delay={46} />
+          <Bullet text="Projects, tasks at owners" delay={30} />
+          <Bullet text="List, board at calendar" delay={38} />
+          <Bullet text="Kita agad ang overdue" delay={46} />
         </div>
       </div>
       <Chip
-        text="3 tasks done"
-        sub="Nice work, team"
+        text="3 tasks, tapos na!"
+        sub="Galing, team!"
         delay={74}
         color={C.green}
         style={{ left: 820, top: 110 }}

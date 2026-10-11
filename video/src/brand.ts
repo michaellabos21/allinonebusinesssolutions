@@ -4,7 +4,9 @@ import { staticFile } from "remotion";
 /** Change the name here; nothing else in the video hardcodes it. */
 export const BRAND = {
   name: "kasama.space",
-  tagline: "Clients, work and money in one place",
+  tagline: "Ang kasama mo sa negosyo",
+  /** Shown under the Tagalog tagline so English speakers get it too. */
+  taglineEn: "Clients, work and money in one place",
 };
 
 export const WIDTH = 1920;

@@ -91,7 +91,7 @@ export const Hook = () => {
         })}
         {frame >= SCATTER ? (
           <div style={{ textAlign: "center" }}>
-            <KineticText text="Too many tools." delay={SCATTER + 2} size={170} stagger={1.2} />
+            <KineticText text="Ang daming tools!" delay={SCATTER + 2} size={170} stagger={1.2} />
             <div
               style={{
                 marginTop: 34,
@@ -102,7 +102,7 @@ export const Hook = () => {
                 transform: `translateY(${interpolate(frame, [SCATTER + 20, SCATTER + 32], [30, 0], { ...clamp, easing: easeOut })}px)`,
               }}
             >
-              Not enough time to run the business.
+              Kulang na ang oras para sa negosyo mo.
             </div>
           </div>
         ) : null}

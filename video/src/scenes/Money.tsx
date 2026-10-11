@@ -195,11 +195,11 @@ export const Money = () => {
           opacity: interpolate(frame, [130, 142], [0, 1], clamp),
         }}
       >
-        <KineticText text="Get paid. Know where it went." delay={130} size={64} />
+        <KineticText text="Bayad na. Alam mo kung saan napunta." delay={130} size={64} />
       </div>
       <Chip
-        text="Payment recorded"
-        sub="₱42,000 · INV-1036"
+        text="Bayad na!"
+        sub="Payment recorded · ₱42,000 · INV-1036"
         delay={CLICK + 10}
         color={C.green}
         style={{ right: 80, top: 90 }}

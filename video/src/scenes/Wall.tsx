@@ -69,9 +69,9 @@ export const Wall = () => {
         }}
       />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
-        <KineticText text="Clients. Work. Money." delay={34} size={130} stagger={1.1} />
+        <KineticText text="Clients. Trabaho. Pera." delay={34} size={130} stagger={1.1} />
         <KineticText
-          text="One place."
+          text="Isang lugar lang."
           delay={52}
           size={130}
           color={C.indigoBright}

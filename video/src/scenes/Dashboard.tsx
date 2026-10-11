@@ -30,9 +30,9 @@ export const Dashboard = () => {
     <AbsoluteFill>
       <Background />
       <AbsoluteFill style={{ alignItems: "center", paddingTop: 70 }}>
-        <KineticText text="Your whole business." delay={0} size={96} exitAt={34} />
+        <KineticText text="Buong negosyo mo." delay={0} size={96} exitAt={34} />
         <KineticText
-          text="One dashboard."
+          text="Isang dashboard lang."
           delay={8}
           size={96}
           color={C.indigoBright}
@@ -86,14 +86,14 @@ export const Dashboard = () => {
       </AbsoluteFill>
       <Chip
         text="₱173,000 waiting to be paid"
-        sub="Open invoices, at a glance"
+        sub="Kita agad ang hindi pa bayad"
         delay={92}
         color={C.amber}
         style={{ left: 70, top: 120 }}
       />
       <Chip
         text="Payments by month"
-        sub="See cash coming in"
+        sub="Kita mo ang pasok ng pera"
         delay={142}
         color={C.teal}
         style={{ right: 70, bottom: 110 }}

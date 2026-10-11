@@ -64,21 +64,21 @@ export const Crm = () => {
       >
         <Eyebrow text="01 · CRM & sales" delay={4} />
         <KineticText
-          text="Win more"
+          text="Mas maraming"
           delay={8}
-          size={104}
+          size={90}
           style={{ justifyContent: "flex-start" }}
         />
         <KineticText
-          text="deals."
+          text="panalo."
           delay={16}
-          size={104}
+          size={90}
           color={C.indigoBright}
           style={{ justifyContent: "flex-start", marginTop: -20 }}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: 22, marginTop: 20 }}>
-          <Bullet text="Leads, contacts and companies" delay={30} />
-          <Bullet text="Drag-and-drop deal pipeline" delay={38} />
+          <Bullet text="Leads, contacts at companies" delay={30} />
+          <Bullet text="Drag-and-drop na deal pipeline" delay={38} />
           <Bullet text="Public lead forms" delay={46} />
         </div>
       </div>
@@ -154,7 +154,7 @@ export const Crm = () => {
         </div>
       </AbsoluteFill>
       <Chip
-        text="Moved to Negotiation"
+        text="Lipat sa Negotiation!"
         sub="Loyalty app · ₱180,000"
         delay={106}
         color={C.teal}

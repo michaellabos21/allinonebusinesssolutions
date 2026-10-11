@@ -76,7 +76,7 @@ export const Outro = () => {
                 opacity: 0.5 + pulse * 0.5,
               }}
             />
-            Now live
+            Live na!
           </div>
         </div>
       </AbsoluteFill>
