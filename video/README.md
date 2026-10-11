@@ -1,12 +1,12 @@
 # Launch video
 
-A 41-second, 1920×1080, 30 fps launch video built with [Remotion](https://www.remotion.dev). It is its own package and does not touch the app's dependencies.
+The kasama.space launch video: a 41-second, 1920×1080, 30 fps video built with [Remotion](https://www.remotion.dev). It is its own package and does not touch the app's dependencies.
 
 ```bash
 cd video
 npm install
 npm run studio   # preview and scrub in the browser
-npm run render   # writes out/launch-video.mp4
+npm run render   # writes out/kasama-space-launch.mp4
 ```
 
 If Remotion cannot download its own headless Chrome, point it at one you have:

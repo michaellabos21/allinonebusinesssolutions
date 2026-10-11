@@ -51,7 +51,7 @@ export const Dashboard = () => {
             shot="overview"
             width={1360}
             camera={camera}
-            url="app / overview"
+            url="kasama.space/overview"
             overlay={
               <>
                 <Ring r={{ x: 555, y: 340, w: 490, h: 130 }} progress={ring} />

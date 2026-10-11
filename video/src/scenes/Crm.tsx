@@ -92,7 +92,7 @@ export const Crm = () => {
             opacity: 0.85,
           }}
         >
-          <Screen shot="leads" width={1150} dim={0.35} url="app / crm / leads" />
+          <Screen shot="leads" width={1150} dim={0.35} url="kasama.space/crm/leads" />
         </div>
         <div
           style={{
@@ -106,7 +106,7 @@ export const Crm = () => {
             shot="deals"
             width={1150}
             camera={camera}
-            url="app / crm / deals"
+            url="kasama.space/crm/deals"
             overlay={
               <>
                 {frame >= 70 ? (

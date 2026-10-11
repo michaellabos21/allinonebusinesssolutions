@@ -69,7 +69,7 @@ export const Search = () => {
             opacity: Math.min(1, screenIn * 2),
           }}
         >
-          <Screen shot="search" width={1500} camera={camera} url="app / search" />
+          <Screen shot="search" width={1500} camera={camera} url="kasama.space/search" />
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

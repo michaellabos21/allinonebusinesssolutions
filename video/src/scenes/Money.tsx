@@ -104,7 +104,7 @@ export const Money = () => {
               opacity: fan,
             }}
           >
-            <Screen shot={shot} width={1150} dim={0.45} url={`app / money / ${shot}`} />
+            <Screen shot={shot} width={1150} dim={0.45} url={`kasama.space/money/${shot}`} />
           </div>
         ))}
         <div
@@ -116,7 +116,7 @@ export const Money = () => {
             shot="invoice"
             width={1340}
             camera={camera}
-            url="app / money / invoices / INV-1036"
+            url="kasama.space/money/invoices/INV-1036"
             overlay={
               <>
                 {paid ? (

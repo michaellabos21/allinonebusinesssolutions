@@ -3,7 +3,7 @@ import { staticFile } from "remotion";
 
 /** Change the name here; nothing else in the video hardcodes it. */
 export const BRAND = {
-  name: "All in One Business",
+  name: "kasama.space",
   tagline: "Clients, work and money in one place",
 };
 

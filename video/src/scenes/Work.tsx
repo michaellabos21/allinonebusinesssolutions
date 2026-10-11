@@ -107,7 +107,7 @@ export const Work = () => {
               shot="tasks"
               width={1150}
               camera={tasksCam}
-              url="app / work / tasks"
+              url="kasama.space/work/tasks"
               overlay={ROWS.map((r, i) => (
                 <Check key={i} y={r.y} end={r.end} at={46 + i * 9} />
               ))}
@@ -121,7 +121,7 @@ export const Work = () => {
               transform: "rotateY(180deg)",
             }}
           >
-            <Screen shot="calendar" width={1150} camera={calCam} url="app / work / calendar" />
+            <Screen shot="calendar" width={1150} camera={calCam} url="kasama.space/work/calendar" />
           </div>
         </div>
       </AbsoluteFill>

@@ -87,7 +87,7 @@ export const Reports = () => {
             transform: `translateY(${(1 - enter) * 900}px) rotateY(${18 + sway}deg) rotateX(${4 + (1 - enter) * 30}deg)`,
           }}
         >
-          <Screen shot="reports" width={1180} camera={camera} url="app / reports" />
+          <Screen shot="reports" width={1180} camera={camera} url="kasama.space/reports" />
         </div>
       </AbsoluteFill>
       <div

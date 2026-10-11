@@ -5,7 +5,7 @@
   "description": "Remotion launch video for the workspace app",
   "scripts": {
     "studio": "remotion studio",
-    "render": "remotion render LaunchVideo out/launch-video.mp4",
+    "render": "remotion render LaunchVideo out/kasama-space-launch.mp4",
     "still": "remotion still LaunchVideo out/poster.png --frame=1150",
     "typecheck": "tsc --noEmit"
   },
