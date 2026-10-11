@@ -67,20 +67,26 @@ export type Project = {
   dueOn: string;
 };
 
-export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskStatus = "todo" | "in_progress" | "in_review" | "done";
 export type TaskPriority = "low" | "medium" | "high";
 
 export type Task = {
   id: string;
   title: string;
   projectId: string | null;
-  assigneeId: string;
+  /** Everyone assigned, in the order they were added. Empty when unassigned. */
+  assigneeIds: string[];
   status: TaskStatus;
   priority: TaskPriority;
-  dueOn: string;
+  /** `YYYY-MM-DD`, or null when the task has no due date. */
+  dueOn: string | null;
   description: string;
-  /** Who added the task; decides whether a member may edit it. */
+  /** Who added the task; with the assignees, decides whether a member may edit it. */
   createdBy: string | null;
+  /** Checklist progress, for lists and cards. */
+  checklist: { done: number; total: number };
+  /** Comments not deleted. */
+  commentCount: number;
 };
 
 /** "overdue" is never stored: it is derived from a sent invoice's due date. */
@@ -283,6 +289,8 @@ export type ActivityEntry = {
   projectId?: string;
   /** Set when the entry belongs to a deal, so it shows in that deal's history. */
   dealId?: string;
+  /** Set when the entry belongs to a task, so it shows in that task's history. */
+  taskId?: string;
 };
 
 export type Notification = {

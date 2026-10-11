@@ -101,9 +101,12 @@ export function getOpenInvoices(invoices: Invoice[]) {
   return invoices.filter(isOpen).sort((a, b) => a.dueOn.localeCompare(b.dueOn));
 }
 
+/** Unfinished tasks with a due date, soonest first. */
 export function getUpcomingTasks(tasks: Task[]) {
   return tasks
-    .filter((task) => task.status !== "done")
+    .filter(
+      (task): task is Task & { dueOn: string } => task.status !== "done" && task.dueOn !== null,
+    )
     .sort((a, b) => a.dueOn.localeCompare(b.dueOn));
 }
 
@@ -137,9 +140,10 @@ export function getSummary(
       const days = daysBetween(today, project.dueOn);
       return days >= 0 && days <= 30;
     }).length,
-    tasksDueThisWeekCount: openTasks.filter((task) => task.dueOn >= today && task.dueOn <= weekEnd)
-      .length,
-    overdueTaskCount: openTasks.filter((task) => task.dueOn < today).length,
+    tasksDueThisWeekCount: openTasks.filter(
+      (task) => task.dueOn !== null && task.dueOn >= today && task.dueOn <= weekEnd,
+    ).length,
+    overdueTaskCount: openTasks.filter((task) => task.dueOn !== null && task.dueOn < today).length,
   };
 }
 

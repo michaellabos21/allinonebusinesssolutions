@@ -13,7 +13,7 @@ import { findNavEntry } from "@/config/navigation";
  */
 export function Breadcrumbs() {
   const pathname = usePathname();
-  const { contacts, companies, projects, invoices, estimates } = useDemoStore();
+  const { contacts, companies, projects, tasks, invoices, estimates } = useDemoStore();
   const entry = findNavEntry(pathname);
   const pageTitle = entry?.item.title ?? "Page not found";
   const section = entry?.group.label;
@@ -27,6 +27,7 @@ export function Breadcrumbs() {
     "/crm/contacts": contacts,
     "/crm/companies": companies,
     "/work/projects": projects,
+    "/work/tasks": tasks.map((task) => ({ id: task.id, name: task.title })),
     "/money/invoices": invoices.map((invoice) => ({
       id: invoice.id,
       name: invoice.number ?? "Draft invoice",

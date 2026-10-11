@@ -179,19 +179,53 @@ export const projectSchema = z.object({
   dueOn: isoDate,
 });
 
+export const TASK_STATUS_IDS = ["todo", "in_progress", "in_review", "done"] as const;
+const taskStatus = z.enum(TASK_STATUS_IDS);
+const optionalDate = z
+  .union([isoDate, z.literal(""), z.null()])
+  .transform((value) => value || null);
+const assigneeIds = z
+  .array(z.uuid("Choose someone on the team."))
+  .max(10, "Assign up to 10 people.")
+  .transform((ids) => [...new Set(ids)]);
+
 export const taskSchema = z.object({
   title: requiredText(200, "Describe the task."),
   description: text(2000),
   projectId: optionalId,
-  assigneeId: z.uuid("Choose an assignee."),
-  status: z.enum(["todo", "in_progress", "done"]),
+  assigneeIds,
+  status: taskStatus,
   priority: z.enum(["low", "medium", "high"]),
-  dueOn: isoDate,
+  dueOn: optionalDate,
 });
+
+/** Any subset of a task's fields, for inline edits on the task page and board. */
+export const taskPatchSchema = taskSchema.partial();
 
 export const taskStatusSchema = z.object({
   id: z.uuid(),
-  status: z.enum(["todo", "in_progress", "done"]),
+  status: taskStatus,
+});
+
+export const checklistItemSchema = z.object({
+  taskId: z.uuid(),
+  body: requiredText(300, "Describe the step."),
+});
+export const checklistUpdateSchema = z.object({
+  id: z.uuid(),
+  body: requiredText(300, "Describe the step.").optional(),
+  done: z.boolean().optional(),
+});
+
+export const commentSchema = z.object({
+  taskId: z.uuid(),
+  body: requiredText(5000, "Write a comment."),
+  mentions: z.array(z.uuid()).max(20).default([]),
+});
+export const commentEditSchema = z.object({
+  id: z.uuid(),
+  body: requiredText(5000, "Write a comment."),
+  mentions: z.array(z.uuid()).max(20).default([]),
 });
 
 export const archiveSchema = z.object({ id: z.uuid(), archived: z.boolean() });

@@ -123,11 +123,11 @@ export async function getWorkspaceRecords(
     ).order("due_on"),
     scoped(
       "tasks",
-      "id, project_id, title, description, status, priority, due_on, assignee_id, created_by",
-    ).order("due_on"),
+      "id, project_id, title, description, status, priority, due_on, created_by, created_at",
+    ).order("due_on", { nullsFirst: false }),
     supabase
       .from("activities")
-      .select("id, actor_id, kind, summary, href, project_id, deal_id, created_at")
+      .select("id, actor_id, kind, summary, href, project_id, deal_id, task_id, created_at")
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(ACTIVITY_CAP),
@@ -161,6 +161,8 @@ export async function getWorkspaceRecords(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type Row = Record<string, any>;
   const rows = (result: { data: unknown }) => (result.data ?? []) as Row[];
+
+  const taskExtras = await loadTaskExtras(supabase, workspaceId);
 
   const finance = can(role, "finance.manage")
     ? await loadFinance(supabase, workspaceId)
@@ -229,8 +231,10 @@ export async function getWorkspaceRecords(
       status: row.status as Task["status"],
       priority: row.priority as Task["priority"],
       dueOn: row.due_on,
-      assigneeId: row.assignee_id,
+      assigneeIds: taskExtras.assignees.get(row.id) ?? [],
       createdBy: row.created_by,
+      checklist: taskExtras.checklist.get(row.id) ?? { done: 0, total: 0 },
+      commentCount: taskExtras.comments.get(row.id) ?? 0,
     })),
     activity: rows(activity).map((row) => ({
       id: row.id,
@@ -244,6 +248,7 @@ export async function getWorkspaceRecords(
       href: row.href,
       projectId: row.project_id ?? undefined,
       dealId: row.deal_id ?? undefined,
+      taskId: row.task_id ?? undefined,
     })),
     stages: rows(stages).map((row) => ({
       id: row.id,
@@ -448,4 +453,55 @@ async function loadFinance(
       (result) => (result.data?.length ?? 0) >= ROW_CAP,
     ),
   };
+}
+
+/**
+ * What lists need about each task beyond its own row: who is assigned, how
+ * far its checklist has got, and how many comments it has. Light rows only;
+ * the task page loads the full checklist and thread itself.
+ */
+async function loadTaskExtras(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  workspaceId: string,
+) {
+  const cap = ROW_CAP * 5;
+  const [assignees, checklist, comments] = await Promise.all([
+    supabase
+      .from("task_assignees")
+      .select("task_id, user_id, created_at")
+      .eq("workspace_id", workspaceId)
+      .order("created_at")
+      .limit(cap),
+    supabase
+      .from("task_checklist_items")
+      .select("task_id, done")
+      .eq("workspace_id", workspaceId)
+      .limit(cap),
+    supabase
+      .from("task_comments")
+      .select("task_id")
+      .eq("workspace_id", workspaceId)
+      .is("deleted_at", null)
+      .limit(cap),
+  ]);
+
+  const byTask = {
+    assignees: new Map<string, string[]>(),
+    checklist: new Map<string, { done: number; total: number }>(),
+    comments: new Map<string, number>(),
+  };
+  for (const row of assignees.data ?? []) {
+    byTask.assignees.set(row.task_id, [...(byTask.assignees.get(row.task_id) ?? []), row.user_id]);
+  }
+  for (const row of checklist.data ?? []) {
+    const current = byTask.checklist.get(row.task_id) ?? { done: 0, total: 0 };
+    byTask.checklist.set(row.task_id, {
+      done: current.done + (row.done ? 1 : 0),
+      total: current.total + 1,
+    });
+  }
+  for (const row of comments.data ?? []) {
+    byTask.comments.set(row.task_id, (byTask.comments.get(row.task_id) ?? 0) + 1);
+  }
+  return byTask;
 }

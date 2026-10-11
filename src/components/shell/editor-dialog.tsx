@@ -21,8 +21,8 @@ import {
   saveCompanyAction,
   saveContactAction,
   saveProjectAction,
-  saveTaskAction,
 } from "@/server/actions/records";
+import { saveTaskAction } from "@/server/actions/tasks";
 import { PAYMENT_METHOD_LABEL } from "@/components/money/invoice-actions";
 import { saveExpenseAction } from "@/server/actions/finance";
 import { saveDealAction, saveLeadAction } from "@/server/actions/sales";
@@ -586,14 +586,14 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
       };
     }
     case "task": {
-      const task = store.tasks.find((item) => item.id === id);
-      if (id && !task) return null;
+      // Tasks are created here and edited on their own page, where several
+      // people can be assigned and the checklist and comments live.
+      if (id) return null;
       return {
-        title: task ? "Edit task" : "New task",
-        description: task
-          ? "Update this task."
-          : "Add something that needs doing and who is doing it.",
-        submitLabel: task ? "Save changes" : "Add task",
+        title: "New task",
+        description:
+          "Add something that needs doing. Assign more people and add a checklist on its page.",
+        submitLabel: "Add task",
         fields: [
           {
             name: "title",
@@ -620,9 +620,8 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             name: "assigneeId",
             label: "Assignee",
             type: "select",
-            required: true,
             half: true,
-            options: memberOptions,
+            options: optional(memberOptions, "Unassigned"),
           },
           {
             name: "status",
@@ -636,8 +635,6 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
             name: "dueOn",
             label: "Due date",
             type: "date",
-            required: true,
-            missing: "Choose a due date.",
             half: true,
           },
           {
@@ -654,38 +651,35 @@ function useFormSpec(kind: EditorKind, id?: string): FormSpec | null {
           },
           {
             name: "description",
-            label: "Notes",
+            label: "Description",
             type: "textarea",
             placeholder: "Anything the assignee should know.",
           },
         ],
         initial: {
-          title: task?.title ?? "",
-          projectId: task?.projectId ?? NONE,
-          assigneeId: task?.assigneeId ?? store.account.user.id,
-          status: task?.status ?? "todo",
-          dueOn: task?.dueOn ?? addDays(getToday(), 2),
-          priority: task?.priority ?? "medium",
-          description: task?.description ?? "",
+          title: "",
+          projectId: NONE,
+          assigneeId: store.account.user.id,
+          status: "todo",
+          dueOn: "",
+          priority: "medium",
+          description: "",
         },
         submit: async (v) =>
           outcome(
-            await saveTaskAction(
-              {
-                title: v.title,
-                description: v.description,
-                projectId: orNull(v.projectId),
-                assigneeId: v.assigneeId,
-                status: v.status,
-                priority: v.priority,
-                dueOn: v.dueOn,
-              },
-              id,
-            ),
+            await saveTaskAction({
+              title: v.title,
+              description: v.description,
+              projectId: orNull(v.projectId),
+              assigneeIds: orNull(v.assigneeId) ? [v.assigneeId] : [],
+              status: v.status,
+              priority: v.priority,
+              dueOn: v.dueOn || null,
+            }),
             (saved) => ({
-              message: task ? `Changes to “${saved.name}” saved` : `Task “${saved.name}” added`,
-              viewLabel: "View tasks",
-              href: "/work/tasks",
+              message: `Task “${saved.name}” added`,
+              viewLabel: "Open task",
+              href: `/work/tasks/${saved.id}`,
             }),
           ),
       };

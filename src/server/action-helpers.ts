@@ -49,7 +49,10 @@ type DatabaseError = { code?: string; message: string } | null;
  * person. Field names point the message at the right input.
  */
 const DATABASE_RULES: Record<string, { error: string; field?: string }> = {
-  assignee_not_a_member: { error: "Choose someone on the team.", field: "assigneeId" },
+  assignee_not_a_member: { error: "Choose someone on the team.", field: "assigneeIds" },
+  too_many_assignees: { error: "Assign up to 10 people.", field: "assigneeIds" },
+  task_not_editable: { error: "You can only change tasks you created or are assigned." },
+  comment_deleted: { error: "That comment was deleted." },
   owner_not_a_member: { error: "Choose someone on the team.", field: "ownerId" },
   lost_reason_required: { error: "Say why the deal was lost.", field: "lostReason" },
   stage_archived: { error: "That stage has been archived. Choose another.", field: "stageId" },

@@ -4,13 +4,13 @@ import {
   setCatalogItemArchivedAction,
   setCompanyArchivedAction,
   setContactArchivedAction,
-  setTaskStatusAction,
 } from "@/server/actions/records";
 import {
   moveDealAction,
   setDealArchivedAction,
   setLeadArchivedAction,
 } from "@/server/actions/sales";
+import { setTaskStatusAction } from "@/server/actions/tasks";
 import type { TaskStatus } from "@/mocks";
 
 /**

@@ -1,34 +1,31 @@
 "use client";
 
-import { Activity, FolderKanban, ListChecks, Pencil, Plus } from "lucide-react";
+import { Activity, FolderKanban, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { Panel } from "@/components/common/panel";
 import { EmptyState } from "@/components/common/states";
-import {
-  PriorityBadge,
-  ProjectStatusBadge,
-  TaskStatusBadge,
-} from "@/components/common/status-badge";
+import { SegmentedControl } from "@/components/common/table-toolbar";
+import { ProjectStatusBadge } from "@/components/common/status-badge";
 import { UserAvatar } from "@/components/common/user-avatar";
 import { BackLink, MissingRecord } from "@/components/crm/shared";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { getToday } from "@/lib/runtime";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/work/progress-bar";
-import { TaskCheck } from "@/components/work/task-check";
-import { TaskPanel } from "@/components/work/task-panel";
-import { daysBetween, describeDue, formatDate, formatRelativeDay } from "@/lib/format";
-import { getProjectProgress, getProjectTeam, memberName, sortTasksForList } from "@/lib/work";
+import { TaskBoard } from "@/components/work/task-board";
+import { TaskList } from "@/components/work/task-list";
+import { daysBetween, formatDate, formatRelativeDay } from "@/lib/format";
+import { getProjectProgress, getProjectTeam, memberName } from "@/lib/work";
 import { cn } from "@/lib/utils";
 
 export function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const store = useDemoStore();
   const today = getToday();
-  const [taskId, setTaskId] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "board">("list");
 
   const project = store.projects.find((item) => item.id === id);
   if (!project) {
@@ -42,7 +39,7 @@ export function ProjectDetail() {
     );
   }
 
-  const tasks = sortTasksForList(store.tasks.filter((task) => task.projectId === project.id));
+  const tasks = store.tasks.filter((task) => task.projectId === project.id);
   const progress = getProjectProgress(project.id, store.tasks);
   const team = getProjectTeam(project, store.tasks);
   const activity = store.activity.filter((entry) => entry.projectId === project.id);
@@ -158,83 +155,32 @@ export function ProjectDetail() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Panel
-            title="Tasks"
-            description={`${progress.open} open, ${progress.done} done.`}
-            action={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => store.openQuickCreate("task", { projectId: project.id })}
-              >
-                <Plus data-icon="inline-start" aria-hidden />
-                Add task
-              </Button>
-            }
-            bodyClassName="px-2 pb-2"
-          >
-            {tasks.length === 0 ? (
-              <EmptyState
-                icon={ListChecks}
-                title="No tasks on this project"
-                description="Break the work into tasks to track progress."
-                action={
-                  <Button
-                    variant="outline"
-                    onClick={() => store.openQuickCreate("task", { projectId: project.id })}
-                  >
-                    Add task
-                  </Button>
-                }
+          <section aria-labelledby="project-tasks-title" className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 id="project-tasks-title" className="font-semibold">
+                  Tasks
+                </h2>
+                <p className="text-caption text-muted-foreground">
+                  {progress.open} open, {progress.done} done.
+                </p>
+              </div>
+              <SegmentedControl
+                label="View"
+                options={[
+                  { value: "list", label: "List" },
+                  { value: "board", label: "Board" },
+                ]}
+                value={view}
+                onChange={setView}
               />
+            </div>
+            {view === "list" ? (
+              <TaskList tasks={tasks} projectId={project.id} showProject={false} />
             ) : (
-              <ul>
-                {tasks.map((task) => {
-                  const done = task.status === "done";
-                  const due = describeDue(task.dueOn);
-                  return (
-                    <li
-                      key={task.id}
-                      className="flex items-start gap-3 rounded-md px-3 py-2.5 hover:bg-muted/50"
-                    >
-                      <TaskCheck task={task} className="mt-0.5" />
-                      <div className="min-w-0 flex-1">
-                        <button
-                          type="button"
-                          onClick={() => setTaskId(task.id)}
-                          className={cn(
-                            "rounded-sm text-left font-medium outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50",
-                            done && "font-normal text-muted-foreground line-through",
-                          )}
-                        >
-                          {task.title}
-                        </button>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
-                          {memberName(task.assigneeId)}
-                          {!done && task.status === "in_progress" ? (
-                            <TaskStatusBadge status="in_progress" />
-                          ) : null}
-                          {!done && task.priority === "high" ? (
-                            <PriorityBadge priority="high" />
-                          ) : null}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          "tabular shrink-0 text-caption",
-                          !done && due.tone === "overdue"
-                            ? "font-medium text-danger"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {done ? formatDate(task.dueOn) : due.label}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <TaskBoard tasks={tasks} projectId={project.id} showProject={false} />
             )}
-          </Panel>
+          </section>
 
           <Panel
             title="Activity"
@@ -308,8 +254,6 @@ export function ProjectDetail() {
           </Panel>
         </div>
       </div>
-
-      <TaskPanel taskId={taskId} onClose={() => setTaskId(null)} />
     </div>
   );
 }

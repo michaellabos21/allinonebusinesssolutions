@@ -14,8 +14,6 @@ import {
   importRowSchema,
   noteSchema,
   projectSchema,
-  taskSchema,
-  taskStatusSchema,
 } from "@/server/validation";
 
 /**
@@ -253,7 +251,7 @@ export async function setCatalogItemArchivedAction(input: unknown): Promise<Resu
 }
 
 // ---------------------------------------------------------------------------
-// Projects and tasks
+// Projects (task actions live in ./tasks.ts)
 // ---------------------------------------------------------------------------
 
 export async function saveProjectAction(input: unknown, id?: string): Promise<Result> {
@@ -278,54 +276,4 @@ export async function saveProjectAction(input: unknown, id?: string): Promise<Re
   if (error || !data?.length) return explain(error, "project.save_failed");
   refresh();
   return { ok: true, data: data[0] };
-}
-
-export async function saveTaskAction(input: unknown, id?: string): Promise<Result> {
-  const parsed = taskSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
-  if (id !== undefined && !idSchema.safeParse(id).success) return FORBIDDEN;
-  const ctx = await context("records.edit");
-  if (!ctx.allowed) return ctx.failure;
-
-  const values = {
-    title: parsed.data.title,
-    description: parsed.data.description,
-    project_id: parsed.data.projectId,
-    assignee_id: parsed.data.assigneeId,
-    status: parsed.data.status,
-    priority: parsed.data.priority,
-    due_on: parsed.data.dueOn,
-  };
-  // Whether a member may edit this particular task is decided by row-level
-  // security: an update they are not allowed simply changes no rows.
-  const query = id
-    ? ctx.supabase.from("tasks").update(values).eq("id", id).eq("workspace_id", ctx.workspace.id)
-    : ctx.supabase.from("tasks").insert({ ...values, workspace_id: ctx.workspace.id });
-  const { data, error } = await query.select("id, title");
-  if (error) return explain(error, "task.save_failed");
-  if (!data?.length) {
-    return { ok: false, error: "You can only edit tasks you created or are assigned." };
-  }
-  refresh();
-  return { ok: true, data: { id: data[0].id, name: data[0].title } };
-}
-
-export async function setTaskStatusAction(input: unknown): Promise<Result<undefined>> {
-  const parsed = taskStatusSchema.safeParse(input);
-  if (!parsed.success) return FORBIDDEN;
-  const ctx = await context("records.edit");
-  if (!ctx.allowed) return ctx.failure;
-
-  const { data, error } = await ctx.supabase
-    .from("tasks")
-    .update({ status: parsed.data.status })
-    .eq("id", parsed.data.id)
-    .eq("workspace_id", ctx.workspace.id)
-    .select("id");
-  if (error) return explain(error, "task.status_failed");
-  if (!data?.length) {
-    return { ok: false, error: "You can only change tasks you created or are assigned." };
-  }
-  refresh();
-  return { ok: true };
 }

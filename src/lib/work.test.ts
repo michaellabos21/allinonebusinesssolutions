@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { getMonthGrid, getProjectProgress, shiftMonth, sortTasksForList } from "@/lib/work";
-import { tasks } from "@/mocks";
+import { applyRuntime } from "@/lib/runtime";
+import {
+  compareDue,
+  getCalendarEvents,
+  getMonthGrid,
+  getProjectProgress,
+  getProjectTeam,
+  isTaskOverdue,
+  shiftMonth,
+  sortTasksForList,
+} from "@/lib/work";
+import { projects, tasks } from "@/mocks";
 
 describe("getProjectProgress", () => {
   it("counts done, open and overdue tasks for one project", () => {
@@ -30,7 +40,7 @@ describe("sortTasksForList", () => {
     const firstDone = sorted.findIndex((task) => task.status === "done");
     expect(sorted.slice(0, firstDone).every((task) => task.status !== "done")).toBe(true);
     expect(sorted.slice(firstDone).every((task) => task.status === "done")).toBe(true);
-    expect(sorted[0].dueOn <= sorted[1].dueOn).toBe(true);
+    expect(sorted[0].dueOn! <= sorted[1].dueOn!).toBe(true);
   });
 });
 
@@ -59,5 +69,55 @@ describe("shiftMonth", () => {
   it("moves across year ends", () => {
     expect(shiftMonth("2026-12", 1)).toBe("2027-01");
     expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+  });
+});
+
+describe("tasks without a due date", () => {
+  const base = tasks[0];
+  const undated = { ...base, id: "undated", status: "todo" as const, dueOn: null };
+  const late = { ...base, id: "late", status: "todo" as const, dueOn: "2026-10-01" };
+
+  it("are never overdue", () => {
+    expect(isTaskOverdue(undated, "2026-10-11")).toBe(false);
+    expect(isTaskOverdue(late, "2026-10-11")).toBe(true);
+    expect(isTaskOverdue({ ...late, status: "done" }, "2026-10-11")).toBe(false);
+  });
+
+  it("sort after dated ones", () => {
+    expect(compareDue(null, "2026-10-01")).toBeGreaterThan(0);
+    expect(compareDue("2026-10-01", null)).toBeLessThan(0);
+    expect(compareDue(null, null)).toBe(0);
+    expect(sortTasksForList([undated, late]).map((task) => task.id)).toEqual(["late", "undated"]);
+  });
+
+  it("stay off the calendar", () => {
+    const events = getCalendarEvents({
+      tasks: [undated, late],
+      projects: [],
+      invoices: [],
+      clientName: () => "",
+    });
+    expect(events.map((event) => event.taskId)).toEqual(["late"]);
+  });
+});
+
+describe("getProjectTeam", () => {
+  it("includes everyone assigned to the project's tasks", () => {
+    const project = { ...projects[0], ownerId: "owner" };
+    const own = [
+      { ...tasks[0], projectId: project.id, assigneeIds: ["mia", "leo"], status: "todo" as const },
+    ];
+    applyRuntime({
+      team: ["owner", "mia", "leo"].map((id) => ({
+        id,
+        name: id,
+        email: "",
+        title: "",
+        role: "Member" as const,
+      })),
+    });
+    const team = getProjectTeam(project, own);
+    expect(team.map((row) => row.member.id).sort()).toEqual(["leo", "mia", "owner"]);
+    expect(team.find((row) => row.member.id === "mia")?.openTasks).toBe(1);
   });
 });
