@@ -4,7 +4,7 @@ An original all-in-one workspace for freelancers, agencies and small businesses:
 
 > **This is a UI-only prototype.** Every record you see is fictional demo data from `src/mocks/`. There is no database, authentication, payment processing, email or external API. Anything you create is held in memory and disappears when you reload the page.
 
-Current scope: **all UI phases (0 to 6)** of `agiled_inspired_saas_ui_first_plan.md`. Every screen in the sidebar is built and the UI quality pass is done. No backend work has started.
+Current scope: **all UI phases (0 to 6)** of `agiled_inspired_saas_ui_first_plan.md`, plus **backend Phase 0** of `agiled_inspired_saas_mvp_plan.md`: version control, tests, CI, formatting and project documentation. There is still no database or authentication; the app behaves exactly as the approved prototype.
 
 ## Setup
 
@@ -24,8 +24,24 @@ Then open http://localhost:3000.
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
+| `npm test` | Unit tests (Vitest) |
+| `npm run test:e2e` | End-to-end smoke test (Playwright); builds and serves the app on port 3211 |
+| `npm run format` | Format with Prettier |
+| `npm run format:check` | Check formatting without changing files |
 
-There is no test runner configured yet.
+The end-to-end test needs a browser once per machine: `npx playwright install chromium`.
+
+No environment variables are needed yet. `.env.example` lists the ones backend Phase 1 will use.
+
+## Project documents
+
+| Document | What it covers |
+| --- | --- |
+| `docs/ARCHITECTURE.md` | How the app is built today, the target architecture, decisions made and still open |
+| `docs/PRODUCT_ROADMAP.md` | Every backend phase, its status, and what UI already exists for it |
+| `docs/DATA_MODEL.md` | The tables each phase will create and how the prototype's records map to them |
+| `docs/SECURITY.md` | The rules each phase must meet, and a draft permission matrix |
+| `supabase/README.md` | Migration and seed-data workflow |
 
 If styles look out of date after editing `src/app/globals.css`, stop the dev server, delete `.next/` and start it again.
 
@@ -144,7 +160,7 @@ What was checked in the final phase, and how:
 - **Empty states:** every screen was loaded with demo data switched off.
 - **Console:** no errors were logged while navigating all routes.
 
-Not covered: screen reader testing with real assistive technology, browsers other than the Chromium-based preview, and automated tests (none exist).
+Not covered: screen reader testing with real assistive technology, and browsers other than Chromium. Automated tests were added afterwards, in backend Phase 0: unit tests for the money, formatting, metrics, report and calendar calculations, and one end-to-end smoke test.
 
 There are no screenshots in this README; the preview tooling available during the build could not capture them at a usable resolution.
 
