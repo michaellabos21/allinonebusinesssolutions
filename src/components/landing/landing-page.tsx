@@ -25,12 +25,13 @@ import {
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
 
+import { LogoMark } from "@/components/common/logo-mark";
 import { LandingMotion } from "@/components/landing/landing-motion";
 import dealsShot from "@/components/landing/shots/deals.webp";
 import invoicesShot from "@/components/landing/shots/invoices.webp";
 import overviewShot from "@/components/landing/shots/overview.webp";
 import tasksShot from "@/components/landing/shots/tasks.webp";
-import { LANDING_VIDEO, MARKETING_NAME } from "@/config/app";
+import { CANONICAL_ORIGIN, LANDING_VIDEO, MARKETING_NAME, PRODUCT_DESCRIPTION } from "@/config/app";
 import { cn } from "@/lib/utils";
 
 import "./landing.css";
@@ -46,6 +47,7 @@ export function LandingPage() {
   return (
     <LandingMotion>
       <div className="min-h-dvh bg-canvas text-foreground">
+        <StructuredData />
         <SiteHeader />
         <main>
           <Hero />
@@ -104,17 +106,47 @@ export function LandingPage() {
   );
 }
 
+/**
+ * Tells search engines what the product is (schema.org SoftwareApplication).
+ * Only facts that are true today: no prices, ratings or reviews.
+ */
+function StructuredData() {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: MARKETING_NAME,
+    url: CANONICAL_ORIGIN,
+    description: PRODUCT_DESCRIPTION,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    image: `${CANONICAL_ORIGIN}/opengraph-image.png`,
+    featureList: [
+      "Contacts and companies",
+      "Leads, deals pipeline and lead forms",
+      "Projects, tasks, comments and notifications",
+      "Estimates, invoices, payments and expenses",
+      "Reports",
+    ],
+  };
+  return (
+    <script
+      type="application/ld+json"
+      // JSON from constants in this file; escape "<" so it can't close the tag.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}
+
 function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-canvas/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 font-display font-semibold">
-          <span
-            aria-hidden
-            className="flex size-8 items-center justify-center rounded-lg bg-primary font-display text-[15px] font-bold text-primary-foreground"
-          >
-            K
-          </span>
+        <Link
+          href="/"
+          aria-label={`${MARKETING_NAME} home`}
+          className="flex items-center gap-2.5 font-display font-semibold"
+        >
+          <LogoMark className="size-8" />
           <span className="hidden text-[17px] tracking-[-0.01em] min-[400px]:inline">
             {MARKETING_NAME}
           </span>

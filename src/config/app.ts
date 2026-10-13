@@ -6,6 +6,16 @@ export const PRODUCT_NAME = "Kasama Space";
 
 export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
+/**
+ * The official public address. Search engines and shared links always point
+ * here, whichever address a page was opened on.
+ */
+export const CANONICAL_ORIGIN = "https://kasama.space";
+
+/** One-line description used by search engines and link previews. */
+export const PRODUCT_DESCRIPTION =
+  "Kasama Space keeps your contacts, sales pipeline, projects, tasks, invoices and payments in one workspace your whole team shares. Built for small businesses and freelancers.";
+
 /** The name on the public landing page. */
 export const MARKETING_NAME = PRODUCT_NAME;
 

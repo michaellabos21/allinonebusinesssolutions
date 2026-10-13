@@ -82,6 +82,8 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Skip static assets and images; run on every page and route handler.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
+    // Skipped: static files, the robots, sitemap and manifest files search
+    // engines and phones fetch while signed out, and generated share images.
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|opengraph-image|twitter-image|icon|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
   ],
 };

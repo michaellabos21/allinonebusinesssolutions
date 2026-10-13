@@ -45,3 +45,37 @@ test("signed-in people still get their workspace at the home address", async ({ 
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: /welcome back/i })).toBeVisible();
 });
+
+test("search engines and link previews can read the public site", async ({ page, request }) => {
+  for (const path of [
+    "/robots.txt",
+    "/sitemap.xml",
+    "/manifest.webmanifest",
+    "/favicon.ico",
+    "/icon.svg",
+    "/apple-icon.png",
+    "/opengraph-image.png",
+  ]) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status(), path).toBe(200);
+  }
+  expect(await (await request.get("/robots.txt")).text()).toContain("Disallow: /crm/");
+
+  await page.goto("/");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://kasama.space",
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    /^https:\/\/kasama\.space\/opengraph-image\.png/,
+  );
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+    "content",
+    "summary_large_image",
+  );
+  const data = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}",
+  );
+  expect(data["@type"]).toBe("SoftwareApplication");
+});
