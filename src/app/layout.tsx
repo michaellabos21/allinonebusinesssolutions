@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/config/app";
+import { CANONICAL_ORIGIN, PRODUCT_DESCRIPTION, PRODUCT_NAME } from "@/config/app";
 
 import "./globals.css";
 
@@ -20,10 +20,24 @@ const displayFont = Bricolage_Grotesque({
   subsets: ["latin", "latin-ext"],
 });
 
+// Icons, the share image and the manifest come from files in this folder:
+// icon.svg, apple-icon.png, favicon.ico, opengraph-image.png, twitter-image.png
+// and manifest.ts.
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: { default: PRODUCT_NAME, template: `%s | ${PRODUCT_NAME}` },
-  description: `${PRODUCT_TAGLINE}.`,
+  description: PRODUCT_DESCRIPTION,
+  applicationName: PRODUCT_NAME,
+  openGraph: {
+    type: "website",
+    siteName: PRODUCT_NAME,
+    locale: "en_PH",
+  },
+  twitter: { card: "summary_large_image" },
+  formatDetection: { telephone: false },
 };
+
+export const viewport: Viewport = { themeColor: "#34479e" };
 
 /** Google Tag Manager container. Tags and what they collect are managed in GTM itself. */
 const GTM_ID = "GTM-PR6339DV";

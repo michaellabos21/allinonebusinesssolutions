@@ -123,6 +123,8 @@ Visitors who aren't signed in see the landing page at `/` (served from `/welcome
 
 `e2e/landing.spec.ts` checks visitors and signed-in people each get the right page.
 
+**Search and sharing.** The official address is `CANONICAL_ORIGIN` in `src/config/app.ts` (`https://kasama.space`); canonical links, `robots.txt` and `sitemap.xml` use it. Files in `src/app/` set the rest: `icon.svg`, `favicon.ico` and `apple-icon.png` (the logo), `opengraph-image.png` and `twitter-image.png` (the 1200×630 link preview), `manifest.ts` (home-screen install, with icons in `public/icons/`), `robots.ts` and `sitemap.ts`. Workspace pages are marked noindex and listed under Disallow in `robots.txt`. The landing page describes the product to search engines as a schema.org `SoftwareApplication`.
+
 ### Accounts, workspaces and team (real)
 
 - Sign up, sign in, sign out, and reset a forgotten password by email

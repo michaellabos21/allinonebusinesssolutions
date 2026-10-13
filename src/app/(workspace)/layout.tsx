@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { AccountProblemNotice } from "@/components/auth/account-problem";
@@ -45,6 +46,9 @@ async function AuthedShell({ children }: { children: React.ReactNode }) {
     </AppShell>
   );
 }
+
+/** Private pages: never in search results, even if a link to one leaks. */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   return (
