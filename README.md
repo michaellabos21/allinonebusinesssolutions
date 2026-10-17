@@ -198,7 +198,8 @@ The database creates every notification (`supabase/migrations/20261011000008_not
 - **Look and sending:** button colour (refused when white text on it would be hard to read), button text, and an optional https page to open after sending
 - **Embed and attribution:** **Embed** gives code to paste into any website; the form sizes itself to fit. Each lead records its UTM tags, the referring site and, for embedded forms, the page it was sent from, shown under the lead's source, in **View enquiry** and in the CSV export
 - **Form stats:** each form shows its views, leads and conversion rate for the last 30 days (a browser tab counts as one view), and **View leads** lists the leads that came through it
-- Members add and edit leads and deals; managers and above also archive them and manage stages and forms; clients see none of it
+- **Delete a lead** for good from its menu (managers and above), for spam and mistakes. A lead that became a deal is kept as that deal's history; the feed records who deleted what. Archive instead to hide a lead but keep it
+- Members add and edit leads and deals; managers and above also archive them, delete leads, and manage stages and forms; clients see none of it
 
 `tests/integration/sales.test.ts` checks these rules against the database, including isolation between workspaces, conversion without duplicates, stage rules, the deal history, the public form's limits, its question rules, answers, attribution and view counts. `e2e/sales.spec.ts` converts a lead, moves and loses the deal, sends a public form without signing in, and builds a form with its own questions, colour and embed code, then follows a tagged visitor's enquiry to the lead.
 

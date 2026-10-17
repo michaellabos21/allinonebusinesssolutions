@@ -123,3 +123,10 @@ Built in `supabase/migrations/20261017000009_lead_form_builder.sql`, which can b
 - **`leads.attribution`**: any of `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `referrer`, `page_url`.
 - Both are written only through `submit_lead_form`; the `leads_enquiry` trigger refuses any other write.
 - **`lead_form_view_days`**: `(form_id, day)` with a `views` count, added to by `public.record_lead_form_view(token)` for active forms. The team reads it; nobody writes it directly.
+
+## Deleting leads
+
+Built in `supabase/migrations/20261017000010_delete_leads.sql`, which can be run again safely.
+
+- **`public.delete_lead(lead)`** (managers and above) deletes a lead for good and adds a feed line. It refuses (`lead_has_deal`) when a deal was made from the lead. The `leads` table itself still refuses deletes.
+- The lead's notifications are deleted with it. `lead_form_submissions.lead_id` becomes optional and is cleared, so the form's rate limits still count that visitor.

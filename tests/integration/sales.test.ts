@@ -781,3 +781,72 @@ describe("lead form questions, look and attribution", () => {
     expect(after.data).toEqual([{ views: 3 }]);
   });
 });
+
+describe("deleting leads", () => {
+  const remove = (user: TestUser, lead: string) =>
+    user.client.rpc("delete_lead", { target_lead: lead });
+  const exists = async (lead: string) =>
+    ((await admin.from("leads").select("id").eq("id", lead)).data ?? []).length === 1;
+
+  it("lets managers and above delete, and nobody else", async () => {
+    const lead = await newLead(mia, { name: "Spam Lead" });
+    expect((await remove(mia, lead)).error?.message).toContain("not_found");
+    expect((await remove(cleo, lead)).error?.message).toContain("not_found");
+    expect((await remove(ben, lead)).error?.message).toContain("not_found");
+    expect((await anonymous().rpc("delete_lead", { target_lead: lead })).error).not.toBeNull();
+    // The table itself still refuses deletes.
+    await ana.client.from("leads").delete().eq("id", lead);
+    expect(await exists(lead)).toBe(true);
+
+    expect((await remove(max, lead)).error).toBeNull();
+    expect(await exists(lead)).toBe(false);
+    const { data: feed } = await ana.client
+      .from("activities")
+      .select("actor_id, summary")
+      .eq("workspace_id", workspaceA)
+      .eq("summary", "deleted the lead Spam Lead");
+    expect(feed).toEqual([{ actor_id: max.id, summary: "deleted the lead Spam Lead" }]);
+  });
+
+  it("keeps a form submission's rate-limit record and drops the lead's notifications", async () => {
+    const visitor = anonymous();
+    const { error } = await visitor.rpc("submit_lead_form", {
+      form_token: formToken,
+      payload: { name: "Delete Me", email: "delete-me@web.test", consent: "true" },
+      client_key: "delete-visitor",
+    });
+    expect(error).toBeNull();
+    const { data: lead } = await ana.client
+      .from("leads")
+      .select("id")
+      .eq("email", "delete-me@web.test")
+      .single();
+    const before = await admin.from("notifications").select("id").eq("lead_id", lead!.id);
+    expect(before.data?.length).toBeGreaterThan(0);
+
+    expect((await remove(ana, lead!.id)).error).toBeNull();
+    const after = await admin.from("notifications").select("id").eq("lead_id", lead!.id);
+    expect(after.data).toEqual([]);
+    const { data: kept } = await admin
+      .from("lead_form_submissions")
+      .select("lead_id")
+      .eq("client_hash", "delete-visitor");
+    expect(kept).toEqual([{ lead_id: null }]);
+  });
+
+  it("keeps a lead that became a deal", async () => {
+    const lead = await newLead(max, { name: "Deal Lead", email: "deal-lead@web.test" });
+    const converted = await max.client.rpc("convert_lead", {
+      target_lead: lead,
+      existing_contact: null,
+      create_deal: true,
+      deal_name: "From a lead",
+      deal_amount_minor: 100_000,
+      deal_stage: null,
+      deal_close_on: null,
+    });
+    expect(converted.error).toBeNull();
+    expect((await remove(ana, lead)).error?.message).toContain("lead_has_deal");
+    expect(await exists(lead)).toBe(true);
+  });
+});
