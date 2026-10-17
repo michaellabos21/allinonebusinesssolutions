@@ -123,7 +123,7 @@ Visitors who aren't signed in see the landing page at `/` (served from `/welcome
 
 `e2e/landing.spec.ts` checks visitors and signed-in people each get the right page.
 
-**Search and sharing.** The official address is `CANONICAL_ORIGIN` in `src/config/app.ts` (`https://kasama.space`); canonical links, `robots.txt` and `sitemap.xml` use it. Files in `src/app/` set the rest: `icon.svg`, `favicon.ico` and `apple-icon.png` (the logo), `opengraph-image.png` and `twitter-image.png` (the 1200×630 link preview), `manifest.ts` (home-screen install, with icons in `public/icons/`), `robots.ts` and `sitemap.ts`. Workspace pages are marked noindex and listed under Disallow in `robots.txt`. The landing page describes the product to search engines as a schema.org `SoftwareApplication`.
+**Search and sharing.** The official address is `CANONICAL_ORIGIN` in `src/config/app.ts` (`https://kasama.space`); canonical links, `robots.txt` and `sitemap.xml` use it. Files in `src/app/` set the rest: `icon.svg`, `favicon.ico` and `apple-icon.png` (the logo), `opengraph-image.png` (the 1200×630 link preview, which Next also uses for the Twitter card), `manifest.ts` (home-screen install, with icons in `public/icons/`), `robots.ts` and `sitemap.ts`. Private pages (the workspace, lead forms, invitations, onboarding and password pages) carry a noindex tag; `robots.txt` lets crawlers fetch them so they can read it, and blocks only `/auth/` and `/photos/`. On Vercel preview builds the origin is the preview build's own address and `robots.txt` blocks everything. The landing page describes the product to search engines as a schema.org `SoftwareApplication`.
 
 ### Accounts, workspaces and team (real)
 

@@ -11,7 +11,7 @@ import { hashInvitationToken, looksLikeInvitationToken } from "@/server/invitati
 import { ROLE_LABEL, type Role } from "@/server/permissions";
 import { getSession } from "@/server/session";
 
-export const metadata: Metadata = { title: "Invitation" };
+export const metadata: Metadata = { title: "Invitation", robots: { index: false } };
 
 const PROBLEMS: Record<string, { title: string; body: string }> = {
   missing: {

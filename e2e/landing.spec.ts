@@ -59,7 +59,18 @@ test("search engines and link previews can read the public site", async ({ page,
     const response = await request.get(path, { maxRedirects: 0 });
     expect(response.status(), path).toBe(200);
   }
-  expect(await (await request.get("/robots.txt")).text()).toContain("Disallow: /crm/");
+  const robots = await (await request.get("/robots.txt")).text();
+  expect(robots).toContain("Disallow: /auth/");
+  // Private pages are fetchable so crawlers can read their noindex tag.
+  expect(robots).not.toContain("Disallow: /crm/");
+  expect(robots).not.toContain("Host:");
+
+  const welcome = await request.get("/welcome", { maxRedirects: 0 });
+  expect(welcome.status()).toBe(308);
+  expect(new URL(welcome.headers().location, "http://x").pathname).toBe("/");
+
+  await page.goto("/forgot-password");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 
   await page.goto("/");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
@@ -73,6 +84,10 @@ test("search engines and link previews can read the public site", async ({ page,
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     "content",
     "summary_large_image",
+  );
+  await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
+    "content",
+    /^https:\/\/kasama\.space\/opengraph-image\.png/,
   );
   const data = JSON.parse(
     (await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}",

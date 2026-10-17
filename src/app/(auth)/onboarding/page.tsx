@@ -6,7 +6,7 @@ import { HardRedirect, SignOutButton } from "@/components/auth/navigate";
 import { WorkspaceForm } from "@/components/auth/workspace-form";
 import { getAccountProblem, getSession } from "@/server/session";
 
-export const metadata: Metadata = { title: "Set up workspace" };
+export const metadata: Metadata = { title: "Set up workspace", robots: { index: false } };
 
 async function Onboarding() {
   const session = await getSession();
