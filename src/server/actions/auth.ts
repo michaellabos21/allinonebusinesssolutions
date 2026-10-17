@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { getSiteUrl } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -92,6 +93,28 @@ export async function signUpAction(
     };
   }
   return go(next);
+}
+
+/**
+ * Starts "Continue with Google": Supabase gives back Google's consent page,
+ * and Google returns the person to /auth/callback, which signs them in and
+ * continues to `next`. A first-time Google user gets an account named from
+ * their Google profile and sets up a workspace like any new sign-up.
+ */
+export async function signInWithGoogleAction(formData: FormData) {
+  const next = safeNext(formData.get("next"));
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
+    },
+  });
+  if (error || !data.url) {
+    logger.warn("auth.google_start_failed", { code: error?.code ?? "no_url" });
+    redirect("/login?error=google");
+  }
+  redirect(data.url);
 }
 
 export async function signInAction(
