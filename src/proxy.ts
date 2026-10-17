@@ -9,7 +9,6 @@ const PUBLIC_PREFIXES = [
   "/auth/",
   "/invite/",
   "/f/",
-  "/welcome",
   // The landing page's video and other files in public/landing.
   "/landing/",
 ];
@@ -51,15 +50,19 @@ export async function proxy(request: NextRequest) {
     (prefix) => pathname === prefix || pathname.startsWith(prefix),
   );
 
-  const redirectTo = (path: string, next?: string) => {
+  const redirectTo = (path: string, next?: string, status = 307) => {
     const target = request.nextUrl.clone();
     target.pathname = path;
     target.search = next ? `?next=${encodeURIComponent(next)}` : "";
-    const redirect = NextResponse.redirect(target);
+    const redirect = NextResponse.redirect(target, status);
     // Keep any refreshed session cookies on the redirect.
     for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
     return redirect;
   };
+
+  // The landing page's one address is `/`; a direct link to /welcome moves
+  // there for good, so search engines credit `/`.
+  if (pathname === "/welcome") return redirectTo("/", undefined, 308);
 
   // Signed-out visitors see the landing page at the home address; signed-in
   // people get their workspace there as before.
@@ -82,8 +85,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Skip static assets and images; run on every page and route handler.
   matcher: [
-    // Skipped: static files, the robots, sitemap and manifest files search
-    // engines and phones fetch while signed out, and generated share images.
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|opengraph-image|twitter-image|icon|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
+    // Skipped: static files (the icons and share image included, by their
+    // extension) and the exact robots, sitemap and manifest files that search
+    // engines and phones fetch while signed out.
+    "/((?!_next/static|_next/image|robots\\.txt$|sitemap\\.xml$|manifest\\.webmanifest$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
   ],
 };

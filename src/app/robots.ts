@@ -1,34 +1,18 @@
 import type { MetadataRoute } from "next";
 
-import { CANONICAL_ORIGIN } from "@/config/app";
+import { CANONICAL_ORIGIN, IS_PREVIEW_DEPLOYMENT } from "@/config/app";
 
 /**
- * Search engines may crawl the public pages: the landing page, sign-up and
- * sign-in. Everything behind a sign-in is private and stays out of results.
+ * Crawlers may fetch every page. Private pages stay out of search results
+ * through their own noindex tag (the workspace layout, lead forms and the
+ * account pages), which a crawler can only read if robots.txt lets it fetch
+ * the page. Only the sign-in callback and private photo files, which are not
+ * pages, are blocked here. Preview builds block everything.
  */
 export default function robots(): MetadataRoute.Robots {
+  if (IS_PREVIEW_DEPLOYMENT) return { rules: { userAgent: "*", disallow: "/" } };
   return {
-    rules: {
-      userAgent: "*",
-      allow: ["/", "/signup", "/login"],
-      disallow: [
-        "/welcome",
-        "/crm/",
-        "/work/",
-        "/money/",
-        "/reports",
-        "/team",
-        "/settings",
-        "/onboarding",
-        "/invite/",
-        "/auth/",
-        "/photos/",
-        "/f/",
-        "/forgot-password",
-        "/reset-password",
-      ],
-    },
+    rules: { userAgent: "*", allow: "/", disallow: ["/auth/", "/photos/"] },
     sitemap: `${CANONICAL_ORIGIN}/sitemap.xml`,
-    host: CANONICAL_ORIGIN,
   };
 }

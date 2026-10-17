@@ -6,11 +6,27 @@ export const PRODUCT_NAME = "Kasama Space";
 
 export const PRODUCT_TAGLINE = "Clients, work and money in one place";
 
+/** The official public address of the live site. */
+const PRODUCTION_ORIGIN = "https://kasama.space";
+
 /**
- * The official public address. Search engines and shared links always point
- * here, whichever address a page was opened on.
+ * True on Vercel preview builds. Vercel sets NEXT_PUBLIC_VERCEL_ENV for Next.js
+ * projects; it is inlined at build time, so server and browser agree.
  */
-export const CANONICAL_ORIGIN = "https://kasama.space";
+export const IS_PREVIEW_DEPLOYMENT = process.env.NEXT_PUBLIC_VERCEL_ENV === "preview";
+
+/**
+ * The address search engines and shared links point to, whichever address a
+ * page was opened on. A preview build points to its own address instead, so
+ * its link previews and robots.txt describe what is actually deployed there.
+ */
+export const CANONICAL_ORIGIN =
+  IS_PREVIEW_DEPLOYMENT && process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+    : PRODUCTION_ORIGIN;
+
+/** Brand colour for the browser's toolbar and the installed app. */
+export const THEME_COLOR = "#34479e";
 
 /** One-line description used by search engines and link previews. */
 export const PRODUCT_DESCRIPTION =

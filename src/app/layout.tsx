@@ -4,7 +4,7 @@ import Script from "next/script";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { CANONICAL_ORIGIN, PRODUCT_DESCRIPTION, PRODUCT_NAME } from "@/config/app";
+import { CANONICAL_ORIGIN, PRODUCT_DESCRIPTION, PRODUCT_NAME, THEME_COLOR } from "@/config/app";
 
 import "./globals.css";
 
@@ -21,8 +21,8 @@ const displayFont = Bricolage_Grotesque({
 });
 
 // Icons, the share image and the manifest come from files in this folder:
-// icon.svg, apple-icon.png, favicon.ico, opengraph-image.png, twitter-image.png
-// and manifest.ts.
+// icon.svg, apple-icon.png, favicon.ico, opengraph-image.png and manifest.ts.
+// Next copies the Open Graph image into the Twitter card tags.
 export const metadata: Metadata = {
   metadataBase: new URL(CANONICAL_ORIGIN),
   title: { default: PRODUCT_NAME, template: `%s | ${PRODUCT_NAME}` },
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 };
 
-export const viewport: Viewport = { themeColor: "#34479e" };
+export const viewport: Viewport = { themeColor: THEME_COLOR };
 
 /** Google Tag Manager container. Tags and what they collect are managed in GTM itself. */
 const GTM_ID = "GTM-PR6339DV";
