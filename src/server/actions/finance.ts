@@ -68,6 +68,29 @@ export async function saveInvoiceDraftAction(input: unknown, id?: string): Promi
   return { ok: true, data: { id: data as string, name: "Draft invoice" } };
 }
 
+/**
+ * The secret link that shows an issued invoice to the client, made the first
+ * time it is asked for. Anyone with the link sees that one invoice.
+ */
+export async function shareInvoiceAction(id: unknown): Promise<Result<{ token: string }>> {
+  if (!idSchema.safeParse(id).success) return FORBIDDEN;
+  const ctx = await context("finance.manage");
+  if (!ctx.allowed) return ctx.failure;
+  const { data, error } = await ctx.supabase.rpc("share_invoice", { target_invoice: id });
+  if (error || typeof data !== "string") return explain(error, "invoice.share_failed");
+  return { ok: true, data: { token: data } };
+}
+
+/** Turns the invoice's current link off; sharing again makes a new one. */
+export async function resetInvoiceShareLinkAction(id: unknown): Promise<Result<undefined>> {
+  if (!idSchema.safeParse(id).success) return FORBIDDEN;
+  const ctx = await context("finance.manage");
+  if (!ctx.allowed) return ctx.failure;
+  const { error } = await ctx.supabase.rpc("reset_invoice_share_link", { target_invoice: id });
+  if (error) return explain(error, "invoice.share_reset_failed");
+  return { ok: true };
+}
+
 export async function deleteInvoiceDraftAction(id: unknown): Promise<Result<undefined>> {
   if (!idSchema.safeParse(id).success) return FORBIDDEN;
   const ctx = await context("finance.manage");

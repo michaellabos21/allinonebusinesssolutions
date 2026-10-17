@@ -56,7 +56,7 @@ export function InvoiceDocument({
       ) : null}
       <header className="flex flex-wrap items-start justify-between gap-4 border-b px-5 py-5 sm:px-8 sm:py-6">
         <p className="font-display text-lg font-semibold">{workspaceName}</p>
-        <div className="text-right">
+        <div className="sm:text-right print:text-right">
           <p className="text-caption text-muted-foreground">{doc.kind}</p>
           <p className="tabular font-display text-title">{doc.number ?? "Draft"}</p>
         </div>
@@ -97,17 +97,24 @@ export function InvoiceDocument({
       </dl>
 
       <div className="relative overflow-x-auto px-5 sm:px-8">
-        <table className="w-full min-w-[26rem] border-collapse text-left">
+        {/* On a phone, quantity and unit price sit under each line so the amount stays in view. */}
+        <table className="w-full border-collapse text-left sm:min-w-[26rem]">
           <caption className="sr-only">{doc.kind} lines</caption>
           <thead>
             <tr className="border-b text-xs font-medium text-muted-foreground">
               <th scope="col" className="py-2.5 pr-4 font-medium">
                 Description
               </th>
-              <th scope="col" className="py-2.5 pr-4 text-right font-medium">
+              <th
+                scope="col"
+                className="hidden py-2.5 pr-4 text-right font-medium sm:table-cell print:table-cell"
+              >
                 Qty
               </th>
-              <th scope="col" className="py-2.5 pr-4 text-right font-medium">
+              <th
+                scope="col"
+                className="hidden py-2.5 pr-4 text-right font-medium sm:table-cell print:table-cell"
+              >
                 Unit price
               </th>
               <th scope="col" className="py-2.5 text-right font-medium">
@@ -122,16 +129,19 @@ export function InvoiceDocument({
                 <tr key={item.id} className="border-b border-dashed last:border-solid">
                   <td className="py-3 pr-4 align-top">
                     <span className="block">{name}</span>
+                    <span className="tabular block text-caption text-muted-foreground sm:hidden print:hidden">
+                      {formatQuantity(item.quantityMilli)} × {money(item.unitPriceMinor)}
+                    </span>
                     {details ? (
                       <span className="mt-0.5 block max-w-[52ch] text-caption whitespace-pre-wrap text-muted-foreground">
                         {details}
                       </span>
                     ) : null}
                   </td>
-                  <td className="tabular py-3 pr-4 text-right align-top">
+                  <td className="tabular hidden py-3 pr-4 text-right align-top sm:table-cell print:table-cell">
                     {formatQuantity(item.quantityMilli)}
                   </td>
-                  <td className="tabular py-3 pr-4 text-right align-top whitespace-nowrap">
+                  <td className="tabular hidden py-3 pr-4 text-right align-top whitespace-nowrap sm:table-cell print:table-cell">
                     {money(item.unitPriceMinor)}
                   </td>
                   <td className="tabular py-3 text-right align-top whitespace-nowrap">

@@ -66,6 +66,12 @@ Finance, as enforced since Phase 4 (`finance.manage` in `src/server/permissions.
 
 Invoices, estimates, their lines and payments cannot be written directly by any user, only through the database functions listed in `docs/DATA_MODEL.md`. A draft invoice can be deleted; an issued one can only be voided, and only while it has no payments.
 
+## Shared invoices
+
+- An issued invoice is reached only by a random 36-character token in its link (`/i/<token>`). Finance roles create and replace links through `share_invoice` and `reset_invoice_share_link`; the link table refuses direct writes.
+- The public can call only `get_shared_invoice`, which returns that one invoice (business name, bill-to as issued, lines, totals, paid and owed) and nothing else about the workspace. Drafts are never returned. Replacing a link turns the old one off at once.
+- The page is marked noindex. Anyone the link is forwarded to can see the invoice, as with any shared link; the share dialog says so and offers **Replace the link**.
+
 ## Public lead forms
 
 - A form is reached only by a random 36-character token in its link. Visitors never send a workspace id; the database works it out from the token.

@@ -544,3 +544,95 @@ describe("reconciliation", () => {
     }
   });
 });
+
+describe("sharing an invoice by link", () => {
+  const visitor = anonymous();
+  let id: string;
+  const share = (user: TestUser, target = id) =>
+    user.client.rpc("share_invoice", { target_invoice: target });
+  const view = (token: string) => visitor.rpc("get_shared_invoice", { link_token: token });
+
+  beforeAll(async () => {
+    const { data } = await draft(max, [{ quantityMilli: 2000, unitPriceMinor: 15_000 }], {
+      notes: "Thank you!",
+    });
+    id = data;
+  });
+
+  it("isn't possible for a draft, or for anyone outside finance", async () => {
+    expect((await share(max)).error?.message).toContain("issue_before_sharing");
+    await max.client.rpc("issue_invoice", { target_invoice: id });
+    for (const user of [mia, cleo, ben]) {
+      expect((await share(user)).error?.message).toContain("not_found");
+    }
+    expect((await visitor.rpc("share_invoice", { target_invoice: id })).error).not.toBeNull();
+  });
+
+  it("gives one stable link that shows only that invoice to anyone who has it", async () => {
+    const first = await share(max);
+    expect(first.data).toMatch(/^[0-9a-f]{36}$/);
+    expect((await share(ana)).data).toBe(first.data);
+
+    const { data, error } = await view(first.data);
+    expect(error).toBeNull();
+    const stored = await invoice(id);
+    expect(data).toMatchObject({
+      business_name: "Finance A",
+      number: stored.number,
+      status: "sent",
+      currency: "PHP",
+      total_minor: Number(stored.total_minor),
+      paid_minor: 0,
+      notes: "Thank you!",
+      bill_to: { name: "Bianca Soriano", email: "bianca@fin.test" },
+    });
+    expect(data.items).toEqual([
+      expect.objectContaining({
+        description: "Line 1",
+        quantity_milli: 2000,
+        amount_minor: 30_000,
+      }),
+    ]);
+    // Nothing else about the workspace comes with it.
+    expect(Object.keys(data)).not.toContain("workspace_id");
+    expect((await view("0".repeat(36))).data).toBeNull();
+  });
+
+  it("follows the invoice: payments show, and replacing the link turns the old one off", async () => {
+    const token = (await share(max)).data as string;
+    await max.client.rpc("record_payment", {
+      target_invoice: id,
+      amount: 10_000,
+      paid: today,
+      pay_method: "e_wallet",
+      pay_reference: "",
+      pay_note: "",
+    });
+    expect((await view(token)).data).toMatchObject({
+      status: "partially_paid",
+      paid_minor: 10_000,
+    });
+
+    expect(
+      (await mia.client.rpc("reset_invoice_share_link", { target_invoice: id })).error,
+    ).not.toBeNull();
+    expect(
+      (await max.client.rpc("reset_invoice_share_link", { target_invoice: id })).error,
+    ).toBeNull();
+    expect((await view(token)).data).toBeNull();
+    const fresh = (await share(max)).data as string;
+    expect(fresh).not.toBe(token);
+    expect((await view(fresh)).data).not.toBeNull();
+  });
+
+  it("keeps the link table closed: only finance roles read it, and nobody writes it directly", async () => {
+    expect((await visitor.from("invoice_share_links").select("token")).data ?? []).toEqual([]);
+    expect((await mia.client.from("invoice_share_links").select("token")).data).toEqual([]);
+    expect((await ben.client.from("invoice_share_links").select("token")).data).toEqual([]);
+    expect((await max.client.from("invoice_share_links").select("token")).data).toHaveLength(1);
+    const forged = await max.client
+      .from("invoice_share_links")
+      .insert({ invoice_id: id, workspace_id: workspaceA, token: "a".repeat(36) });
+    expect(forged.error).not.toBeNull();
+  });
+});

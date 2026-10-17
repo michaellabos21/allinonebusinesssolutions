@@ -76,6 +76,7 @@ const DATABASE_RULES: Record<string, { error: string; field?: string }> = {
   },
   // Finance
   invalid_items: { error: "Check the lines: each needs a description, quantity and price." },
+  issue_before_sharing: { error: "Issue the invoice before sharing it." },
   lead_has_deal: {
     error: "This lead became a deal, so it’s kept as part of that deal’s history.",
   },

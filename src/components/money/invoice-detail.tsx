@@ -1,8 +1,9 @@
 "use client";
 
-import { Ban, BadgeCheck, Pencil, Printer, ReceiptText, Send, Trash2 } from "lucide-react";
+import { Ban, BadgeCheck, Pencil, Printer, ReceiptText, Send, Share2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 
 import { Panel } from "@/components/common/panel";
 import { InvoiceStatusBadge } from "@/components/common/status-badge";
@@ -13,6 +14,7 @@ import {
   useInvoiceActions,
 } from "@/components/money/invoice-actions";
 import { InvoiceDocument } from "@/components/money/invoice-document";
+import { ShareInvoiceDialog } from "@/components/money/share-invoice-dialog";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { describeDue, formatDate, formatMoney } from "@/lib/format";
@@ -24,6 +26,7 @@ export function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const store = useDemoStore();
   const actions = useInvoiceActions();
+  const [sharing, setSharing] = useState(false);
 
   const invoice = store.invoices.find((item) => item.id === id);
   if (!invoice) {
@@ -83,10 +86,18 @@ export function InvoiceDetail() {
               </Button>
             </>
           ) : (
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer data-icon="inline-start" aria-hidden />
-              Print or save PDF
-            </Button>
+            <>
+              {invoice.status !== "void" ? (
+                <Button variant="outline" onClick={() => setSharing(true)}>
+                  <Share2 data-icon="inline-start" aria-hidden />
+                  Share
+                </Button>
+              ) : null}
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer data-icon="inline-start" aria-hidden />
+                Print or save PDF
+              </Button>
+            </>
           )}
           {invoice.status === "sent" ? (
             <Button variant="outline" onClick={() => actions.askVoid(invoice)}>
@@ -232,6 +243,12 @@ export function InvoiceDetail() {
       </div>
 
       <InvoiceActionDialogs {...actions.dialogs} />
+      <ShareInvoiceDialog
+        invoice={invoice}
+        businessName={store.account.workspace.name}
+        open={sharing}
+        onOpenChange={setSharing}
+      />
     </div>
   );
 }
