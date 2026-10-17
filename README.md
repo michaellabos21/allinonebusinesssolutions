@@ -81,6 +81,7 @@ Signed-out pages:
 | `/auth/callback` | Landing point for links in auth emails |
 | `/f/[token]` | A business's public lead form; anyone with the link can send an enquiry |
 | `/i/[token]` | A shared invoice: the client sees it and saves it as a PDF without an account |
+| `/privacy`, `/terms` | Privacy Policy and Terms; the contact address is `CONTACT_EMAIL` in `src/config/app.ts` |
 
 The app itself, all behind sign-in:
 

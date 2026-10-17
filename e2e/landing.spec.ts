@@ -94,3 +94,28 @@ test("search engines and link previews can read the public site", async ({ page,
   );
   expect(data["@type"]).toBe("SoftwareApplication");
 });
+
+test("visitors can read the Privacy Policy and Terms", async ({ page }) => {
+  await page.goto("/");
+  await page
+    .getByRole("navigation", { name: "Footer" })
+    .getByRole("link", { name: "Privacy" })
+    .click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Privacy Policy" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "hello@kasama.space" }).first()).toBeVisible();
+
+  await page.getByRole("link", { name: "Terms" }).first().click();
+  await expect(page).toHaveURL(/\/terms$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Terms" })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://kasama.space/terms",
+  );
+
+  await page.goto("/signup");
+  await expect(page.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute(
+    "href",
+    "/privacy",
+  );
+});

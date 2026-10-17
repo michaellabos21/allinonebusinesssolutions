@@ -11,6 +11,8 @@ const PUBLIC_PREFIXES = [
   "/f/",
   // A shared invoice's public page.
   "/i/",
+  "/privacy",
+  "/terms",
   // The landing page's video and other files in public/landing.
   "/landing/",
 ];
