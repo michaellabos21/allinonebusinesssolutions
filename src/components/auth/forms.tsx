@@ -181,6 +181,19 @@ export function SignupForm({ google = false }: { google?: boolean }) {
             </SubmitButton>
           </>
         )}
+        {done ? null : (
+          <p className="text-caption text-muted-foreground">
+            By creating an account you agree to the{" "}
+            <Link href="/terms" className={linkClass}>
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className={linkClass}>
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        )}
         <p className="text-caption">
           Already have an account?{" "}
           <Link href={`/login${query}`} className={linkClass}>

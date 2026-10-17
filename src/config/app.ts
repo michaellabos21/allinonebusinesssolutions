@@ -25,6 +25,15 @@ export const CANONICAL_ORIGIN =
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
     : PRODUCTION_ORIGIN;
 
+/**
+ * Where people write about their account, their data or these terms. Shown on
+ * the Privacy Policy and Terms pages; the mailbox must exist and be read.
+ */
+export const CONTACT_EMAIL = "hello@kasama.space";
+
+/** When the Privacy Policy and Terms last changed. Update with any edit to either. */
+export const LEGAL_UPDATED_ON = "17 October 2026";
+
 /** Brand colour for the browser's toolbar and the installed app. */
 export const THEME_COLOR = "#34479e";
 

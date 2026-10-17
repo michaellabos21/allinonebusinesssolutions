@@ -815,12 +815,18 @@ function SiteFooter() {
         <p>
           © {MARKETING_NAME}. <span lang="fil">Kasama</span> means “partner” in Filipino.
         </p>
-        <nav aria-label="Footer" className="flex gap-4">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-2">
           <Link href="/login" className="hover:text-foreground">
             Sign in
           </Link>
           <Link href="/signup" className="hover:text-foreground">
             Sign up
+          </Link>
+          <Link href="/privacy" className="hover:text-foreground">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-foreground">
+            Terms
           </Link>
         </nav>
       </div>
