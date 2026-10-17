@@ -790,7 +790,7 @@ function FinalCta() {
             href="/signup"
             className="cta-shine group inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-[15px] font-medium text-primary-foreground shadow-[0_10px_30px_-10px_rgb(52_71_158/0.7)] transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-primary-hover"
           >
-            Create your workspace
+            Start your workspace
             <ArrowRight
               aria-hidden
               className="size-4 transition-transform group-hover:translate-x-1"
@@ -800,7 +800,7 @@ function FinalCta() {
             href="/login"
             className="inline-flex h-12 items-center rounded-xl border bg-background/80 px-6 text-[15px] font-medium transition-colors hover:bg-background"
           >
-            Sign in
+            I already have an account
           </Link>
         </div>
       </div>
@@ -820,7 +820,7 @@ function SiteFooter() {
             Sign in
           </Link>
           <Link href="/signup" className="hover:text-foreground">
-            Create a workspace
+            Sign up
           </Link>
         </nav>
       </div>
