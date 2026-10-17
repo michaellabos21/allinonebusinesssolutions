@@ -215,3 +215,62 @@ test("a receipt is attached to an expense and stored privately", async ({ page }
   await page.reload();
   await expect(main.getByLabel("Receipt attached")).toBeVisible();
 });
+
+test("an issued invoice is shared by link and opens for the client without signing in", async ({
+  page,
+  browser,
+}) => {
+  await startWorkspace(page, "share");
+  const main = page.getByRole("main");
+
+  await mainNav(page).getByRole("link", { name: "Contacts" }).click();
+  await page.waitForURL((url) => url.pathname === "/crm/contacts");
+  await main.getByRole("button", { name: "New contact" }).first().click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Full name").fill("Liza Mercado");
+  await dialog.getByLabel("Email").fill("liza@mercado.example");
+  await dialog.getByRole("button", { name: "Add contact" }).click();
+  await expect(dialog).toBeHidden();
+
+  await mainNav(page).getByRole("link", { name: "Invoices" }).click();
+  await page.waitForURL((url) => url.pathname === "/money/invoices");
+  await main.getByRole("link", { name: "New invoice" }).first().click();
+  await page.waitForURL((url) => url.pathname === "/money/invoices/new");
+  await main.getByRole("combobox", { name: "Client" }).click();
+  await page.getByRole("option", { name: /Liza Mercado/ }).click();
+  await main.getByLabel("Description").first().fill("Brand kit");
+  await main.getByLabel("Unit price").first().fill("42000");
+  await main.getByRole("button", { name: "Save draft" }).click();
+  await page.waitForURL(/\/money\/invoices\/[0-9a-f-]{36}$/);
+  // Drafts have nothing to share yet.
+  await expect(main.getByRole("button", { name: "Share" })).toHaveCount(0);
+  await main.getByRole("button", { name: "Issue invoice" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Issue invoice" }).click();
+  await expect(main.getByRole("heading", { name: "INV-0001" })).toBeVisible();
+
+  await main.getByRole("button", { name: "Share" }).click();
+  dialog = page.getByRole("dialog");
+  const linkBox = dialog.getByLabel("Link");
+  await expect(linkBox).toHaveValue(/\/i\/[0-9a-f]{36}$/);
+  const link = await linkBox.inputValue();
+  await expect(dialog.getByLabel("Message")).toHaveValue(
+    new RegExp(`^Hi Liza, here’s invoice INV-0001 from .+ for ₱42,000, due .+: ${link}$`),
+  );
+
+  // The client opens it with no account.
+  const client = await browser.newContext();
+  const clientPage = await client.newPage();
+  await clientPage.goto(link);
+  await expect(clientPage.getByRole("heading", { name: /Invoice INV-0001 from/ })).toBeVisible();
+  await expect(clientPage.getByText("₱42,000 due")).toBeVisible();
+  await expect(clientPage.getByText("Brand kit")).toBeVisible();
+  await expect(clientPage.getByRole("button", { name: "Download PDF" })).toBeVisible();
+
+  // Replacing the link turns the old one off.
+  await dialog.getByRole("button", { name: "Replace the link" }).click();
+  await expect(linkBox).not.toHaveValue(link);
+  await expect(linkBox).toHaveValue(/\/i\/[0-9a-f]{36}$/);
+  await clientPage.goto(link);
+  await expect(clientPage.getByText("This invoice isn’t available")).toBeVisible();
+  await client.close();
+});

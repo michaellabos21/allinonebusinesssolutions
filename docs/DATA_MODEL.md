@@ -130,3 +130,12 @@ Built in `supabase/migrations/20261017000010_delete_leads.sql`, which can be run
 
 - **`public.delete_lead(lead)`** (managers and above) deletes a lead for good and adds a feed line. It refuses (`lead_has_deal`) when a deal was made from the lead. The `leads` table itself still refuses deletes.
 - The lead's notifications are deleted with it. `lead_form_submissions.lead_id` becomes optional and is cleared, so the form's rate limits still count that visitor.
+
+## Invoice share links
+
+Built in `supabase/migrations/20261017000011_invoice_share_links.sql`, which can be run again safely.
+
+- **`invoice_share_links`**: one row per shared invoice, `(invoice_id, workspace_id, token, created_by, created_at)`; the token is 36 random hex characters. Finance roles read it; nobody writes it directly.
+- **`public.share_invoice(invoice)`** (finance roles) returns the link token, making it the first time; drafts are refused (`issue_before_sharing`).
+- **`public.reset_invoice_share_link(invoice)`** (finance roles) deletes the row, so the old link stops working.
+- **`public.get_shared_invoice(token)`** (anyone) returns that invoice's business name, number, status, dates, bill-to, lines and totals, or null for an unknown link or a draft.

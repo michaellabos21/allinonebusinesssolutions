@@ -78,7 +78,7 @@ export function useInvoiceActions() {
         },
         onIssued: (number: string) =>
           toast.success(`Issued as ${number}`, {
-            description: "Download or print it to send to your client.",
+            description: "Share it by link, or download it, to send to your client.",
           }),
         onDeleted: () => router.push("/money/invoices"),
       },

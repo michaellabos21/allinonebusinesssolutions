@@ -80,6 +80,7 @@ Signed-out pages:
 | `/onboarding` | Create a workspace (needs a session) |
 | `/auth/callback` | Landing point for links in auth emails |
 | `/f/[token]` | A business's public lead form; anyone with the link can send an enquiry |
+| `/i/[token]` | A shared invoice: the client sees it and saves it as a PDF without an account |
 
 The app itself, all behind sign-in:
 
@@ -213,6 +214,7 @@ Not built in Phase 3: saved views and more than one pipeline per workspace. New 
 - **Invoices:** draft → issued → part paid → paid, or void. Drafts can be edited or deleted; once issued, lines and totals are locked. An issued invoice with no payments can be voided with a reason and keeps its number. "Overdue" is shown, never stored
 - **Line items:** a name with optional details printed beneath it, quantities with up to three decimals (1.5 hours), unit prices, and optional links to catalog items (picking one fills in its name, price and description). The database works out every line, the subtotal, discount, tax and total; anything the browser sends for those is ignored. The editor previews the same arithmetic (`src/lib/money.ts`), and a test checks the two agree
 - **Numbers:** given when an invoice is issued or an estimate is sent, from a per-workspace counter that is locked while it's taken, so two people issuing at once never get the same number and drafts never use one up. The prefix (default `INV-` and `EST-`) is set in Settings → Workspace
+- **Share by link:** **Share** on an issued invoice gives a secret link (`/i/<token>`) and a ready-to-send message ("Hi Liza, here's invoice INV-1036 … for ₱42,000, due …") to copy into Messenger, Viber, SMS or email, or send through the phone's share sheet. The client sees that one invoice, what's paid and still owed, and can save it as a PDF; nothing else about the business. **Replace the link** turns the old one off. Drafts can't be shared
 - **Bill-to snapshot:** issuing an invoice copies the client's name, email and company onto it, so later edits to the contact don't change an issued invoice
 - **Payments:** recorded by hand with date, method, reference and note. Part payments are allowed; a payment larger than what's owed is refused. Payments can't be edited or deleted
 - **Expenses:** date, vendor, category, amount, payment method, notes and an optional project, with archive instead of delete. A receipt (JPEG, PNG, WebP, HEIC or PDF, up to 5 MB) is stored in a private bucket, and viewing one makes a link that expires after 60 seconds, after checking the viewer's role

@@ -9,6 +9,8 @@ const PUBLIC_PREFIXES = [
   "/auth/",
   "/invite/",
   "/f/",
+  // A shared invoice's public page.
+  "/i/",
   // The landing page's video and other files in public/landing.
   "/landing/",
 ];
