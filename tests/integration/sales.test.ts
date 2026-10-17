@@ -23,7 +23,14 @@ let stages: { id: string; name: string; kind: string }[];
 let openStage: string, wonStage: string, lostStage: string;
 let formToken: string, formId: string;
 
-const TABLES = ["pipeline_stages", "leads", "deals", "lead_forms", "lead_form_submissions"];
+const TABLES = [
+  "pipeline_stages",
+  "leads",
+  "deals",
+  "lead_forms",
+  "lead_form_submissions",
+  "lead_form_view_days",
+];
 
 const stageNamed = (name: string) => stages.find((stage) => stage.name === name)!.id;
 
@@ -175,10 +182,21 @@ describe("pipeline stages", () => {
 describe("workspace isolation", () => {
   it("hides every sales table from another workspace's owner, a client and the public", async () => {
     await newLead(ana, { name: "Private Lead" });
-    for (const reader of [ben.client, cleo.client, anonymous()]) {
+    // Signed-in outsiders get an empty answer, not an error that could hide a leak;
+    // the public has no access to these tables at all.
+    const readers = [
+      { client: ben.client, signedIn: true },
+      { client: cleo.client, signedIn: true },
+      { client: anonymous(), signedIn: false },
+    ];
+    for (const { client, signedIn } of readers) {
       for (const table of TABLES) {
-        const { data } = await reader.from(table).select("id").eq("workspace_id", workspaceA);
-        expect(data ?? [], `${table}`).toEqual([]);
+        const { data, error } = await client
+          .from(table)
+          .select("workspace_id")
+          .eq("workspace_id", workspaceA);
+        if (signedIn) expect(error, table).toBeNull();
+        expect(data ?? [], table).toEqual([]);
       }
     }
   });
@@ -456,6 +474,17 @@ describe("public lead form", () => {
         business_name: "Sales A",
         intro: "",
         consent_text: "You may contact me about my enquiry.",
+        // The default questions, colour and button a form starts with.
+        fields: [
+          { key: "name", type: "short_text", label: "Your name", required: true },
+          { key: "email", type: "email", label: "Email", required: true },
+          { key: "phone", type: "phone", label: "Phone", required: false },
+          { key: "company", type: "short_text", label: "Company", required: false },
+          { key: "message", type: "long_text", label: "How can we help?", required: false },
+        ],
+        accent_color: "#34479e",
+        button_label: "Send",
+        redirect_url: "",
       },
     ]);
     const missing = await visitor.rpc("get_lead_form", { form_token: "not-a-token" });
@@ -559,5 +588,196 @@ describe("public lead form", () => {
       .update({ token: "guessable" })
       .eq("id", formId);
     expect(error?.message).toContain("immutable_column");
+  });
+});
+
+describe("lead form questions, look and attribution", () => {
+  const visitor = anonymous();
+  let token: string;
+  let id: string;
+  const fields = [
+    { key: "name", type: "short_text", label: "Your name", required: true },
+    { key: "email", type: "email", label: "Work email", required: true },
+    {
+      key: "c_budget1",
+      type: "dropdown",
+      label: "Budget",
+      required: true,
+      options: ["Small", "Large"],
+    },
+    {
+      key: "c_svc1234",
+      type: "checkboxes",
+      label: "Services",
+      required: false,
+      options: ["Logo", "Web", "Print"],
+    },
+    { key: "c_start12", type: "date", label: "Start date", required: false },
+    { key: "message", type: "long_text", label: "Anything else?", required: false },
+  ];
+  const submit = (payload: Record<string, unknown>, client: string) =>
+    visitor.rpc("submit_lead_form", { form_token: token, payload, client_key: client });
+  const answers = (extra: Record<string, unknown> = {}) => ({
+    values: { name: "Quote Seeker", email: "Seeker@Web.test", c_budget1: "Large", ...extra },
+  });
+
+  beforeAll(async () => {
+    const { data, error } = await max.client
+      .from("lead_forms")
+      .insert({
+        workspace_id: workspaceA,
+        name: "Quote request",
+        fields,
+        accent_color: "#0f6b66",
+        button_label: "Request a quote",
+        redirect_url: "https://studio.example/thanks",
+      })
+      .select("id, token")
+      .single();
+    if (error) throw new Error(error.message);
+    ({ id, token } = data);
+  });
+
+  it("refuses field lists the public form couldn't use", async () => {
+    const save = (list: unknown[]) =>
+      max.client.from("lead_forms").update({ fields: list }).eq("id", id);
+    const [nameOptional, noChoices, unknownType, duplicate, noEmail, builtInRetyped] =
+      await Promise.all([
+        save([{ ...fields[0], required: false }, fields[1]]),
+        save([fields[0], fields[1], { ...fields[2], options: [] }]),
+        save([
+          fields[0],
+          fields[1],
+          { key: "c_file1234", type: "file", label: "CV", required: false },
+        ]),
+        save([fields[0], fields[1], fields[2], fields[2]]),
+        save([fields[0], fields[2]]),
+        save([fields[0], { ...fields[1], type: "short_text" }]),
+      ]);
+    for (const result of [
+      nameOptional,
+      noChoices,
+      unknownType,
+      duplicate,
+      noEmail,
+      builtInRetyped,
+    ]) {
+      expect(result.error?.message).toContain("lead_forms_fields_check");
+    }
+    const look = await Promise.all([
+      max.client.from("lead_forms").update({ redirect_url: "javascript:alert(1)" }).eq("id", id),
+      max.client.from("lead_forms").update({ redirect_url: "http://plain.example" }).eq("id", id),
+      max.client.from("lead_forms").update({ accent_color: "teal" }).eq("id", id),
+    ]);
+    for (const result of look) expect(result.error).not.toBeNull();
+  });
+
+  it("serves the questions and look to the public", async () => {
+    const { data } = await visitor.rpc("get_lead_form", { form_token: token });
+    expect(data[0]).toMatchObject({
+      fields,
+      accent_color: "#0f6b66",
+      button_label: "Request a quote",
+      redirect_url: "https://studio.example/thanks",
+    });
+  });
+
+  it("keeps answers as asked and only known, safe attribution", async () => {
+    const { error } = await submit(
+      {
+        ...answers({ c_svc1234: ["Print", "Logo"], c_start12: "2026-11-02", message: "Soon" }),
+        // Company isn't on this form, so it is dropped.
+        company: "Not asked",
+        attribution: {
+          utm_source: "facebook",
+          utm_campaign: "x".repeat(300),
+          page_url: "javascript:alert(1)",
+          referrer: "https://news.example/story",
+          workspace_id: workspaceB,
+        },
+      },
+      "attr-1",
+    );
+    expect(error).toBeNull();
+    const { data: lead } = await ana.client
+      .from("leads")
+      .select("email, company_name, notes, answers, attribution, workspace_id")
+      .eq("form_id", id)
+      .single();
+    expect(lead).toEqual({
+      email: "seeker@web.test",
+      company_name: "",
+      notes: "Soon",
+      // Checkbox answers in the form's order, whatever order they were ticked.
+      answers: [
+        { key: "c_budget1", label: "Budget", value: "Large" },
+        { key: "c_svc1234", label: "Services", value: "Logo, Print" },
+        { key: "c_start12", label: "Start date", value: "2026-11-02" },
+      ],
+      attribution: {
+        utm_source: "facebook",
+        utm_campaign: "x".repeat(150),
+        referrer: "https://news.example/story",
+      },
+      workspace_id: workspaceA,
+    });
+  });
+
+  it("checks each answer against its question", async () => {
+    const bad = await Promise.all([
+      submit({ values: { name: "No Budget", email: "a@web.test" } }, "bad-1"),
+      submit(answers({ c_budget1: "Huge" }), "bad-2"),
+      submit(answers({ c_svc1234: ["Logo", "Catering"] }), "bad-3"),
+      submit(answers({ c_start12: "2026-02-30" }), "bad-4"),
+      submit(answers({ c_start12: "next week" }), "bad-5"),
+      submit(answers({ email: "not-an-email" }), "bad-6"),
+      submit(answers({ message: "x".repeat(2001) }), "bad-7"),
+      submit(answers({ c_budget1: ["Large"] }), "bad-8"),
+    ]);
+    for (const result of bad) expect(result.error?.message).toContain("invalid_submission");
+  });
+
+  it("never lets the team write or change what a visitor sent", async () => {
+    const forged = await max.client.from("leads").insert({
+      workspace_id: workspaceA,
+      name: "Forged",
+      answers: [{ key: "c_x", label: "X", value: "Y" }],
+    });
+    expect(forged.error?.message).toContain("immutable_column");
+    const { data: lead } = await ana.client.from("leads").select("id").eq("form_id", id).single();
+    const edited = await ana.client
+      .from("leads")
+      .update({ attribution: { utm_source: "edited" } })
+      .eq("id", lead!.id);
+    expect(edited.error?.message).toContain("immutable_column");
+    // Ordinary edits still work.
+    const renamed = await ana.client
+      .from("leads")
+      .update({ status: "contacted" })
+      .eq("id", lead!.id);
+    expect(renamed.error).toBeNull();
+  });
+
+  it("counts views per day for the team, and only for live forms", async () => {
+    for (let i = 0; i < 3; i += 1) {
+      expect((await visitor.rpc("record_lead_form_view", { form_token: token })).error).toBeNull();
+    }
+    await visitor.rpc("record_lead_form_view", { form_token: "f".repeat(36) });
+    const { data } = await mia.client.from("lead_form_view_days").select("views").eq("form_id", id);
+    expect(data).toEqual([{ views: 3 }]);
+    expect((await visitor.from("lead_form_view_days").select("views")).data ?? []).toEqual([]);
+    const outsider = await ben.client.from("lead_form_view_days").select("views").eq("form_id", id);
+    expect(outsider.data).toEqual([]);
+    const write = await mia.client
+      .from("lead_form_view_days")
+      .update({ views: 999 })
+      .eq("form_id", id)
+      .select("views");
+    expect(write.data ?? []).toEqual([]);
+
+    await max.client.from("lead_forms").update({ active: false }).eq("id", id);
+    await visitor.rpc("record_lead_form_view", { form_token: token });
+    const after = await mia.client.from("lead_form_view_days").select("views").eq("form_id", id);
+    expect(after.data).toEqual([{ views: 3 }]);
   });
 });

@@ -69,7 +69,11 @@ Invoices, estimates, their lines and payments cannot be written directly by any 
 ## Public lead forms
 
 - A form is reached only by a random 36-character token in its link. Visitors never send a workspace id; the database works it out from the token.
-- The public can call exactly two functions, `get_lead_form` (the form's own wording and the business name) and `submit_lead_form` (creates one unassigned lead). Neither returns anything about existing records. Every table stays closed to anonymous visitors.
+- The public can call exactly three functions: `get_lead_form` (the form's own wording, questions and look, and the business name), `submit_lead_form` (creates one unassigned lead) and `record_lead_form_view` (adds one to the form's view count for today). None returns anything about existing records. Every table stays closed to anonymous visitors.
+- Every answer is checked against the form's own question list in the database: required questions, choices that exist, real dates, email format and length limits. Questions the form doesn't ask are ignored. Attribution keeps only known keys (UTM tags, referrer, page), cuts them to length, and keeps page addresses only when they are http or https.
+- A lead's answers and attribution are written only by `submit_lead_form` and can never be set or edited by the team, so they always show what the visitor sent.
+- A form may only redirect to an https address. View counts can be inflated by anyone who calls the function, so they are a guide, not an audit figure.
+- The embed code listens only to messages from the app's own address and from its own frame, and the form only sends its height.
 - Submissions are validated on the server and again in the database. Limits, enforced in the database: 3 per visitor per form in 10 minutes, and 100 per form per hour. The visitor key is a SHA-256 of the form token and the network address, so it identifies neither the person nor their other submissions.
 - A hidden field catches simple bots: when it is filled in, the visitor is thanked and nothing is saved.
 - Consent text is written by the business. The app does not supply legal wording or claim compliance with any privacy law.

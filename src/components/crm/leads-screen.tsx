@@ -5,12 +5,14 @@ import {
   ArchiveRestore,
   ArrowRightCircle,
   Download,
+  FileText,
   Inbox,
   Pencil,
   Plus,
   SearchX,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +24,7 @@ import { EmptyState } from "@/components/common/states";
 import { LEAD_STATUS_LABEL, LeadStatusBadge } from "@/components/common/status-badge";
 import { FilterMenu, SearchInput, TableToolbar } from "@/components/common/table-toolbar";
 import { ConvertLeadDialog } from "@/components/crm/convert-lead-dialog";
+import { EnquiryDialog, attributionSummary } from "@/components/crm/enquiry-dialog";
 import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
@@ -53,6 +56,10 @@ export function LeadsScreen() {
   const [status, setStatus] = useState("open");
   const [owner, setOwner] = useState("all");
   const [source, setSource] = useState("all");
+  // "View leads" on a lead form opens this screen filtered to that form.
+  const searchParams = useSearchParams();
+  const [form, setForm] = useState(() => searchParams.get("form") ?? "all");
+  const [enquiryTarget, setEnquiryTarget] = useState<Lead | null>(null);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Lead | null>(null);
 
@@ -67,6 +74,17 @@ export function LeadsScreen() {
       .sort()
       .map((value) => ({ value, label: value })),
   ];
+  const formName = new Map(leadForms.map((item) => [item.id, item.name]));
+  for (const lead of leads) {
+    if (lead.formId && !formName.has(lead.formId)) {
+      formName.set(lead.formId, lead.source.replace(/^Form: /, ""));
+    }
+  }
+  const formOptions = [
+    { value: "all", label: "Any form" },
+    { value: "none", label: "Added by hand" },
+    ...[...formName].map(([value, label]) => ({ value, label })),
+  ];
 
   const filtered = useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -78,12 +96,15 @@ export function LeadsScreen() {
         return false;
       }
       if (source !== "all" && lead.source !== source) return false;
+      if (form === "none" ? lead.formId !== null : form !== "all" && lead.formId !== form) {
+        return false;
+      }
       if (!text) return true;
       return [lead.name, lead.email, lead.companyName].some((value) =>
         value.toLowerCase().includes(text),
       );
     });
-  }, [leads, query, status, owner, source]);
+  }, [leads, query, status, owner, source, form]);
 
   const columns = useMemo<Column<Lead>[]>(
     () => [
@@ -118,7 +139,19 @@ export function LeadsScreen() {
         header: "Source",
         sortValue: (lead) => lead.source,
         className: "hidden md:table-cell",
-        cell: (lead) => lead.source || <span className="text-muted-foreground">Unknown</span>,
+        cell: (lead) => {
+          const via = attributionSummary(lead.attribution);
+          return (
+            <div className="min-w-0">
+              <span className="block truncate">
+                {lead.source || <span className="text-muted-foreground">Unknown</span>}
+              </span>
+              {via ? (
+                <span className="block truncate text-caption text-muted-foreground">{via}</span>
+              ) : null}
+            </div>
+          );
+        },
       },
       {
         id: "owner",
@@ -180,6 +213,15 @@ export function LeadsScreen() {
               <RowActions
                 label={`Actions for ${lead.name}`}
                 actions={[
+                  ...(lead.formId
+                    ? [
+                        {
+                          label: "View enquiry",
+                          icon: FileText,
+                          onSelect: () => setEnquiryTarget(lead),
+                        },
+                      ]
+                    : []),
                   { label: "Edit", icon: Pencil, onSelect: () => openEditor("lead", lead.id) },
                   ...(canArchive
                     ? [
@@ -213,7 +255,8 @@ export function LeadsScreen() {
   const table = useTableState(filtered, columns, {
     initialSort: { id: "added", direction: "desc" },
   });
-  const hasFilters = query !== "" || status !== "open" || owner !== "all" || source !== "all";
+  const hasFilters =
+    query !== "" || status !== "open" || owner !== "all" || source !== "all" || form !== "all";
   const openCount = leads.filter(isOpen).length;
   const unassigned = leads.filter((lead) => isOpen(lead) && lead.ownerId === null).length;
 
@@ -221,7 +264,23 @@ export function LeadsScreen() {
     downloadCsv(
       `leads-${getToday()}.csv`,
       toCsv(
-        ["Name", "Email", "Phone", "Company", "Source", "Status", "Owner", "Added", "Notes"],
+        [
+          "Name",
+          "Email",
+          "Phone",
+          "Company",
+          "Source",
+          "Status",
+          "Owner",
+          "Added",
+          "Notes",
+          "Form answers",
+          "UTM source",
+          "UTM medium",
+          "UTM campaign",
+          "Referrer",
+          "Form page",
+        ],
         filtered.map((lead) => [
           lead.name,
           lead.email,
@@ -232,6 +291,12 @@ export function LeadsScreen() {
           lead.ownerId ? memberName(lead.ownerId) : "",
           lead.createdOn,
           lead.notes,
+          lead.answers.map((answer) => `${answer.label}: ${answer.value}`).join("\n"),
+          lead.attribution.utm_source ?? "",
+          lead.attribution.utm_medium ?? "",
+          lead.attribution.utm_campaign ?? "",
+          lead.attribution.referrer ?? "",
+          lead.attribution.page_url ?? "",
         ]),
       ),
     );
@@ -299,6 +364,9 @@ export function LeadsScreen() {
                 onChange={setSource}
               />
             ) : null}
+            {formName.size > 0 ? (
+              <FilterMenu label="Form" options={formOptions} value={form} onChange={setForm} />
+            ) : null}
             {hasFilters ? (
               <Button
                 variant="ghost"
@@ -307,6 +375,7 @@ export function LeadsScreen() {
                   setStatus("open");
                   setOwner("all");
                   setSource("all");
+                  setForm("all");
                 }}
               >
                 Clear filters
@@ -338,6 +407,11 @@ export function LeadsScreen() {
       )}
 
       <ConvertLeadDialog lead={convertTarget} onClose={() => setConvertTarget(null)} />
+      <EnquiryDialog
+        lead={enquiryTarget}
+        formName={enquiryTarget?.formId ? formName.get(enquiryTarget.formId) : undefined}
+        onClose={() => setEnquiryTarget(null)}
+      />
 
       <ConfirmDialog
         open={archiveTarget !== null}

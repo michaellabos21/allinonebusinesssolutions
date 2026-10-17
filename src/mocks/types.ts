@@ -1,5 +1,7 @@
 /** Shapes for the prototype's demo records. Money is always integer minor units (centavos). */
 
+import type { Attribution, FormField } from "@/lib/lead-forms";
+
 /** A fictional teammate on the demo records. Real members live in the database. */
 export type TeamMember = {
   id: string;
@@ -258,6 +260,10 @@ export type Lead = {
   convertedDealId: string | null;
   createdOn: string;
   archived: boolean;
+  /** Answers to the form's own questions, as asked. Empty for leads added by hand. */
+  answers: { key: string; label: string; value: string }[];
+  /** UTM tags, referring site and form page, for leads that came through a form. */
+  attribution: Attribution;
 };
 
 /** A public enquiry form. Its token is the only thing in its link. */
@@ -270,6 +276,13 @@ export type LeadForm = {
   successMessage: string;
   active: boolean;
   createdOn: string;
+  fields: FormField[];
+  accentColor: string;
+  buttonLabel: string;
+  /** An https page opened after sending, or "" to show the success message. */
+  redirectUrl: string;
+  /** Times the form was opened in the last 30 days. */
+  viewsLast30Days: number;
 };
 
 export type ActivityKind =

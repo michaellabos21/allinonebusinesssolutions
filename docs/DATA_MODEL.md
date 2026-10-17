@@ -112,3 +112,14 @@ Built in `supabase/migrations/20261011000008_notifications.sql`, which can be ru
 ## Later phases
 
 Client portal, workflow, scheduling, time, HR, AI and integration tables are listed in section 15 of the MVP plan and are not designed further here.
+
+## Lead form questions, look and attribution
+
+Built in `supabase/migrations/20261017000009_lead_form_builder.sql`, which can be run again safely.
+
+- **`lead_forms.fields`**: the questions in order, each `{ key, type, label, required, placeholder?, options? }`. Keys `name`, `email`, `phone`, `company` and `message` fill in the lead's own columns (name and email always present and required); other keys are `c_<random>`. Types: `short_text`, `long_text`, `email`, `phone`, `dropdown`, `checkboxes`, `date`. `private.valid_lead_form_fields` enforces the rules in a check constraint. Existing forms get the five original questions.
+- **`lead_forms.accent_color`** (`#rrggbb`), **`button_label`** (1-40 characters), **`redirect_url`** (empty or https).
+- **`leads.answers`**: `[{ key, label, value }]` for the form's own questions, as asked; checkbox answers joined with ", ".
+- **`leads.attribution`**: any of `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `referrer`, `page_url`.
+- Both are written only through `submit_lead_form`; the `leads_enquiry` trigger refuses any other write.
+- **`lead_form_view_days`**: `(form_id, day)` with a `views` count, added to by `public.record_lead_form_view(token)` for active forms. The team reads it; nobody writes it directly.

@@ -113,3 +113,87 @@ test("a public lead form creates a lead without signing in", async ({ page, brow
   await expect(row.getByText("Form: Website enquiry")).toBeVisible();
   await expect(row.getByText("Unassigned")).toBeVisible();
 });
+
+test("a lead form with its own questions, look and embed code records answers and campaign", async ({
+  page,
+  browser,
+}) => {
+  await startWorkspace(page, "form-builder");
+  const main = page.getByRole("main");
+
+  await mainNav(page).getByRole("link", { name: "Lead forms" }).click();
+  await main.getByRole("button", { name: "New form" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Form name").fill("Quote request");
+
+  // A required dropdown and an optional set of checkboxes, after the built-in questions.
+  await dialog.getByRole("button", { name: "Add question" }).click();
+  await page.getByRole("menuitem", { name: "Dropdown" }).click();
+  await dialog.getByRole("textbox", { name: "Question 6", exact: true }).fill("Budget");
+  await dialog.getByLabel("Choices, one per line").fill("Under ₱50,000\n₱50,000 to ₱150,000");
+  await dialog.getByRole("checkbox", { name: "Required" }).nth(5).check();
+  await dialog.getByRole("button", { name: "Add question" }).click();
+  await page.getByRole("menuitem", { name: "Checkboxes" }).click();
+  await dialog.getByRole("textbox", { name: "Question 7", exact: true }).fill("Services");
+  await dialog.getByLabel("Choices, one per line").nth(1).fill("Logo\nWebsite\nPrinting");
+  // Company isn’t needed for quotes.
+  await dialog.getByRole("button", { name: "Remove question 4" }).click();
+
+  // A colour too light for white text is refused before saving.
+  await dialog.getByLabel("Button colour, as a hex code").fill("#ffee88");
+  await expect(dialog.getByText("Pick a darker colour")).toBeVisible();
+  await dialog.getByRole("button", { name: "Use #0f6b66" }).click();
+  await dialog.getByLabel("Button text").fill("Request a quote");
+  await dialog.getByRole("button", { name: "Create form" }).click();
+  await expect(dialog).toBeHidden();
+
+  await main.getByRole("button", { name: /^Embed/ }).click();
+  const code = await page.getByLabel("Embed code").inputValue();
+  expect(code).toMatch(/\/f\/[0-9a-f]{36}\?embed=1&page=/);
+  await page.getByRole("button", { name: "Close" }).first().click();
+  const href = await main.getByRole("link", { name: /^Open/ }).getAttribute("href");
+
+  // A visitor arrives from a tagged campaign link.
+  const visitor = await browser.newContext();
+  const form = await visitor.newPage();
+  await form.goto(`${href}?utm_source=facebook&utm_campaign=october`);
+  await expect(form.getByRole("heading", { name: "Quote request" })).toBeVisible();
+  await expect(form.getByLabel("Company (optional)")).toHaveCount(0);
+  const send = form.getByRole("button", { name: "Request a quote" });
+  await expect(send).toHaveCSS("background-color", "rgb(15, 107, 102)");
+  await form.getByLabel("Your name").fill("Paolo Reyes");
+  await form.getByLabel("Email").fill("paolo@reyes.example");
+  await send.click();
+  await expect(form.getByText("Choose one.")).toBeVisible();
+  await form.getByLabel("Budget").selectOption("₱50,000 to ₱150,000");
+  await form.getByRole("checkbox", { name: "Logo" }).check();
+  await form.getByRole("checkbox", { name: "Printing" }).check();
+  await send.click();
+  await expect(form.getByText("Message sent")).toBeVisible();
+
+  // The same form shown on a website through the embed code.
+  await form.goto(
+    `${href}?embed=1&page=${encodeURIComponent("https://reyes.example/contact?utm_source=google")}`,
+  );
+  await expect(form.getByRole("heading", { name: "Quote request" })).toBeVisible();
+  await expect(form.locator("main")).not.toHaveClass(/rounded-lg/);
+  await visitor.close();
+
+  await page.goto("/crm/leads");
+  const row = main.getByRole("row", { name: /Paolo Reyes/ });
+  await expect(row.getByText("via facebook / october")).toBeVisible();
+  await row.getByRole("button", { name: "Actions for Paolo Reyes" }).click();
+  await page.getByRole("menuitem", { name: "View enquiry" }).click();
+  const enquiry = page.getByRole("dialog");
+  await expect(enquiry.getByText("₱50,000 to ₱150,000")).toBeVisible();
+  await expect(enquiry.getByText("Logo, Printing")).toBeVisible();
+  await expect(enquiry.getByText("october")).toBeVisible();
+  await enquiry.getByRole("button", { name: "Close" }).first().click();
+
+  // One view (a browser tab counts once, link and embed alike) and one lead in the last 30 days.
+  await page.goto("/crm/forms");
+  const stats = main.getByLabel("Quote request, last 30 days").getByRole("definition");
+  await expect(stats).toHaveText(["1", "1", "100%"]);
+  await main.getByRole("link", { name: /View leads/ }).click();
+  await expect(main.getByRole("row", { name: /Paolo Reyes/ })).toBeVisible();
+});
