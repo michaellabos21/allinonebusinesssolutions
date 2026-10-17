@@ -28,7 +28,7 @@ export default function GlobalError({
           display: "grid",
           placeItems: "center",
           padding: 24,
-          fontFamily: "ui-sans-serif, system-ui, sans-serif",
+          fontFamily: "-apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif",
           background: "#f5f4f0",
           color: "#1c2434",
         }}

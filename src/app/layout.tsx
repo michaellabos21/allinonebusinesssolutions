@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
 
 import { Toaster } from "@/components/ui/sonner";
@@ -7,18 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CANONICAL_ORIGIN, PRODUCT_DESCRIPTION, PRODUCT_NAME, THEME_COLOR } from "@/config/app";
 
 import "./globals.css";
-
-// latin-ext carries the peso sign (₱) used by the default workspace currency.
-const appFont = Hanken_Grotesk({
-  variable: "--font-app",
-  subsets: ["latin", "latin-ext"],
-});
-
-// Display face for page titles, headline figures and the receivables statement.
-const displayFont = Bricolage_Grotesque({
-  variable: "--font-display-face",
-  subsets: ["latin", "latin-ext"],
-});
 
 // Icons, the share image and the manifest come from files in this folder:
 // icon.svg, apple-icon.png, favicon.ico, opengraph-image.png and manifest.ts.
@@ -44,7 +31,7 @@ const GTM_ID = "GTM-PR6339DV";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${appFont.variable} ${displayFont.variable} h-full antialiased`}>
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full">
         <noscript>
           <iframe
