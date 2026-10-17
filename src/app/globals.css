@@ -87,6 +87,19 @@
 }
 
 :root {
+  /*
+   * Type: Apple's system font (San Francisco) on iPhone, iPad and Mac, which
+   * picks its Text or Display cut by size. Apple's licence doesn't allow
+   * serving SF Pro from a website, so other devices use their own system font:
+   * Segoe UI on Windows, Roboto on Android. All of them include the peso sign.
+   */
+  --font-app:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-display-face:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+
   /* Surfaces */
   --canvas: #f5f4f0; /* app frame behind the sidebar and topbar */
   --background: #ffffff; /* working surface */
