@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   SearchX,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -29,7 +30,7 @@ import { useDemoStore } from "@/components/providers/demo-store";
 import { Button } from "@/components/ui/button";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
 import { formatDate } from "@/lib/format";
-import { setLeadArchived } from "@/lib/record-actions";
+import { deleteLead, setLeadArchived } from "@/lib/record-actions";
 import { getToday, memberName } from "@/lib/runtime";
 import type { Lead } from "@/mocks";
 import { can } from "@/server/permissions";
@@ -62,6 +63,7 @@ export function LeadsScreen() {
   const [enquiryTarget, setEnquiryTarget] = useState<Lead | null>(null);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Lead | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
 
   const ownerOptions = [
     { value: "all", label: "Anyone" },
@@ -241,6 +243,12 @@ export function LeadsScreen() {
                               destructive: true,
                               onSelect: () => setArchiveTarget(lead),
                             },
+                        {
+                          label: "Delete",
+                          icon: Trash2,
+                          destructive: true,
+                          onSelect: () => setDeleteTarget(lead),
+                        },
                       ]
                     : []),
                 ]}
@@ -426,6 +434,24 @@ export function LeadsScreen() {
             action: { label: "Undo", onClick: () => setLeadArchived(archiveTarget.id, false) },
           });
           setArchiveTarget(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={`Delete ${deleteTarget?.name ?? "lead"} for good?`}
+        description={
+          deleteTarget?.formId
+            ? "The lead and the answers they sent through the form are removed and can’t be restored. To keep them out of your list but recoverable, archive the lead instead."
+            : "The lead is removed and can’t be restored. To keep it out of your list but recoverable, archive it instead."
+        }
+        confirmLabel="Delete lead"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          if (!(await deleteLead(deleteTarget.id))) return;
+          toast.success(`${deleteTarget.name} deleted`);
+          setDeleteTarget(null);
         }}
       />
     </div>

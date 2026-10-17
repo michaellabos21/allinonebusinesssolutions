@@ -76,6 +76,9 @@ const DATABASE_RULES: Record<string, { error: string; field?: string }> = {
   },
   // Finance
   invalid_items: { error: "Check the lines: each needs a description, quantity and price." },
+  lead_has_deal: {
+    error: "This lead became a deal, so it’s kept as part of that deal’s history.",
+  },
   not_a_draft: { error: "Only drafts can be changed. This one has already been issued." },
   bill_to_required: {
     error: "Choose who the document is for before issuing it.",

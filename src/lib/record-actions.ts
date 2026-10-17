@@ -6,6 +6,7 @@ import {
   setContactArchivedAction,
 } from "@/server/actions/records";
 import {
+  deleteLeadAction,
   moveDealAction,
   setDealArchivedAction,
   setLeadArchivedAction,
@@ -41,3 +42,5 @@ export const setDealArchived = (id: string, archived: boolean) =>
 
 export const setLeadArchived = (id: string, archived: boolean) =>
   runAction(setLeadArchivedAction({ id, archived }));
+
+export const deleteLead = (id: string) => runAction(deleteLeadAction(id));

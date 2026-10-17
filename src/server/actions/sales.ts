@@ -83,6 +83,25 @@ export async function setLeadArchivedAction(input: unknown): Promise<Result<unde
 }
 
 /**
+ * Deletes a lead for good (managers and above). The database refuses when a
+ * deal was made from it, and records the deletion in the feed.
+ */
+export async function deleteLeadAction(id: unknown): Promise<Result<undefined>> {
+  if (!idSchema.safeParse(id).success) return FORBIDDEN;
+  const ctx = await context("records.archive");
+  if (!ctx.allowed) return ctx.failure;
+  const { error } = await ctx.supabase.rpc("delete_lead", { target_lead: id });
+  if (error) {
+    if (error.message.includes("not_found")) {
+      return { ok: false, error: "This lead was already deleted." };
+    }
+    return explain(error, "lead.delete_failed");
+  }
+  refresh();
+  return { ok: true };
+}
+
+/**
  * Converts a lead in one database transaction. The contact the user picked is
  * used as is; otherwise one with the lead's email is reused, so converting
  * never creates a duplicate person.

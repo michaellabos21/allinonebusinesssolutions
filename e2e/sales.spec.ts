@@ -197,3 +197,27 @@ test("a lead form with its own questions, look and embed code records answers an
   await main.getByRole("link", { name: /View leads/ }).click();
   await expect(main.getByRole("row", { name: /Paolo Reyes/ })).toBeVisible();
 });
+
+test("a manager deletes a lead for good", async ({ page }) => {
+  await startWorkspace(page, "delete-lead");
+  const main = page.getByRole("main");
+
+  await mainNav(page).getByRole("link", { name: "Leads" }).click();
+  await main.getByRole("button", { name: "New lead" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Name").fill("Spam Sender");
+  await dialog.getByRole("button", { name: "Add lead" }).click();
+  await expect(dialog).toBeHidden();
+
+  await main.getByRole("button", { name: "Actions for Spam Sender" }).click();
+  await page.getByRole("menuitem", { name: "Delete" }).click();
+  const confirm = page.getByRole("alertdialog");
+  await expect(confirm.getByText("can’t be restored")).toBeVisible();
+  await confirm.getByRole("button", { name: "Delete lead" }).click();
+  await expect(page.getByText("Spam Sender deleted")).toBeVisible();
+
+  await page.reload();
+  await expect(main.getByRole("row", { name: /Spam Sender/ })).toHaveCount(0);
+  // Not hidden in the archive either: it is gone.
+  await expect(page.getByText("No leads yet")).toBeVisible();
+});
