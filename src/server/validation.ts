@@ -1,6 +1,16 @@
 import { z } from "zod";
 
 import { CURRENCY_OPTIONS, TAX_OPTIONS } from "@/config/app";
+import {
+  ATTRIBUTION_KEYS,
+  BUILT_IN_FIELDS,
+  CUSTOM_KEY,
+  FIELD_TYPES,
+  MAX_FIELDS,
+  MAX_OPTIONS,
+  contrastWithWhite,
+  isBuiltIn,
+} from "@/lib/lead-forms";
 import { ASSIGNABLE_ROLES } from "@/server/permissions";
 
 /**
@@ -292,22 +302,97 @@ export const stageSchema = z.object({
 
 export const stageOrderSchema = z.array(z.uuid()).min(3).max(30);
 
+const formFieldSchema = z
+  .object({
+    key: z.string().refine((key) => isBuiltIn(key) || CUSTOM_KEY.test(key)),
+    type: z.enum(FIELD_TYPES),
+    label: requiredText(80, "Write the question."),
+    required: z.boolean(),
+    placeholder: text(120).optional(),
+    options: z.array(text(80)).max(MAX_OPTIONS, `Use ${MAX_OPTIONS} choices or fewer.`).optional(),
+  })
+  .transform((field) => {
+    const choice = field.type === "dropdown" || field.type === "checkboxes";
+    return {
+      key: field.key,
+      type: field.type,
+      label: field.label,
+      required: field.required,
+      ...(field.placeholder && !choice ? { placeholder: field.placeholder } : {}),
+      ...(choice ? { options: (field.options ?? []).filter(Boolean) } : {}),
+    };
+  })
+  .superRefine((field, ctx) => {
+    if (isBuiltIn(field.key)) {
+      const fixed = BUILT_IN_FIELDS[field.key];
+      if (field.type !== fixed.type) ctx.addIssue({ code: "custom", message: "Invalid field." });
+      if (fixed.alwaysRequired && !field.required) {
+        ctx.addIssue({ code: "custom", message: "Name and email are always required." });
+      }
+    }
+    if (field.options) {
+      if (field.options.length === 0) {
+        ctx.addIssue({ code: "custom", message: "Add at least one choice." });
+      } else if (new Set(field.options).size !== field.options.length) {
+        ctx.addIssue({ code: "custom", message: "Each choice must be different." });
+      }
+    }
+  });
+
 export const leadFormSchema = z.object({
   name: requiredText(80, "Name the form."),
   intro: text(500),
   consentText: text(1000),
   successMessage: requiredText(300, "Write the message people see after sending."),
   active: z.boolean(),
+  fields: z
+    .array(formFieldSchema)
+    .min(2)
+    .max(MAX_FIELDS, `A form can ask up to ${MAX_FIELDS} questions.`)
+    .refine(
+      (fields) => new Set(fields.map((field) => field.key)).size === fields.length,
+      "Each question can appear once.",
+    )
+    .refine(
+      (fields) => ["name", "email"].every((key) => fields.some((field) => field.key === key)),
+      "A form always asks for a name and an email.",
+    ),
+  accentColor: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^#[0-9a-f]{6}$/, "Use a colour like #34479e.")
+    .refine(
+      (color) => contrastWithWhite(color) >= 4.5,
+      "Pick a darker colour so the white button text stays readable.",
+    ),
+  buttonLabel: requiredText(40, "Write the button’s text."),
+  redirectUrl: z
+    .string()
+    .trim()
+    .max(500, "Use 500 characters or fewer.")
+    .refine(
+      (url) => url === "" || /^https:\/\/[^\s]+$/.test(url),
+      "Use a full https:// address, or leave it empty.",
+    ),
 });
 
-/** What a visitor sends from a public form. Checked again by the database. */
+/** What a visitor sends from a public form. Answers are checked against the form, then by the database. */
 export const publicLeadSchema = z.object({
-  name: requiredText(120, "Enter your name."),
-  email,
-  phone: text(40),
-  company: text(120),
-  message: text(2000),
+  values: z.record(
+    z.string().max(40),
+    z.union([z.string().max(2000), z.array(z.string().max(80)).max(MAX_OPTIONS)]),
+  ),
   consent: z.boolean(),
+  attribution: z
+    .record(z.string(), z.string().max(500))
+    .transform((entries) =>
+      Object.fromEntries(
+        Object.entries(entries).filter(([key]) =>
+          (ATTRIBUTION_KEYS as readonly string[]).includes(key),
+        ),
+      ),
+    ),
 });
 
 // ---------------------------------------------------------------------------

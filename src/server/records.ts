@@ -138,12 +138,12 @@ export async function getWorkspaceRecords(
     ).order("expected_close_on"),
     scoped(
       "leads",
-      "id, name, email, phone, company_name, source, status, notes, owner_id, form_id, converted_contact_id, converted_deal_id, archived_at, created_at",
+      "id, name, email, phone, company_name, source, status, notes, owner_id, form_id, converted_contact_id, converted_deal_id, archived_at, created_at, answers, attribution",
     ).order("created_at", { ascending: false }),
     can(role, "pipeline.manage")
       ? scoped(
           "lead_forms",
-          "id, name, token, intro, consent_text, success_message, active, created_at",
+          "id, name, token, intro, consent_text, success_message, active, created_at, fields, accent_color, button_label, redirect_url",
         ).order("created_at")
       : Promise.resolve({ data: [] }),
   ]);
@@ -163,6 +163,20 @@ export async function getWorkspaceRecords(
   const rows = (result: { data: unknown }) => (result.data ?? []) as Row[];
 
   const taskExtras = await loadTaskExtras(supabase, workspaceId);
+
+  // Lead form views over the last 30 days, for the conversion rate on each form.
+  const formViews = new Map<string, number>();
+  if (rows(leadForms).length > 0) {
+    const since = new Date(Date.now() - 29 * 86_400_000).toISOString().slice(0, 10);
+    const { data: viewDays } = await supabase
+      .from("lead_form_view_days")
+      .select("form_id, views")
+      .eq("workspace_id", workspaceId)
+      .gte("day", since);
+    for (const row of (viewDays ?? []) as Row[]) {
+      formViews.set(row.form_id, (formViews.get(row.form_id) ?? 0) + Number(row.views));
+    }
+  }
 
   const finance = can(role, "finance.manage")
     ? await loadFinance(supabase, workspaceId)
@@ -288,6 +302,8 @@ export async function getWorkspaceRecords(
       convertedDealId: row.converted_deal_id,
       createdOn: day(row.created_at),
       archived: row.archived_at !== null,
+      answers: Array.isArray(row.answers) ? row.answers : [],
+      attribution: row.attribution ?? {},
     })),
     leadForms: rows(leadForms).map((row) => ({
       id: row.id,
@@ -298,6 +314,11 @@ export async function getWorkspaceRecords(
       successMessage: row.success_message,
       active: row.active,
       createdOn: day(row.created_at),
+      fields: row.fields,
+      accentColor: row.accent_color,
+      buttonLabel: row.button_label,
+      redirectUrl: row.redirect_url,
+      viewsLast30Days: formViews.get(row.id) ?? 0,
     })),
     invoices: finance.invoices,
     payments: finance.payments,

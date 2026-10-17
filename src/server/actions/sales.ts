@@ -8,6 +8,7 @@ import {
   archiveSchema,
   convertLeadSchema,
   dealSchema,
+  fieldErrorsOf,
   dealStageChangeSchema,
   idSchema,
   leadFormSchema,
@@ -329,7 +330,23 @@ export async function reorderStagesAction(input: unknown): Promise<Result<undefi
 
 export async function saveLeadFormAction(input: unknown, id?: string): Promise<Result> {
   const parsed = leadFormSchema.safeParse(input);
-  if (!parsed.success) return invalid(parsed.error);
+  if (!parsed.success) {
+    // Problems inside one question are reported against that question ("fields.3").
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      if (issue.path[0] === "fields" && typeof issue.path[1] === "number") {
+        fieldErrors[`fields.${issue.path[1]}`] ??= issue.message;
+      }
+    }
+    return {
+      ok: false,
+      error: "Check the highlighted fields.",
+      fieldErrors: {
+        ...fieldErrorsOf(parsed.error),
+        ...fieldErrors,
+      },
+    };
+  }
   if (id !== undefined && !idSchema.safeParse(id).success) return FORBIDDEN;
   const ctx = await context("pipeline.manage");
   if (!ctx.allowed) return ctx.failure;
@@ -340,6 +357,10 @@ export async function saveLeadFormAction(input: unknown, id?: string): Promise<R
     consent_text: parsed.data.consentText,
     success_message: parsed.data.successMessage,
     active: parsed.data.active,
+    fields: parsed.data.fields,
+    accent_color: parsed.data.accentColor,
+    button_label: parsed.data.buttonLabel,
+    redirect_url: parsed.data.redirectUrl,
   };
   const query = id
     ? ctx.supabase
