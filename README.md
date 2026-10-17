@@ -128,6 +128,7 @@ Visitors who aren't signed in see the landing page at `/` (served from `/welcome
 ### Accounts, workspaces and team (real)
 
 - Sign up, sign in, sign out, and reset a forgotten password by email
+- **Continue with Google** on the sign-in and sign-up pages, shown only once Google is switched on in Supabase (Authentication → Sign In / Providers → Google; checked every few minutes, no redeploy needed). A first-time Google user's name comes from their Google profile and they set up a workspace like any new sign-up. Google returns people to `/auth/callback`, which also handles email links
 - Create a workspace with a name, country, currency and time zone; belong to several and switch between them
 - Invite a teammate by email address: the app creates a single-use link, valid for seven days, that only that address can accept. **It does not send the email.** You are shown the link once to pass on yourself
 - Five roles (owner, admin, manager, member, client). Owners and admins change settings, invite people, change roles and remove members; only the owner manages admins; nobody can change their own role or the owner's

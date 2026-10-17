@@ -118,3 +118,15 @@ test("invite a teammate, who joins as a member with limited rights", async ({ pa
   await expect(page.getByText("Invited Teammate")).toBeVisible();
   await expect(page.getByText("No pending invitations")).toBeVisible();
 });
+
+test("Continue with Google stays hidden until Google sign-in is switched on in Supabase", async ({
+  page,
+}) => {
+  // The local Supabase used by these tests has Google switched off.
+  await page.goto("/login");
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toHaveCount(0);
+  // A cancelled or failed Google attempt comes back with a plain explanation.
+  await page.goto("/login?error=google");
+  await expect(page.getByText("Google sign-in didn’t finish.")).toBeVisible();
+});

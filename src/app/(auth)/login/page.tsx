@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { LoginForm } from "@/components/auth/forms";
+import { isGoogleSignInEnabled } from "@/server/auth-providers";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -13,7 +14,12 @@ export default function Page() {
   // The form reads the URL's query string, which is only known at request time.
   return (
     <Suspense fallback={null}>
-      <LoginForm />
+      <LoginFormWithProviders />
     </Suspense>
   );
+}
+
+/** Shows "Continue with Google" once Google sign-in is switched on in Supabase. */
+async function LoginFormWithProviders() {
+  return <LoginForm google={await isGoogleSignInEnabled()} />;
 }
