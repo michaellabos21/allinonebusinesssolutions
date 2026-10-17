@@ -28,9 +28,12 @@ export const CANONICAL_ORIGIN =
 /** Brand colour for the browser's toolbar and the installed app. */
 export const THEME_COLOR = "#34479e";
 
-/** One-line description used by search engines and link previews. */
+/**
+ * One-line description used by search engines and link previews. Keep it under
+ * about 155 characters so Google shows it whole instead of cutting it off.
+ */
 export const PRODUCT_DESCRIPTION =
-  "Kasama Space keeps your contacts, sales pipeline, projects, tasks, invoices and payments in one workspace your whole team shares. Built for small businesses and freelancers.";
+  "From first enquiry to paid invoice: leads, projects, tasks and invoices in one simple workspace for Filipino small businesses and freelancers.";
 
 /** The name on the public landing page. */
 export const MARKETING_NAME = PRODUCT_NAME;
